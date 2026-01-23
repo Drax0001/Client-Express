@@ -21,9 +21,31 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
 
     // Extract projectId from form data
-    const projectId = formData.get("projectId") as string;
-    const url = formData.get("url") as string;
-    const file = formData.get("file") as File;
+    const projectIdEntry = formData.get("projectId");
+    const urlEntry = formData.get("url");
+    const fileEntry = formData.get("file");
+
+    console.log("API: Document upload - raw FormData entries:", {
+      projectIdEntry: typeof projectIdEntry + " - " + projectIdEntry,
+      urlEntry: typeof urlEntry + " - " + urlEntry,
+      fileEntry: fileEntry instanceof File ? `File: ${fileEntry.name}` : typeof fileEntry + " - " + fileEntry,
+      allKeys: Array.from(formData.keys()),
+    });
+
+    // Convert to proper types
+    const projectId = projectIdEntry as string;
+    const url = urlEntry as string;
+    const file = fileEntry instanceof File ? fileEntry : null;
+
+    console.log("API: Document upload - processed data:", {
+      projectId,
+      hasUrl: !!url,
+      hasFile: !!file,
+      url: url ? url.substring(0, 100) + "..." : null,
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+    });
 
     // Validate request with Zod schema
     const validationResult = UploadDocumentSchema.safeParse({
@@ -70,7 +92,9 @@ export async function POST(request: NextRequest) {
     // Note: In a production app, this would typically be done with a job queue
     // For now, we'll process synchronously for simplicity
     try {
-      await documentService.processDocument(document.id);
+      // Temporarily disable processing for testing
+      console.log(`Document uploaded successfully: ${document.id}, processing disabled for now`);
+      // await documentService.processDocument(document.id);
     } catch (processError) {
       // Log processing error but don't fail the upload
       console.error(

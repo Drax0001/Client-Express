@@ -178,4 +178,52 @@ export class ProjectService {
       );
     }
   }
+
+  /**
+   * Retrieves all projects with document counts
+   * Returns projects sorted by creation date (newest first)
+   *
+   * @returns Promise<ProjectWithDocuments[]> - Array of all projects
+   * @throws DatabaseError if database operation fails
+   */
+  async getAllProjects(): Promise<ProjectWithDocuments[]> {
+    try {
+      // Get all projects from database
+      const projects = await prisma.project.findMany({
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      // Get document counts for each project
+      const projectsWithCounts = await Promise.all(
+        projects.map(async (project) => {
+          try {
+            // Try to get document count from vector store (if collection exists)
+            const collection = await this.chromaClient.getCollection({
+              name: project.id,
+            });
+            const documentCount = await collection.count();
+
+            return {
+              ...project,
+              documentCount,
+            };
+          } catch (error) {
+            // If collection doesn't exist or vector store is unavailable, return 0
+            return {
+              ...project,
+              documentCount: 0,
+            };
+          }
+        })
+      );
+
+      return projectsWithCounts;
+    } catch (error) {
+      throw new DatabaseError(
+        `Failed to retrieve projects: ${(error as Error).message}`
+      );
+    }
+  }
 }

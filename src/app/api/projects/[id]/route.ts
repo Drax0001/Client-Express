@@ -18,12 +18,15 @@ const projectService = new ProjectService();
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params in Next.js 16
+    const { id } = await params;
+
     // Validate project ID parameter
     const validationResult = GetProjectSchema.safeParse({
-      params: { id: params.id },
+      params: { id },
     });
 
     if (!validationResult.success) {
@@ -36,10 +39,10 @@ export async function GET(
       );
     }
 
-    const { id } = validationResult.data.params;
+    const { id: validatedId } = validationResult.data.params;
 
     // Retrieve project using service
-    const project = await projectService.getProject(id);
+    const project = await projectService.getProject(validatedId);
 
     // Return success response
     return NextResponse.json(project, { status: 200 });
@@ -54,12 +57,15 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params in Next.js 16
+    const { id } = await params;
+
     // Validate project ID parameter
     const validationResult = DeleteProjectSchema.safeParse({
-      params: { id: params.id },
+      params: { id },
     });
 
     if (!validationResult.success) {
@@ -72,10 +78,10 @@ export async function DELETE(
       );
     }
 
-    const { id } = validationResult.data.params;
+    const { id: validatedId } = validationResult.data.params;
 
     // Delete project using service (cascade deletes documents)
-    await projectService.deleteProject(id);
+    await projectService.deleteProject(validatedId);
 
     // Return success response
     return NextResponse.json(

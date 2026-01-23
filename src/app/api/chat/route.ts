@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     // Parse and validate request body
     const body = await request.json();
 
-    const validationResult = ChatRequestSchema.safeParse({ body });
+    const validationResult = ChatRequestSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
         {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { projectId, message } = validationResult.data.body;
+    const { projectId, message } = validationResult.data;
 
     // Process query using ChatService
     const response = await chatService.processQuery({

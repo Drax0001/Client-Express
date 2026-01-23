@@ -8,6 +8,21 @@
  */
 
 import { ChromaClient, Collection } from "chromadb";
+
+// Dynamic import to avoid client-side processing
+let ChromaClientDynamic: typeof ChromaClient | null = null;
+
+async function getChromaClient() {
+  if (typeof window === "undefined") {
+    // Only import on server side
+    if (!ChromaClientDynamic) {
+      const { ChromaClient: Client } = await import("chromadb");
+      ChromaClientDynamic = Client;
+    }
+    return ChromaClientDynamic;
+  }
+  throw new Error("ChromaDB can only be used on the server side");
+}
 import { getConfig } from "./config";
 import { VectorStoreError, ServiceUnavailableError } from "./errors";
 import { CircuitBreaker, withRetryAndCircuitBreaker } from "./retry";
@@ -37,18 +52,29 @@ export interface SearchResult {
  * Handles vector storage and retrieval operations with ChromaDB
  */
 export class VectorStore {
-  private client: ChromaClient;
+  private client: ChromaClient | null = null;
   private config = getConfig();
   private circuitBreaker: CircuitBreaker;
 
   /**
-   * Initializes the ChromaDB client and circuit breaker
+   * Initializes the circuit breaker
+   * ChromaDB client is initialized lazily to avoid client-side issues
    */
   constructor() {
-    this.client = new ChromaClient({
-      path: `http://${this.config.vectorStore.host}:${this.config.vectorStore.port}`,
-    });
     this.circuitBreaker = new CircuitBreaker();
+  }
+
+  /**
+   * Get or create ChromaDB client
+   */
+  private async getClient(): Promise<ChromaClient> {
+    if (!this.client) {
+      const ChromaClientClass = await getChromaClient();
+      this.client = new ChromaClientClass({
+        path: `http://${this.config.vectorStore.host}:${this.config.vectorStore.port}`,
+      });
+    }
+    return this.client;
   }
 
   /**
@@ -66,26 +92,24 @@ export class VectorStore {
    */
   async createCollection(projectId: string): Promise<void> {
     try {
-      await withRetryAndCircuitBreaker(
-        async () => {
-          // Check if collection already exists
-          const collections = await this.client.listCollections();
-          const collectionExists = collections.some(
-            (collection) => collection.name === projectId
-          );
+      await withRetryAndCircuitBreaker(async () => {
+        const client = await this.getClient();
+        // Check if collection already exists
+        const collections = await client.listCollections();
+        const collectionExists = collections.some(
+          (collection) => collection.name === projectId
+        );
 
-          if (!collectionExists) {
-            await this.client.createCollection({
-              name: projectId,
-              metadata: {
-                createdAt: new Date().toISOString(),
-                projectId: projectId,
-              },
-            });
-          }
-        },
-        this.circuitBreaker
-      );
+        if (!collectionExists) {
+          await client.createCollection({
+            name: projectId,
+            metadata: {
+              createdAt: new Date().toISOString(),
+              projectId: projectId,
+            },
+          });
+        }
+      }, this.circuitBreaker);
     } catch (error: any) {
       if (
         error.message?.includes("Circuit breaker is OPEN") ||
@@ -119,32 +143,33 @@ export class VectorStore {
    * @returns Promise that resolves when documents are added
    * @throws VectorStoreError if document addition fails
    */
-  async addDocuments(projectId: string, chunks: DocumentChunk[]): Promise<void> {
+  async addDocuments(
+    projectId: string,
+    chunks: DocumentChunk[]
+  ): Promise<void> {
     try {
-      await withRetryAndCircuitBreaker(
-        async () => {
-          const collection = await this.client.getCollection({
-            name: projectId,
-          });
+      await withRetryAndCircuitBreaker(async () => {
+        const client = await this.getClient();
+        const collection = await client.getCollection({
+          name: projectId,
+        });
 
-          // Prepare data for batch insertion
-          const ids = chunks.map((chunk) => chunk.id);
-          const embeddings = chunks.map((chunk) => chunk.embedding);
-          const metadatas = chunks.map((chunk) => ({
-            text: chunk.text,
-            ...chunk.metadata,
-          }));
-          const documents = chunks.map((chunk) => chunk.text);
+        // Prepare data for batch insertion
+        const ids = chunks.map((chunk) => chunk.id);
+        const embeddings = chunks.map((chunk) => chunk.embedding);
+        const metadatas = chunks.map((chunk) => ({
+          text: chunk.text,
+          ...chunk.metadata,
+        }));
+        const documents = chunks.map((chunk) => chunk.text);
 
-          await collection.add({
-            ids,
-            embeddings,
-            metadatas,
-            documents,
-          });
-        },
-        this.circuitBreaker
-      );
+        await collection.add({
+          ids,
+          embeddings,
+          metadatas,
+          documents,
+        });
+      }, this.circuitBreaker);
     } catch (error: any) {
       if (
         error.message?.includes("Circuit breaker is OPEN") ||
@@ -186,20 +211,18 @@ export class VectorStore {
     topK: number = 5
   ): Promise<SearchResult[]> {
     try {
-      const results = await withRetryAndCircuitBreaker(
-        async () => {
-          const collection = await this.client.getCollection({
-            name: projectId,
-          });
+      const results = await withRetryAndCircuitBreaker(async () => {
+        const client = await this.getClient();
+        const collection = await client.getCollection({
+          name: projectId,
+        });
 
-          return await collection.query({
-            queryEmbeddings: [queryEmbedding],
-            nResults: topK,
-            include: ["documents", "metadatas", "distances"],
-          });
-        },
-        this.circuitBreaker
-      );
+        return await collection.query({
+          queryEmbeddings: [queryEmbedding],
+          nResults: topK,
+          include: ["documents", "metadatas", "distances"],
+        });
+      }, this.circuitBreaker);
 
       // Transform results into SearchResult format
       const searchResults: SearchResult[] = [];
@@ -256,7 +279,8 @@ export class VectorStore {
    */
   async deleteCollection(projectId: string): Promise<void> {
     try {
-      await this.client.deleteCollection({
+      const client = await this.getClient();
+      await client.deleteCollection({
         name: projectId,
       });
     } catch (error: any) {
@@ -290,7 +314,8 @@ export class VectorStore {
    */
   async collectionExists(projectId: string): Promise<boolean> {
     try {
-      const collections = await this.client.listCollections();
+      const client = await this.getClient();
+      const collections = await client.listCollections();
       return collections.some((collection) => collection.name === projectId);
     } catch (error: any) {
       return false;
@@ -305,7 +330,8 @@ export class VectorStore {
    */
   async getDocumentCount(projectId: string): Promise<number> {
     try {
-      const collection = await this.client.getCollection({
+      const client = await this.getClient();
+      const collection = await client.getCollection({
         name: projectId,
       });
       const count = await collection.count();

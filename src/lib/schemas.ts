@@ -11,20 +11,18 @@ import { z } from "zod";
  * Validates the request payload for POST /api/projects
  */
 export const CreateProjectSchema = z.object({
-  body: z.object({
-    name: z
-      .string()
-      .min(1, "Project name is required")
-      .max(100, "Project name must be 100 characters or less")
-      .trim(),
-  }),
+  name: z
+    .string()
+    .min(1, "Project name is required")
+    .max(100, "Project name must be 100 characters or less")
+    .trim(),
 });
 
 /**
  * Response schema for project creation
  */
 export const CreateProjectResponseSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().cuid(),
   name: z.string(),
   createdAt: z.string().datetime(),
 });
@@ -35,7 +33,7 @@ export const CreateProjectResponseSchema = z.object({
  */
 export const GetProjectSchema = z.object({
   params: z.object({
-    id: z.string().uuid("Project ID must be a valid UUID"),
+    id: z.string().cuid("Project ID must be a valid CUID"),
   }),
 });
 
@@ -43,7 +41,7 @@ export const GetProjectSchema = z.object({
  * Response schema for project retrieval
  */
 export const GetProjectResponseSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().cuid(),
   name: z.string(),
   createdAt: z.string().datetime(),
   documentCount: z.number().int().min(0),
@@ -55,7 +53,7 @@ export const GetProjectResponseSchema = z.object({
  */
 export const DeleteProjectSchema = z.object({
   params: z.object({
-    id: z.string().uuid("Project ID must be a valid UUID"),
+    id: z.string().cuid("Project ID must be a valid CUID"),
   }),
 });
 
@@ -72,7 +70,7 @@ export const DeleteProjectResponseSchema = z.object({
  */
 export const UploadDocumentSchema = z.object({
   body: z.object({
-    projectId: z.string().uuid("Project ID must be a valid UUID"),
+    projectId: z.string().cuid("Project ID must be a valid CUID"),
     // File upload will be handled separately by Next.js
   }),
 });
@@ -94,14 +92,12 @@ export const UploadDocumentResponseSchema = z.object({
  * Validates the request payload for POST /api/chat
  */
 export const ChatRequestSchema = z.object({
-  body: z.object({
-    projectId: z.string().uuid("Project ID must be a valid UUID"),
-    message: z
-      .string()
-      .min(1, "Message is required")
-      .max(10000, "Message must be 10000 characters or less")
-      .trim(),
-  }),
+  projectId: z.string().cuid("Project ID must be a valid CUID"),
+  message: z
+    .string()
+    .min(1, "Message is required")
+    .max(10000, "Message must be 10000 characters or less")
+    .trim(),
 });
 
 /**

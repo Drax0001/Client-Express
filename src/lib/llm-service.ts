@@ -28,7 +28,7 @@ interface LocalLLMResponse {
  * Calls a local LLM endpoint via HTTP
  * @private
  */
-private async callLocalLLM(systemPrompt: string, userPrompt: string): Promise<string> {
+  private async callLocalLLM(systemPrompt: string, userPrompt: string): Promise<string> {
   const { llm } = this.config;
 
   if (!llm.endpoint) {
