@@ -60,6 +60,11 @@ export interface AppConfig {
     chunkSize: number;
     chunkOverlap: number;
   };
+  pdfExtractor: {
+    url: string;
+    apiKey?: string;
+    timeoutMs: number;
+  };
 }
 
 /**
@@ -196,6 +201,20 @@ export function loadConfig(): AppConfig {
     );
   }
 
+  // PDF Extractor configuration
+  const pdfExtractorUrl = process.env.PDF_EXTRACTOR_URL || "http://localhost:8080";
+  const pdfExtractorApiKey = process.env.PDF_EXTRACTOR_API_KEY;
+  const pdfExtractorTimeoutMs = parseInt(
+    process.env.PDF_EXTRACTOR_TIMEOUT_MS || "30000",
+    10
+  );
+
+  if (isNaN(pdfExtractorTimeoutMs) || pdfExtractorTimeoutMs <= 0) {
+    throw new ConfigurationError(
+      "PDF_EXTRACTOR_TIMEOUT_MS must be a positive number"
+    );
+  }
+
   return {
     database: {
       url: databaseUrl,
@@ -224,6 +243,11 @@ export function loadConfig(): AppConfig {
       relevanceThreshold,
       chunkSize: 1000,
       chunkOverlap: 200,
+    },
+    pdfExtractor: {
+      url: pdfExtractorUrl,
+      apiKey: pdfExtractorApiKey,
+      timeoutMs: pdfExtractorTimeoutMs,
     },
   };
 }

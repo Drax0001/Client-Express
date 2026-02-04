@@ -116,20 +116,33 @@ export class ChatService {
     // 6.2: Generate embedding for the user message
     let queryEmbedding: number[];
     try {
-      queryEmbedding = await this.embeddingService.generateEmbedding(message);
+      const embedStart = Date.now();
+      // Timeout embedding if it takes too long
+      queryEmbedding = await this.withTimeout(
+        this.embeddingService.generateEmbedding(message),
+        10000,
+        "embedding",
+      );
+      console.log(`ChatService: embedding took ${Date.now() - embedStart}ms`);
     } catch (error) {
+      console.error("ChatService: embedding error:", error);
       throw new ServiceUnavailableError("Unable to process query embedding");
     }
 
     // 7.1, 7.2, 7.3, 7.4: Perform similarity search
     let searchResults;
     try {
-      searchResults = await this.vectorStore.similaritySearch(
-        projectId,
-        queryEmbedding,
-        5 // Top 5 similar chunks
+      const searchStart = Date.now();
+      searchResults = await this.withTimeout(
+        this.vectorStore.similaritySearch(projectId, queryEmbedding, 5),
+        8000,
+        "similaritySearch",
+      );
+      console.log(
+        `ChatService: similarity search took ${Date.now() - searchStart}ms`,
       );
     } catch (error) {
+      console.error("ChatService: similarity search error:", error);
       throw new ServiceUnavailableError("Unable to perform similarity search");
     }
 
@@ -163,11 +176,18 @@ Answer the question based only on the context provided above.`;
     // 10.4: Invoke LLM (temperature already constrained in LLMService)
     let llmResponse: string;
     try {
-      llmResponse = await this.llmService.generateResponse(
-        systemPrompt,
-        userPrompt
+      const llmStart = Date.now();
+      // Allow a longer timeout for LLM
+      llmResponse = await this.withTimeout(
+        this.llmService.generateResponse(systemPrompt, userPrompt),
+        60000,
+        "llm",
+      );
+      console.log(
+        `ChatService: LLM generation took ${Date.now() - llmStart}ms`,
       );
     } catch (error) {
+      console.error("ChatService: LLM error:", error);
       throw new ServiceUnavailableError("Unable to generate response");
     }
 
@@ -176,6 +196,29 @@ Answer the question based only on the context provided above.`;
       answer: llmResponse,
       sourceCount: searchResults.length,
     };
+  }
+
+  /**
+   * Helper to apply a timeout to a promise and annotate errors
+   */
+  private async withTimeout<T>(
+    p: Promise<T>,
+    ms: number,
+    name = "operation",
+  ): Promise<T> {
+    let timer: NodeJS.Timeout | null = null;
+    const timeoutPromise = new Promise<never>((_, rej) => {
+      timer = setTimeout(
+        () => rej(new Error(`${name} timeout after ${ms}ms`)),
+        ms,
+      );
+    });
+
+    try {
+      return await Promise.race([p, timeoutPromise]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
   }
 
   /**
@@ -191,7 +234,7 @@ Answer the question based only on the context provided above.`;
    * @private
    */
   private assembleContext(
-    searchResults: Array<{ text: string; score: number }>
+    searchResults: Array<{ text: string; score: number }>,
   ): string {
     // Simple token estimation: ~4 characters per token
     const maxContextTokens = 3000; // Conservative limit to leave room for prompts

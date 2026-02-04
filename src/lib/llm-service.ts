@@ -10,7 +10,12 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getConfig } from "./config";
-import { LLMError, QuotaExceededError, TimeoutError, ServiceUnavailableError } from "./errors";
+import {
+  LLMError,
+  QuotaExceededError,
+  TimeoutError,
+  ServiceUnavailableError,
+} from "./errors";
 import { CircuitBreaker, withRetryAndCircuitBreaker } from "./retry";
 
 // For local LLM endpoints
@@ -28,49 +33,7 @@ interface LocalLLMResponse {
  * Calls a local LLM endpoint via HTTP
  * @private
  */
-  private async callLocalLLM(systemPrompt: string, userPrompt: string): Promise<string> {
-  const { llm } = this.config;
-
-  if (!llm.endpoint) {
-    throw new LLMError("Local LLM endpoint is required for local provider");
-  }
-
-  const request: LocalLLMRequest = {
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt }
-    ],
-    temperature: Math.min(llm.temperature, 0.3),
-    max_tokens: llm.maxTokens,
-  };
-
-  try {
-    const response = await fetch(llm.endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    });
-
-    if (!response.ok) {
-      throw new LLMError(`Local LLM request failed: ${response.status} ${response.statusText}`);
-    }
-
-    const data: LocalLLMResponse = await response.json();
-
-    if (!data.choices || data.choices.length === 0) {
-      throw new LLMError("Invalid response from local LLM");
-    }
-
-    return data.choices[0].message.content;
-  } catch (error) {
-    if (error instanceof LLMError) {
-      throw error;
-    }
-    throw new LLMError(`Failed to call local LLM: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
+// NOTE: `callLocalLLM` is implemented as a class method inside `LLMService` below.
 
 /**
  * LLMService class
@@ -123,6 +86,63 @@ export class LLMService {
   }
 
   /**
+   * Calls a local LLM endpoint via HTTP
+   * @private
+   */
+  private async callLocalLLM(
+    systemPrompt: string,
+    userPrompt: string,
+  ): Promise<string> {
+    const { llm } = this.config;
+
+    if (!llm.endpoint) {
+      throw new LLMError("Local LLM endpoint is required for local provider");
+    }
+
+    const request: LocalLLMRequest = {
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: Math.min(llm.temperature, 0.3),
+      max_tokens: llm.maxTokens,
+    };
+
+    try {
+      const response = await fetch(llm.endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        throw new LLMError(
+          `Local LLM request failed: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const data: LocalLLMResponse = await response.json();
+
+      if (!data.choices || data.choices.length === 0) {
+        throw new LLMError("Invalid response from local LLM");
+      }
+
+      return data.choices[0].message.content;
+    } catch (error) {
+      if (error instanceof LLMError) {
+        throw error;
+      }
+      throw new LLMError(
+        `Failed to call local LLM: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      );
+    }
+  }
+
+  /**
    * Generates a response from the LLM based on system and user prompts
    *
    * This method invokes the LLM with strict instructions to only answer based on
@@ -144,41 +164,40 @@ export class LLMService {
    */
   async generateResponse(
     systemPrompt: string,
-    userPrompt: string
+    userPrompt: string,
   ): Promise<string> {
     try {
-      const response = await withRetryAndCircuitBreaker(
-        async () => {
-          // Initialize model (or check provider type)
-          this.initializeModel();
+      const response = await withRetryAndCircuitBreaker(async () => {
+        // Initialize model (or check provider type)
+        this.initializeModel();
 
-          if (this.isLocalProvider) {
-            // Use local LLM endpoint
-            return await this.callLocalLLM(systemPrompt, userPrompt);
-          } else {
-            // Use Gemini
-            const model = this.model!;
-            const messages = [
-              new SystemMessage(systemPrompt),
-              new HumanMessage(userPrompt),
-            ];
+        if (this.isLocalProvider) {
+          // Use local LLM endpoint
+          return await this.callLocalLLM(systemPrompt, userPrompt);
+        } else {
+          // Use Gemini
+          const model = this.model!;
+          const messages = [
+            new SystemMessage(systemPrompt),
+            new HumanMessage(userPrompt),
+          ];
 
-            const result = await model.invoke(messages);
+          const result = await model.invoke(messages);
 
-            // Return the LLM output verbatim (Requirement 11.1)
-            return typeof result.content === "string"
-              ? result.content
-              : String(result.content);
-          }
-        },
-        this.circuitBreaker
-      );
+          // Return the LLM output verbatim (Requirement 11.1)
+          return typeof result.content === "string"
+            ? result.content
+            : String(result.content);
+        }
+      }, this.circuitBreaker);
 
       return response;
     } catch (error: any) {
       // Handle specific error types
       if (error.message?.includes("Circuit breaker is OPEN")) {
-        throw new ServiceUnavailableError("LLM service temporarily unavailable");
+        throw new ServiceUnavailableError(
+          "LLM service temporarily unavailable",
+        );
       }
 
       if (error.message?.includes("quota")) {
@@ -191,7 +210,7 @@ export class LLMService {
 
       // Generic LLM error
       throw new LLMError(
-        `Failed to generate response: ${error.message || "Unknown error"}`
+        `Failed to generate response: ${error.message || "Unknown error"}`,
       );
     }
   }

@@ -6,9 +6,9 @@ generator client {
   output   = "../generated/prisma"
 }
 
-datasource db {
-  provider = "postgresql"
-}
+// datasource db {
+//   provider = "postgresql"
+// }
 
 model Project {
   id        String     @id @default(cuid())
@@ -26,4 +26,83 @@ model Document {
   status       String   // "pending" | "processing" | "ready" | "failed"
   uploadedAt   DateTime @default(now())
   errorMessage String?
+
+  // Relation to processing jobs
+  jobs DocumentJob[]
+}
+
+model DocumentJob {
+  id         String   @id @default(cuid())
+  documentId String   @unique
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  externalId String
+  status     String   // queued | processing | done | failed
+  result     Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Chatbot {
+  id            String   @id @default(cuid())
+  userId        String   // For future multi-user support
+  name          String
+  description   String?
+  config        Json     // TrainingConfig as JSON
+  status        String   // "training" | "ready" | "failed"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now())
+  documentCount Int      @default(0)
+  lastQueriedAt DateTime?
+  queryCount    Int      @default(0)
+  totalTokens   Int      @default(0)
+
+  // Relations
+  trainingSessions TrainingSession[]
+  conversations    Conversation[]
+
+  @@map("chatbots")
+}
+
+model TrainingSession {
+  id          String   @id @default(cuid())
+  chatbotId   String
+  uploadId    String   // Reference to upload session
+  status      String   // "queued" | "processing" | "completed" | "failed" | "cancelled"
+  progress    Json     // TrainingProgress as JSON
+  config      Json     // TrainingConfig as JSON
+  startedAt   DateTime?
+  completedAt DateTime?
+  errors      Json?    // string[] as JSON
+  createdAt   DateTime @default(now())
+
+  chatbot Chatbot @relation(fields: [chatbotId], references: [id])
+
+  @@map("training_sessions")
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  chatbotId String
+  userId    String   // For future multi-user support
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  chatbot   Chatbot          @relation(fields: [chatbotId], references: [id])
+  messages  ChatMessage[]
+
+  @@map("conversations")
+}
+
+model ChatMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String   // "user" | "assistant"
+  content        String
+  sources        Json?    // ChatSource[] as JSON
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  @@map("chat_messages")
 } 

@@ -53,6 +53,7 @@ This backend system provides a complete RAG pipeline that:
 - **PostgreSQL** database
 - **ChromaDB** vector database
 - **Google Gemini API key** (or local LLM endpoint)
+- **Python 3.10+** with uv (for PDF extraction service)
 
 ## Quick Start
 
@@ -92,7 +93,19 @@ This backend system provides a complete RAG pipeline that:
    npx prisma migrate dev
    ```
 
-6. **Start the development server**
+6. **Start the PDF extractor service**
+
+   ```bash
+   cd pdf-extractor
+   # Install uv if not already installed: https://docs.astral.sh/uv/
+   uv venv
+   uv pip sync requirements.txt
+   uv run uvicorn app:app --reload --host 0.0.0.0 --port 8080
+   ```
+
+   The service should be running on `http://localhost:8080`. You can verify by visiting `http://localhost:8080/health`.
+
+7. **Start the development server** (in a new terminal)
    ```bash
    npm run dev
    ```
@@ -143,6 +156,14 @@ This backend system provides a complete RAG pipeline that:
 | `EMBEDDING_PROVIDER` | Set to `local`               | `local`                                      |
 | `EMBEDDING_ENDPOINT` | Local embedding API endpoint | `http://localhost:11434/v1/embeddings`       |
 
+### PDF Extractor Service
+
+| Variable                     | Description                           | Default                   |
+| ---------------------------- | ------------------------------------- | ------------------------- |
+| `PDF_EXTRACTOR_URL`          | PDF extractor service URL             | `http://localhost:8080`   |
+| `PDF_EXTRACTOR_API_KEY`      | API key for PDF extractor service     | (optional)                |
+| `PDF_EXTRACTOR_TIMEOUT_MS`   | Timeout for PDF extraction in ms      | `30000`                   |
+
 ### Example .env file
 
 ```bash
@@ -174,6 +195,11 @@ EMBEDDING_MODEL_NAME="embedding-001"
 # LLM_ENDPOINT="http://localhost:11434/v1/chat/completions"
 # EMBEDDING_PROVIDER="local"
 # EMBEDDING_ENDPOINT="http://localhost:11434/v1/embeddings"
+
+# PDF Extractor Service
+PDF_EXTRACTOR_URL="http://localhost:8080"
+PDF_EXTRACTOR_API_KEY="supersecret"
+PDF_EXTRACTOR_TIMEOUT_MS="30000"
 ```
 
 ## API Documentation

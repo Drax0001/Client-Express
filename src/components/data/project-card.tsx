@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Bot, FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,14 +22,32 @@ export function ProjectCard({
   createdAt,
   documentCount,
 }: ProjectCardProps) {
+  const router = useRouter();
+
   return (
-    <Link href={`/projects/${id}`}>
-      <Card className="group relative overflow-hidden hover-lift transition-all duration-300 touch-manipulation border-0 shadow-soft bg-gradient-to-br from-card via-card to-card/50 cursor-pointer">
-        <div className="absolute inset-0 bg-gradient-accent opacity-0 group-hover:opacity-5 transition-opacity duration-300 rounded-lg"></div>
-        <CardHeader className="pb-4 relative">
+    <Card
+      role="button"
+      tabIndex={0}
+      className="group relative overflow-hidden hover-lift transition-all duration-300 touch-manipulation border-0 shadow-soft bg-gradient-to-br from-card via-card to-card/50 cursor-pointer"
+      onClick={() => router.push(`/projects/${id}`)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          router.push(`/projects/${id}`);
+        }
+      }}
+    >
+      <div className="absolute inset-0 bg-gradient-accent opacity-0 group-hover:opacity-5 transition-opacity duration-300 rounded-lg" />
+      <CardHeader className="pb-4 relative">
         <div className="flex items-start justify-between">
           <CardTitle className="text-xl font-bold truncate pr-2 bg-gradient-primary bg-clip-text text-transparent">
-            {name}
+            <Link
+              href={`/projects/${id}`}
+              className="focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {name}
+            </Link>
           </CardTitle>
           <DeleteProjectDialog projectId={id} projectName={name}>
             <Button
@@ -43,7 +62,7 @@ export function ProjectCard({
           </DeleteProjectDialog>
         </div>
         <div className="flex items-center gap-2 mt-2">
-          <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+          <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
           <span className="text-sm text-muted-foreground">
             {documentCount} {documentCount === 1 ? "document" : "documents"}
           </span>
@@ -90,6 +109,5 @@ export function ProjectCard({
         </p>
       </CardContent>
     </Card>
-    </Link>
   );
 }

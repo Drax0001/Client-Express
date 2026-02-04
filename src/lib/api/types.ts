@@ -11,43 +11,50 @@
  * Project entity from database
  */
 export interface Project {
-  id: string
-  name: string
-  createdAt: string
-  documentCount: number
+  id: string;
+  name: string;
+  createdAt: string;
+  documentCount: number;
 }
 
 /**
  * Project creation request
  */
 export interface CreateProjectRequest {
-  name: string
+  name: string;
 }
 
 /**
  * Project creation response
  */
 export interface CreateProjectResponse {
-  id: string
-  name: string
-  createdAt: string
+  id: string;
+  name: string;
+  createdAt: string;
 }
 
 /**
  * Get project response (includes document count)
  */
 export interface GetProjectResponse {
-  id: string
-  name: string
-  createdAt: string
-  documentCount: number
+  id: string;
+  name: string;
+  createdAt: string;
+  documentCount: number;
+}
+
+/**
+ * Extended GetProjectResponse that includes documents list
+ */
+export interface GetProjectWithDocumentsResponse extends GetProjectResponse {
+  documents: Document[];
 }
 
 /**
  * Project deletion response
  */
 export interface DeleteProjectResponse {
-  message: string
+  message: string;
 }
 
 // ======================================
@@ -57,41 +64,41 @@ export interface DeleteProjectResponse {
 /**
  * Document status enum
  */
-export type DocumentStatus = "pending" | "processing" | "ready" | "failed"
+export type DocumentStatus = "pending" | "processing" | "ready" | "failed";
 
 /**
  * Document entity from database
  */
 export interface Document {
-  id: string
-  projectId: string
-  filename: string
-  fileType: "pdf" | "docx" | "txt" | "url"
-  status: DocumentStatus
-  uploadedAt: string
-  errorMessage?: string
+  id: string;
+  projectId: string;
+  filename: string;
+  fileType: "pdf" | "docx" | "txt" | "url";
+  status: DocumentStatus;
+  uploadedAt: string;
+  errorMessage?: string;
 }
 
 /**
  * Document upload request (multipart form data)
  */
 export interface UploadDocumentRequest {
-  projectId: string
-  file?: File
-  url?: string
+  projectId: string;
+  file?: File;
+  url?: string;
 }
 
 /**
  * Document upload response
  */
 export interface UploadDocumentResponse {
-  id: string
-  projectId: string
-  filename: string
-  fileType: "pdf" | "docx" | "txt" | "url"
-  status: DocumentStatus
-  uploadedAt: string
-  errorMessage?: string
+  id: string;
+  projectId: string;
+  filename: string;
+  fileType: "pdf" | "docx" | "txt" | "url";
+  status: DocumentStatus;
+  uploadedAt: string;
+  errorMessage?: string;
 }
 
 // ======================================
@@ -102,16 +109,16 @@ export interface UploadDocumentResponse {
  * Chat query request
  */
 export interface ChatRequest {
-  projectId: string
-  message: string
+  projectId: string;
+  message: string;
 }
 
 /**
  * Chat response
  */
 export interface ChatResponse {
-  answer: string
-  sourceCount: number
+  answer: string;
+  sourceCount: number;
 }
 
 // ======================================
@@ -123,10 +130,10 @@ export interface ChatResponse {
  */
 export interface ApiError {
   error: {
-    code: string
-    message: string
-    details?: unknown
-  }
+    code: string;
+    message: string;
+    details?: unknown;
+  };
 }
 
 // ======================================
@@ -137,14 +144,14 @@ export interface ApiError {
  * Type guard for DocumentStatus
  */
 export function isDocumentStatus(status: string): status is DocumentStatus {
-  return ["pending", "processing", "ready", "failed"].includes(status)
+  return ["pending", "processing", "ready", "failed"].includes(status);
 }
 
 /**
  * Type guard for Document fileType
  */
 export function isDocumentFileType(type: string): type is Document["fileType"] {
-  return ["pdf", "docx", "txt", "url"].includes(type)
+  return ["pdf", "docx", "txt", "url"].includes(type);
 }
 
 /**
@@ -159,7 +166,7 @@ export function isApiError(error: unknown): error is ApiError {
     (error as any).error !== null &&
     "code" in (error as any).error &&
     "message" in (error as any).error
-  )
+  );
 }
 
 // ======================================
@@ -174,7 +181,7 @@ export const queryKeys = {
   project: (id: string) => ["projects", id] as const,
   documents: (projectId: string) => ["documents", projectId] as const,
   chat: (projectId: string) => ["chat", projectId] as const,
-}
+};
 
 // ======================================
 // MUTATION KEYS
@@ -188,4 +195,4 @@ export const mutationKeys = {
   deleteProject: "deleteProject",
   uploadDocument: "uploadDocument",
   sendChatMessage: "sendChatMessage",
-} as const
+} as const;

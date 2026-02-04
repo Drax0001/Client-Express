@@ -22,6 +22,15 @@ export interface Project {
  */
 export interface ProjectWithDocuments extends Project {
   documentCount: number;
+  documents: {
+    id: string;
+    projectId: string;
+    filename: string;
+    fileType: "pdf" | "docx" | "txt" | "url";
+    status: "pending" | "processing" | "ready" | "failed";
+    uploadedAt: Date;
+    errorMessage?: string | null;
+  }[];
 }
 
 /**
@@ -71,7 +80,7 @@ export class ProjectService {
         }
       }
       throw new DatabaseError(
-        `Failed to create project: ${(error as Error).message}`
+        `Failed to create project: ${(error as Error).message}`,
       );
     }
   }
@@ -103,13 +112,22 @@ export class ProjectService {
         name: project.name,
         createdAt: project.createdAt,
         documentCount: project.documents.length,
+        documents: project.documents.map((d) => ({
+          id: d.id,
+          projectId: d.projectId,
+          filename: d.filename,
+          fileType: d.fileType as "pdf" | "docx" | "txt" | "url",
+          status: d.status as "pending" | "processing" | "ready" | "failed",
+          uploadedAt: d.uploadedAt,
+          errorMessage: d.errorMessage ?? null,
+        })),
       };
     } catch (error) {
       if (error instanceof NotFoundError) {
         throw error;
       }
       throw new DatabaseError(
-        `Failed to retrieve project: ${(error as Error).message}`
+        `Failed to retrieve project: ${(error as Error).message}`,
       );
     }
   }
@@ -150,7 +168,7 @@ export class ProjectService {
           !errorMessage.includes("not found")
         ) {
           throw new VectorStoreError(
-            `Failed to delete vector collection: ${errorMessage}`
+            `Failed to delete vector collection: ${errorMessage}`,
           );
         }
       }
@@ -174,7 +192,7 @@ export class ProjectService {
       }
 
       throw new DatabaseError(
-        `Failed to delete project: ${(error as Error).message}`
+        `Failed to delete project: ${(error as Error).message}`,
       );
     }
   }
@@ -191,7 +209,7 @@ export class ProjectService {
       // Get all projects from database
       const projects = await prisma.project.findMany({
         orderBy: {
-          createdAt: 'desc',
+          createdAt: "desc",
         },
       });
 
@@ -201,7 +219,7 @@ export class ProjectService {
           try {
             // Try to get document count from vector store (if collection exists)
             const collection = await this.chromaClient.getCollection({
-              name: project.id,
+              name: `project_${project.id}`,
             });
             const documentCount = await collection.count();
 
@@ -216,13 +234,13 @@ export class ProjectService {
               documentCount: 0,
             };
           }
-        })
+        }),
       );
 
       return projectsWithCounts;
     } catch (error) {
       throw new DatabaseError(
-        `Failed to retrieve projects: ${(error as Error).message}`
+        `Failed to retrieve projects: ${(error as Error).message}`,
       );
     }
   }

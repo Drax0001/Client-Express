@@ -56,6 +56,12 @@ export class VectorStore {
   private config = getConfig();
   private circuitBreaker: CircuitBreaker;
 
+  private collectionPrefix = "project_";
+
+  private collectionName(projectId: string) {
+    return `${this.collectionPrefix}${projectId}`;
+  }
+
   /**
    * Initializes the circuit breaker
    * ChromaDB client is initialized lazily to avoid client-side issues
@@ -96,13 +102,14 @@ export class VectorStore {
         const client = await this.getClient();
         // Check if collection already exists
         const collections = await client.listCollections();
+        const name = this.collectionName(projectId);
         const collectionExists = collections.some(
-          (collection) => collection.name === projectId
+          (collection) => collection.name === name,
         );
 
         if (!collectionExists) {
           await client.createCollection({
-            name: projectId,
+            name: name,
             metadata: {
               createdAt: new Date().toISOString(),
               projectId: projectId,
@@ -117,14 +124,14 @@ export class VectorStore {
         error.message?.includes("unreachable")
       ) {
         throw new ServiceUnavailableError(
-          `Vector store connection failed: ${error.message}`
+          `Vector store connection failed: ${error.message}`,
         );
       }
 
       throw new VectorStoreError(
         `Failed to create collection for project ${projectId}: ${
           error.message || "Unknown error"
-        }`
+        }`,
       );
     }
   }
@@ -145,13 +152,13 @@ export class VectorStore {
    */
   async addDocuments(
     projectId: string,
-    chunks: DocumentChunk[]
+    chunks: DocumentChunk[],
   ): Promise<void> {
     try {
       await withRetryAndCircuitBreaker(async () => {
         const client = await this.getClient();
         const collection = await client.getCollection({
-          name: projectId,
+          name: this.collectionName(projectId),
         });
 
         // Prepare data for batch insertion
@@ -177,14 +184,14 @@ export class VectorStore {
         error.message?.includes("unreachable")
       ) {
         throw new ServiceUnavailableError(
-          `Vector store connection failed: ${error.message}`
+          `Vector store connection failed: ${error.message}`,
         );
       }
 
       throw new VectorStoreError(
         `Failed to add documents to project ${projectId}: ${
           error.message || "Unknown error"
-        }`
+        }`,
       );
     }
   }
@@ -208,13 +215,13 @@ export class VectorStore {
   async similaritySearch(
     projectId: string,
     queryEmbedding: number[],
-    topK: number = 5
+    topK: number = 5,
   ): Promise<SearchResult[]> {
     try {
       const results = await withRetryAndCircuitBreaker(async () => {
         const client = await this.getClient();
         const collection = await client.getCollection({
-          name: projectId,
+          name: this.collectionName(projectId),
         });
 
         return await collection.query({
@@ -252,14 +259,14 @@ export class VectorStore {
         error.message?.includes("unreachable")
       ) {
         throw new ServiceUnavailableError(
-          `Vector store connection failed: ${error.message}`
+          `Vector store connection failed: ${error.message}`,
         );
       }
 
       throw new VectorStoreError(
         `Failed to perform similarity search for project ${projectId}: ${
           error.message || "Unknown error"
-        }`
+        }`,
       );
     }
   }
@@ -281,7 +288,7 @@ export class VectorStore {
     try {
       const client = await this.getClient();
       await client.deleteCollection({
-        name: projectId,
+        name: this.collectionName(projectId),
       });
     } catch (error: any) {
       if (
@@ -289,7 +296,7 @@ export class VectorStore {
         error.message?.includes("unreachable")
       ) {
         throw new ServiceUnavailableError(
-          `Vector store connection failed: ${error.message}`
+          `Vector store connection failed: ${error.message}`,
         );
       }
 
@@ -301,7 +308,7 @@ export class VectorStore {
       throw new VectorStoreError(
         `Failed to delete collection for project ${projectId}: ${
           error.message || "Unknown error"
-        }`
+        }`,
       );
     }
   }
@@ -316,7 +323,9 @@ export class VectorStore {
     try {
       const client = await this.getClient();
       const collections = await client.listCollections();
-      return collections.some((collection) => collection.name === projectId);
+      return collections.some(
+        (collection) => collection.name === this.collectionName(projectId),
+      );
     } catch (error: any) {
       return false;
     }
@@ -332,7 +341,7 @@ export class VectorStore {
     try {
       const client = await this.getClient();
       const collection = await client.getCollection({
-        name: projectId,
+        name: this.collectionName(projectId),
       });
       const count = await collection.count();
       return count;

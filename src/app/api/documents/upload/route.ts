@@ -28,7 +28,10 @@ export async function POST(request: NextRequest) {
     console.log("API: Document upload - raw FormData entries:", {
       projectIdEntry: typeof projectIdEntry + " - " + projectIdEntry,
       urlEntry: typeof urlEntry + " - " + urlEntry,
-      fileEntry: fileEntry instanceof File ? `File: ${fileEntry.name}` : typeof fileEntry + " - " + fileEntry,
+      fileEntry:
+        fileEntry instanceof File
+          ? `File: ${fileEntry.name}`
+          : typeof fileEntry + " - " + fileEntry,
       allKeys: Array.from(formData.keys()),
     });
 
@@ -58,7 +61,7 @@ export async function POST(request: NextRequest) {
           error: "Validation failed",
           details: validationResult.error.format(),
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -84,22 +87,39 @@ export async function POST(request: NextRequest) {
           error: "Validation failed",
           details: "Either 'file' or 'url' must be provided",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // Trigger async document processing
-    // Note: In a production app, this would typically be done with a job queue
-    // For now, we'll process synchronously for simplicity
+    // Trigger async document processing in background (fire-and-forget)
+    // Note: In production you would use a job queue (Redis, Bull, etc.)
     try {
-      // Temporarily disable processing for testing
-      console.log(`Document uploaded successfully: ${document.id}, processing disabled for now`);
-      // await documentService.processDocument(document.id);
+      console.log(
+        `Document uploaded successfully: ${document.id}, starting background processing`,
+      );
+
+      // Fire-and-forget processing so upload response returns quickly
+      (async () => {
+        try {
+          if (file) {
+            await documentService.processDocument(
+              document.id,
+              Buffer.from(await file.arrayBuffer()),
+            );
+          } else {
+            await documentService.processDocument(document.id);
+          }
+        } catch (processError) {
+          console.error(
+            `Background processing failed for ${document.id}:`,
+            processError,
+          );
+        }
+      })();
     } catch (processError) {
-      // Log processing error but don't fail the upload
       console.error(
-        `Document processing failed for ${document.id}:`,
-        processError
+        `Failed to start background processing for ${document.id}:`,
+        processError,
       );
     }
 

@@ -1,22 +1,29 @@
-"use client"
+"use client";
 
-import { useParams } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft, MessageSquare, FileText } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MainLayout } from "@/components/layout/main-layout"
-import { UploadInterface } from "@/components/documents/upload-interface"
-import { DocumentList } from "@/components/documents/document-list"
-import { useProject } from "@/lib/api/hooks"
-import { StatusBadge } from "@/components/data/status-badge"
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, MessageSquare, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MainLayout } from "@/components/layout/main-layout";
+import { UploadInterface } from "@/components/documents/upload-interface";
+import { DocumentList } from "@/components/documents/document-list";
+import {
+  useProject,
+  useDeleteDocument,
+  useRetryDocument,
+} from "@/lib/api/hooks";
+import { StatusBadge } from "@/components/data/status-badge";
 
 export default function ProjectPage() {
-  const params = useParams()
-  const projectId = params.id as string
+  const params = useParams();
+  const projectId = params.id as string;
 
-  const { data: project, isLoading, error } = useProject(projectId)
+  const { data: project, isLoading, error } = useProject(projectId);
+
+  const deleteDocument = useDeleteDocument();
+  const retryDocument = useRetryDocument();
 
   if (isLoading) {
     return (
@@ -29,7 +36,7 @@ export default function ProjectPage() {
           <div className="h-96 bg-muted rounded"></div>
         </div>
       </MainLayout>
-    )
+    );
   }
 
   if (error || !project) {
@@ -38,7 +45,8 @@ export default function ProjectPage() {
         <div className="text-center py-12">
           <div className="text-red-500 mb-2">Project not found</div>
           <p className="text-muted-foreground mb-4">
-            The project you're looking for doesn't exist or you don't have access to it.
+            The project you&apos;re looking for doesn&apos;t exist or you
+            don&apos;t have access to it.
           </p>
           <Button asChild>
             <Link href="/">
@@ -48,7 +56,7 @@ export default function ProjectPage() {
           </Button>
         </div>
       </MainLayout>
-    )
+    );
   }
 
   return (
@@ -64,7 +72,9 @@ export default function ProjectPage() {
               </Link>
             </Button>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
+              <h1 className="text-3xl font-bold tracking-tight">
+                {project.name}
+              </h1>
               <p className="text-muted-foreground">
                 Manage documents and chat with your knowledge base
               </p>
@@ -75,7 +85,9 @@ export default function ProjectPage() {
             <div className="text-right">
               <div className="flex items-center gap-2 mb-1">
                 <FileText className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">{project.documentCount} documents</span>
+                <span className="text-sm font-medium">
+                  {project.documentCount} documents
+                </span>
               </div>
               <p className="text-xs text-muted-foreground">
                 Created {new Date(project.createdAt).toLocaleDateString()}
@@ -100,14 +112,21 @@ export default function ProjectPage() {
 
           <TabsContent value="documents" className="space-y-6">
             <DocumentList
-              documents={[]} // TODO: Fetch documents from API
-              onRetry={(documentId) => {
-                // TODO: Implement document retry
-                console.log("Retry document", documentId)
+              documents={project.documents || []}
+              loading={isLoading}
+              onRetry={async (documentId) => {
+                try {
+                  await retryDocument.mutateAsync(documentId);
+                } catch (err) {
+                  console.error("Retry failed", err);
+                }
               }}
-              onDelete={(documentId) => {
-                // TODO: Implement document deletion
-                console.log("Delete document", documentId)
+              onDelete={async (documentId) => {
+                try {
+                  await deleteDocument.mutateAsync(documentId);
+                } catch (err) {
+                  console.error("Delete failed", err);
+                }
               }}
             />
           </TabsContent>
@@ -117,15 +136,28 @@ export default function ProjectPage() {
               <div className="mb-6">
                 <h2 className="text-xl font-semibold mb-2">Upload Documents</h2>
                 <p className="text-muted-foreground">
-                  Add documents to your knowledge base. Supported formats: PDF, DOCX, TXT files, or web URLs.
+                  Add documents to your knowledge base. Supported formats: PDF,
+                  DOCX, TXT files, or web URLs.
                 </p>
               </div>
 
               <UploadInterface
                 projectId={projectId}
                 onUploadSuccess={() => {
-                  // TODO: Refresh document list
-                  console.log("Upload successful")
+                  // Refresh project documents after upload
+                  // The upload hook also invalidates project cache on success,
+                  // but we trigger an additional refetch here to ensure list updates.
+                  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+                  (async () => {
+                    try {
+                      // useProject will refetch automatically; force a refetch by
+                      // invalidating the query via the browser's fetch.
+                      // Simpler: reload the window to ensure latest data in this client
+                      window.location.reload();
+                    } catch (err) {
+                      console.error("Refresh after upload failed", err);
+                    }
+                  })();
                 }}
               />
             </div>
@@ -133,5 +165,5 @@ export default function ProjectPage() {
         </Tabs>
       </div>
     </MainLayout>
-  )
+  );
 }

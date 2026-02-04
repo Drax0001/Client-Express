@@ -1,0 +1,50 @@
+Traceback (most recent call last):
+  File "C:\Users\BERTHOLD\Desktop\chat-remix\chroma-server\.venv\Lib\site-packages\pydantic\v1\env_settings.py", line 198, in __call__
+    env_val = settings.__config__.parse_env_var(field.name, env_val)
+  File "C:\Users\BERTHOLD\Desktop\chat-remix\chroma-server\.venv\Lib\site-packages\pydantic\v1\env_settings.py", line 132, in parse_env_var
+    return cls.json_loads(raw_val)
+           ~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Python313\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Python313\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\BERTHOLD\Desktop\chat-remix\chroma-server\.venv\Scripts\chroma.exe\__main__.py", line 4, in <module>
+    from chromadb.cli.cli import app
+  File "C:\Users\BERTHOLD\Desktop\chat-remix\chroma-server\.venv\Lib\site-packages\chromadb\__init__.py", line 3, in <module>
+    from chromadb.api.client import Client as ClientCreator
+  File "C:\Users\BERTHOLD\Desktop\chat-remix\chroma-server\.venv\Lib\site-packages\chromadb\api\client.py", line 13, in <module>
+    from chromadb.api.shared_system_client import SharedSystemClient
+  File "C:\Users\BERTHOLD\Desktop\chat-remix\chroma-server\.venv\Lib\site-packages\chromadb\api\shared_system_client.py", line 13, in <module>
+    class SharedSystemClient:
+    ...<141 lines>...
+            return api_keys[0]
+  File "C:\Users\BERTHOLD\Desktop\chat-remix\chroma-server\.venv\Lib\site-packages\chromadb\api\shared_system_client.py", line 19, in SharedSystemClient
+    settings: Settings = Settings(),
+                         ~~~~~~~~^^
+  File "C:\Users\BERTHOLD\Desktop\chat-remix\chroma-server\.venv\Lib\site-packages\pydantic\v1\env_settings.py", line 41, in __init__
+    **__pydantic_self__._build_values(
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        values,
+        ^^^^^^^
+    ...<3 lines>...
+        _secrets_dir=_secrets_dir,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\BERTHOLD\Desktop\chat-remix\chroma-server\.venv\Lib\site-packages\pydantic\v1\env_settings.py", line 76, in _build_values
+    return deep_update(*reversed([source(self) for source in sources]))
+                                  ~~~~~~^^^^^^
+  File "C:\Users\BERTHOLD\Desktop\chat-remix\chroma-server\.venv\Lib\site-packages\pydantic\v1\env_settings.py", line 201, in __call__
+    raise SettingsError(f'error parsing env var "{env_name}"') from e
+pydantic.v1.env_settings.SettingsError: error parsing env var "chroma_server_cors_allow_origins"

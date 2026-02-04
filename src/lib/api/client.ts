@@ -18,7 +18,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 /**
  * Request timeout in milliseconds
  */
-const REQUEST_TIMEOUT = 30000; // 30 seconds
+const REQUEST_TIMEOUT = 120000; // 120 seconds - increased to allow longer LLM responses
 
 /**
  * Retry configuration
@@ -59,8 +59,11 @@ const apiClient: AxiosInstance = axios.create({
  */
 apiClient.interceptors.request.use(
   (config) => {
-    // Add any authentication headers here if needed
-    // config.headers.Authorization = `Bearer ${token}`
+    // When sending FormData, do not set Content-Type so the browser sets
+    // multipart/form-data with the correct boundary
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
 
     // Log requests in development
     if (process.env.NODE_ENV === "development") {
@@ -72,7 +75,7 @@ apiClient.interceptors.request.use(
   (error) => {
     console.error("Request interceptor error:", error);
     return Promise.reject(error);
-  }
+  },
 );
 
 // ======================================
@@ -89,34 +92,55 @@ apiClient.interceptors.response.use(
       console.log(
         `API Response: ${
           response.status
-        } ${response.config.method?.toUpperCase()} ${response.config.url}`
+        } ${response.config.method?.toUpperCase()} ${response.config.url}`,
       );
     }
 
     return response;
   },
-  async (error: AxiosError) => {
-    // Handle retries for eligible errors
-    if (RETRY_CONFIG.retryCondition(error) && shouldRetry(error)) {
-      return handleRetry(error);
+  async (error: unknown) => {
+    const axiosError = error as AxiosError;
+
+    // Handle retries for eligible errors (only for Axios errors)
+    if (
+      axiosError?.config &&
+      RETRY_CONFIG.retryCondition(axiosError) &&
+      shouldRetry(axiosError)
+    ) {
+      return handleRetry(axiosError);
     }
 
-    // Transform error to consistent format
-    const transformedError = transformError(error);
+    // Transform to consistent format (Axios error or generic)
+    const transformedError =
+      axiosError?.response !== undefined || axiosError?.config !== undefined
+        ? transformError(axiosError)
+        : ({
+            error: {
+              code: "UNKNOWN_ERROR",
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "An unexpected error occurred",
+              details: undefined,
+            },
+          } satisfies ApiError);
 
-    // Log error details
-    console.error("API Error:", {
-      url: error.config?.url,
-      method: error.config?.method?.toUpperCase(),
-      status: error.response?.status,
-      responseData: error.response?.data,
-      originalError: error.message,
-      fullError: error,
-    });
-    console.error("Transformed error:", transformedError);
+    // Log serializable details so we always see useful output (avoids {} from non-enumerable props)
+    const logPayload = {
+      url: axiosError?.config?.url,
+      method: axiosError?.config?.method?.toUpperCase(),
+      status: axiosError?.response?.status,
+      responseData: axiosError?.response?.data,
+      message: error instanceof Error ? error.message : String(error),
+    };
+    console.error("API Error:", JSON.stringify(logPayload, null, 2));
+    console.error(
+      "Transformed error:",
+      JSON.stringify(transformedError, null, 2),
+    );
 
     return Promise.reject(transformedError);
-  }
+  },
 );
 
 // ======================================
@@ -162,7 +186,7 @@ async function handleRetry(error: AxiosError): Promise<any> {
   const delay = RETRY_CONFIG.retryDelay * Math.pow(2, attempts - 1);
 
   console.log(
-    `Retrying request (attempt ${attempts}/${RETRY_CONFIG.maxRetries}) after ${delay}ms`
+    `Retrying request (attempt ${attempts}/${RETRY_CONFIG.maxRetries}) after ${delay}ms`,
   );
 
   await new Promise((resolve) => setTimeout(resolve, delay));

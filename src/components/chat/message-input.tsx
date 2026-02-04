@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Send } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface MessageInputProps {
-  onSend: (message: string) => void
-  disabled?: boolean
-  placeholder?: string
-  className?: string
+  onSend: (message: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
+  className?: string;
 }
 
 export function MessageInput({
@@ -18,50 +18,59 @@ export function MessageInput({
   placeholder = "Ask a question about your documents...",
   className,
 }: MessageInputProps) {
-  const [message, setMessage] = React.useState("")
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+  const [message, setMessage] = React.useState("");
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const [error, setError] = React.useState<string>("");
 
   // Auto-resize textarea
   React.useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
-  }, [message])
+  }, [message]);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    const trimmedMessage = message.trim()
-    if (!trimmedMessage || disabled) return
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage || disabled) return;
 
-    onSend(trimmedMessage)
-    setMessage("")
+    onSend(trimmedMessage);
+    setMessage("");
 
     // Reset textarea height
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = "auto";
     }
-  }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSubmit(e)
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
     }
-  }
+  };
 
   // Announce character count for screen readers (if we add a limit later)
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value)
-    if (error) setError("")
-  }
+    setMessage(e.target.value);
+    if (error) setError("");
+  };
 
-  const canSend = message.trim().length > 0 && !disabled
+  const canSend = message.trim().length > 0 && !disabled;
 
   return (
-    <div className={cn("border-t border-border/50 bg-gradient-to-t from-background to-background/95 backdrop-blur-sm p-4 sm:p-6", className)}>
-      <form onSubmit={handleSubmit} className="flex gap-3 items-end max-w-4xl mx-auto">
+    <div
+      className={cn(
+        "border-t border-border/50 bg-gradient-to-t from-background to-background/95 backdrop-blur-sm p-4 sm:p-6",
+        className,
+      )}
+    >
+      <form
+        onSubmit={handleSubmit}
+        className="flex gap-3 items-end max-w-4xl mx-auto"
+      >
         <div className="flex-1 relative">
           <div className="absolute inset-0 bg-gradient-accent opacity-5 rounded-2xl blur-sm"></div>
           <textarea
@@ -78,9 +87,9 @@ export function MessageInput({
               "disabled:cursor-not-allowed disabled:opacity-50 shadow-soft hover:shadow-medium transition-all",
               "max-h-32 overflow-y-auto custom-scrollbar",
               // Mobile optimizations
-              "touch-manipulation"
+              "touch-manipulation",
             )}
-            style={{ minHeight: '52px' }}
+            style={{ minHeight: "52px" }}
           />
         </div>
 
@@ -99,5 +108,5 @@ export function MessageInput({
         Press Enter to send, Shift+Enter for new line
       </div>
     </div>
-  )
+  );
 }

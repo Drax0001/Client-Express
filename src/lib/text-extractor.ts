@@ -4,7 +4,7 @@
  * Requirements: 3.1, 3.2, 3.3, 3.4
  */
 
-import { ValidationError } from "./errors";
+import { ValidationError, ServiceUnavailableError } from "./errors";
 import * as cheerio from "cheerio";
 
 /**
@@ -13,23 +13,33 @@ import * as cheerio from "cheerio";
  */
 export class TextExtractor {
   /**
-   * Extract text from PDF file using pdf-parse
+   * Extract text from PDF file using Python PDF extractor service
    * Requirements: 3.1
    *
    * @param buffer - PDF file buffer
    * @returns Extracted text content
    * @throws ValidationError if extraction fails
+   * @throws ServiceUnavailableError if PDF extractor service is unavailable
    */
   async extractFromPdf(buffer: Buffer): Promise<string> {
     try {
-      // pdf-parse uses CommonJS, so we need to use require
-      const pdfParse = require("pdf-parse");
-      const data = await pdfParse(buffer);
-      return data.text;
+      // Use Python PDF extractor service for reliable extraction
+      const { PdfExtractorClient } = await import("./pdf-extractor-client");
+      const client = new PdfExtractorClient();
+
+      return await client.extractPdfSync(buffer);
     } catch (error) {
+      // Re-throw known errors from the client
+      if (
+        error instanceof ValidationError ||
+        error instanceof ServiceUnavailableError
+      ) {
+        throw error;
+      }
+
+      // Handle unexpected errors
       throw new ValidationError(
-        `Failed to extract text from PDF: ${
-          error instanceof Error ? error.message : "Unknown error"
+        `Failed to extract text from PDF: ${error instanceof Error ? error.message : "Unknown error"
         }`
       );
     }
@@ -51,9 +61,8 @@ export class TextExtractor {
       return result.value;
     } catch (error) {
       throw new ValidationError(
-        `Failed to extract text from DOCX: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
+        `Failed to extract text from DOCX: ${error instanceof Error ? error.message : "Unknown error"
+        }`,
       );
     }
   }
@@ -71,9 +80,8 @@ export class TextExtractor {
       return buffer.toString("utf-8");
     } catch (error) {
       throw new ValidationError(
-        `Failed to extract text from TXT: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
+        `Failed to extract text from TXT: ${error instanceof Error ? error.message : "Unknown error"
+        }`,
       );
     }
   }
@@ -115,9 +123,8 @@ export class TextExtractor {
         throw new ValidationError(`Invalid URL format: ${url}`);
       }
       throw new ValidationError(
-        `Failed to extract text from URL: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
+        `Failed to extract text from URL: ${error instanceof Error ? error.message : "Unknown error"
+        }`,
       );
     }
   }
