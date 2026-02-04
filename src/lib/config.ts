@@ -231,7 +231,7 @@ export function loadConfig(): AppConfig {
       provider: embeddingProvider,
       apiKey: embeddingApiKey,
       endpoint: embeddingEndpoint,
-      modelName: process.env.EMBEDDING_MODEL_NAME || "embedding-001",
+      modelName: process.env.EMBEDDING_MODEL_NAME || "text-embedding-004",
       dimensions: embeddingDimensions,
     },
     vectorStore: {
