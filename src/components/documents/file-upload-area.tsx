@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Upload, FileText, X, AlertCircle } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import * as React from "react";
+import { AppIcon } from "@/components/ui/app-icon";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface FileUploadAreaProps {
-  onFileSelect: (files: File[]) => void
-  accept?: string
-  maxSize?: number // in bytes
-  multiple?: boolean
-  disabled?: boolean
-  className?: string
+  onFileSelect: (files: File[]) => void;
+  accept?: string;
+  maxSize?: number; // in bytes
+  multiple?: boolean;
+  disabled?: boolean;
+  className?: string;
 }
 
 export function FileUploadArea({
@@ -23,94 +23,98 @@ export function FileUploadArea({
   disabled = false,
   className,
 }: FileUploadAreaProps) {
-  const [isDragOver, setIsDragOver] = React.useState(false)
-  const [selectedFiles, setSelectedFiles] = React.useState<File[]>([])
-  const [errors, setErrors] = React.useState<string[]>([])
-  const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const [isDragOver, setIsDragOver] = React.useState(false);
+  const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
+  const [errors, setErrors] = React.useState<string[]>([]);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const validateFiles = (files: FileList): File[] => {
-    const validFiles: File[] = []
-    const newErrors: string[] = []
+    const validFiles: File[] = [];
+    const newErrors: string[] = [];
 
     Array.from(files).forEach((file) => {
       // Check file size
       if (file.size > maxSize) {
-        newErrors.push(`${file.name}: File size exceeds ${(maxSize / (1024 * 1024)).toFixed(1)}MB limit`)
-        return
+        newErrors.push(
+          `${file.name}: File size exceeds ${(maxSize / (1024 * 1024)).toFixed(1)}MB limit`,
+        );
+        return;
       }
 
       // Check file type
-      const allowedExtensions = accept.split(',').map(ext => ext.trim().toLowerCase().replace('.', ''))
-      const fileExtension = file.name.split('.').pop()?.toLowerCase()
+      const allowedExtensions = accept
+        .split(",")
+        .map((ext) => ext.trim().toLowerCase().replace(".", ""));
+      const fileExtension = file.name.split(".").pop()?.toLowerCase();
 
       if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-        newErrors.push(`${file.name}: Invalid file type. Allowed: ${accept}`)
-        return
+        newErrors.push(`${file.name}: Invalid file type. Allowed: ${accept}`);
+        return;
       }
 
-      validFiles.push(file)
-    })
+      validFiles.push(file);
+    });
 
-    setErrors(newErrors)
-    return validFiles
-  }
+    setErrors(newErrors);
+    return validFiles;
+  };
 
   const handleFileSelect = (files: FileList) => {
-    const validFiles = validateFiles(files)
-    setSelectedFiles(validFiles)
-    onFileSelect(validFiles)
-  }
+    const validFiles = validateFiles(files);
+    setSelectedFiles(validFiles);
+    onFileSelect(validFiles);
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!disabled) {
-      setIsDragOver(true)
+      setIsDragOver(true);
     }
-  }
+  };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-  }
+    e.preventDefault();
+    setIsDragOver(false);
+  };
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
+    e.preventDefault();
+    setIsDragOver(false);
 
-    if (disabled) return
+    if (disabled) return;
 
-    const files = e.dataTransfer.files
+    const files = e.dataTransfer.files;
     if (files.length > 0) {
-      handleFileSelect(files)
+      handleFileSelect(files);
     }
-  }
+  };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
+    const files = e.target.files;
     if (files && files.length > 0) {
-      handleFileSelect(files)
+      handleFileSelect(files);
     }
-  }
+  };
 
   const removeFile = (index: number) => {
-    const newFiles = selectedFiles.filter((_, i) => i !== index)
-    setSelectedFiles(newFiles)
-    onFileSelect(newFiles)
-  }
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    setSelectedFiles(newFiles);
+    onFileSelect(newFiles);
+  };
 
   const clearAll = () => {
-    setSelectedFiles([])
-    setErrors([])
-    onFileSelect([])
-  }
+    setSelectedFiles([]);
+    setErrors([]);
+    onFileSelect([]);
+  };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -122,7 +126,7 @@ export function FileUploadArea({
             ? "border-primary bg-primary/5"
             : "border-muted-foreground/25 hover:border-muted-foreground/50",
           disabled && "opacity-50 cursor-not-allowed",
-          !disabled && "cursor-pointer"
+          !disabled && "cursor-pointer",
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -141,7 +145,7 @@ export function FileUploadArea({
 
         <div className="flex flex-col items-center gap-4">
           <div className="p-4 bg-muted rounded-full">
-            <Upload className="h-8 w-8 text-muted-foreground" />
+            <AppIcon name="Upload" className="h-8 w-8 text-muted-foreground" />
           </div>
 
           <div>
@@ -166,7 +170,9 @@ export function FileUploadArea({
       {selectedFiles.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium">Selected Files ({selectedFiles.length})</h4>
+            <h4 className="text-sm font-medium">
+              Selected Files ({selectedFiles.length})
+            </h4>
             <Button
               type="button"
               variant="ghost"
@@ -184,7 +190,10 @@ export function FileUploadArea({
                 key={index}
                 className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50"
               >
-                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <AppIcon
+                  name="FileText"
+                  className="h-4 w-4 text-muted-foreground flex-shrink-0"
+                />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{file.name}</p>
                   <p className="text-xs text-muted-foreground">
@@ -198,7 +207,7 @@ export function FileUploadArea({
                   onClick={() => removeFile(index)}
                   className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                 >
-                  <X className="h-4 w-4" />
+                  <AppIcon name="X" className="h-4 w-4" />
                   <span className="sr-only">Remove file</span>
                 </Button>
               </div>
@@ -215,12 +224,12 @@ export function FileUploadArea({
               key={index}
               className="flex items-center gap-2 p-3 border border-destructive/50 rounded-lg bg-destructive/5 text-destructive text-sm"
             >
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <AppIcon name="AlertCircle" className="h-4 w-4 flex-shrink-0" />
               <span>{error}</span>
             </div>
           ))}
         </div>
       )}
     </div>
-  )
+  );
 }

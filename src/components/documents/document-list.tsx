@@ -1,35 +1,36 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { FileText, MoreHorizontal, Trash2, RotateCcw } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { StatusBadge } from "@/components/data/status-badge"
+import * as React from "react";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/data/status-badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatDistanceToNow } from "date-fns"
+} from "@/components/ui/dropdown-menu";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatDistanceToNow } from "date-fns";
+import { MoreHorizontal } from "lucide-react";
 
 interface Document {
-  id: string
-  filename: string
-  fileType: "pdf" | "docx" | "txt" | "url"
-  status: "pending" | "processing" | "ready" | "failed"
-  uploadedAt: string
-  errorMessage?: string
+  id: string;
+  filename: string;
+  fileType: "pdf" | "docx" | "txt" | "url";
+  status: "pending" | "processing" | "ready" | "failed";
+  uploadedAt: string;
+  errorMessage?: string;
 }
 
 interface DocumentListProps {
-  documents: Document[]
-  onRetry?: (documentId: string) => void
-  onDelete?: (documentId: string) => void
-  loading?: boolean
-  className?: string
+  documents: Document[];
+  onRetry?: (documentId: string) => void;
+  onDelete?: (documentId: string) => void;
+  loading?: boolean;
+  className?: string;
 }
 
 export function DocumentList({
@@ -41,12 +42,12 @@ export function DocumentList({
 }: DocumentListProps) {
   const formatFileSize = (filename: string) => {
     // This is a placeholder - in real app you'd get size from backend
-    return "Unknown size"
-  }
+    return "Unknown size";
+  };
 
   const getFileIcon = (fileType: string) => {
-    return <FileText className="h-4 w-4" />
-  }
+    return <AppIcon name="FileText" className="h-4 w-4" />;
+  };
 
   if (loading) {
     return (
@@ -66,14 +67,17 @@ export function DocumentList({
           </Card>
         ))}
       </div>
-    )
+    );
   }
 
   if (documents.length === 0) {
     return (
       <Card className={className}>
         <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+          <AppIcon
+            name="FileText"
+            className="h-12 w-12 text-muted-foreground mb-4"
+          />
           <h3 className="text-lg font-semibold mb-2">No documents yet</h3>
           <p className="text-muted-foreground max-w-sm">
             Upload your first document to start building your knowledge base.
@@ -81,7 +85,7 @@ export function DocumentList({
           </p>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -92,10 +96,11 @@ export function DocumentList({
         </h3>
         <div className="flex gap-2">
           <Badge variant="outline">
-            {documents.filter(d => d.status === "ready").length} Ready
+            {documents.filter((d) => d.status === "ready").length} Ready
           </Badge>
           <Badge variant="secondary">
-            {documents.filter(d => d.status === "processing").length} Processing
+            {documents.filter((d) => d.status === "processing").length}{" "}
+            Processing
           </Badge>
         </div>
       </div>
@@ -111,14 +116,21 @@ export function DocumentList({
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-medium truncate">{document.filename}</h4>
+                    <h4 className="font-medium truncate">
+                      {document.filename}
+                    </h4>
                     <Badge variant="outline" className="text-xs">
                       {document.fileType.toUpperCase()}
                     </Badge>
                   </div>
 
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>Uploaded {formatDistanceToNow(new Date(document.uploadedAt), { addSuffix: true })}</span>
+                    <span>
+                      Uploaded{" "}
+                      {formatDistanceToNow(new Date(document.uploadedAt), {
+                        addSuffix: true,
+                      })}
+                    </span>
                     {document.status === "ready" && (
                       <span>{formatFileSize(document.filename)}</span>
                     )}
@@ -144,8 +156,13 @@ export function DocumentList({
                     <DropdownMenuContent align="end">
                       {document.status === "failed" && onRetry && (
                         <>
-                          <DropdownMenuItem onClick={() => onRetry(document.id)}>
-                            <RotateCcw className="mr-2 h-4 w-4" />
+                          <DropdownMenuItem
+                            onClick={() => onRetry(document.id)}
+                          >
+                            <AppIcon
+                              name="RotateCcw"
+                              className="mr-2 h-4 w-4"
+                            />
                             Retry processing
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
@@ -156,7 +173,7 @@ export function DocumentList({
                           onClick={() => onDelete(document.id)}
                           className="text-destructive focus:text-destructive"
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
+                          <AppIcon name="Trash2" className="mr-2 h-4 w-4" />
                           Delete document
                         </DropdownMenuItem>
                       )}
@@ -169,5 +186,5 @@ export function DocumentList({
         ))}
       </div>
     </div>
-  )
+  );
 }

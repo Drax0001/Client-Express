@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,14 +8,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Keyboard } from "lucide-react"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { AppIcon } from "@/components/ui/app-icon";
 
 interface KeyboardShortcut {
-  keys: string[]
-  description: string
+  keys: string[];
+  description: string;
 }
 
 const shortcuts: KeyboardShortcut[] = [
@@ -26,16 +26,16 @@ const shortcuts: KeyboardShortcut[] = [
   { keys: ["Enter"], description: "Send message (in chat)" },
   { keys: ["Shift", "Enter"], description: "New line (in chat)" },
   { keys: ["Escape"], description: "Close dialogs" },
-]
+];
 
 export function KeyboardShortcutsDialog() {
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = React.useState(false);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="gap-2">
-          <Keyboard className="h-4 w-4" />
+          <AppIcon name="Keyboard" className="h-4 w-4" />
           Shortcuts
         </Button>
       </DialogTrigger>
@@ -43,7 +43,8 @@ export function KeyboardShortcutsDialog() {
         <DialogHeader>
           <DialogTitle>Keyboard Shortcuts</DialogTitle>
           <DialogDescription>
-            Use these keyboard shortcuts to navigate faster through the application.
+            Use these keyboard shortcuts to navigate faster through the
+            application.
           </DialogDescription>
         </DialogHeader>
 
@@ -68,5 +69,5 @@ export function KeyboardShortcutsDialog() {
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

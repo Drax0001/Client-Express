@@ -1,65 +1,50 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import {
-  Send,
-  Bot,
-  User,
-  Copy,
-  ThumbsUp,
-  ThumbsDown,
-  MoreHorizontal,
-  FileText,
-  ExternalLink,
-  Download,
-  Trash2,
-  RotateCcw,
-  MessageSquare,
-  Loader2
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import * as React from "react";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: Date
-  sources?: Source[]
-  tokensUsed?: number
-  responseTime?: number
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+  sources?: Source[];
+  tokensUsed?: number;
+  responseTime?: number;
 }
 
 interface Source {
-  id: string
-  title: string
-  url?: string
-  snippet: string
-  relevanceScore: number
+  id: string;
+  title: string;
+  url?: string;
+  snippet: string;
+  relevanceScore: number;
 }
 
 interface ChatInterfaceProps {
-  chatbotId: string
-  chatbotName: string
-  messages: Message[]
-  isLoading?: boolean
-  onSendMessage?: (message: string) => void
-  onClearConversation?: () => void
-  onExportConversation?: () => void
-  onRateMessage?: (messageId: string, rating: 'positive' | 'negative') => void
-  className?: string
+  chatbotId: string;
+  chatbotName: string;
+  messages: Message[];
+  isLoading?: boolean;
+  onSendMessage?: (message: string) => void;
+  onClearConversation?: () => void;
+  onExportConversation?: () => void;
+  onRateMessage?: (messageId: string, rating: "positive" | "negative") => void;
+  className?: string;
 }
 
 export function ChatInterface({
@@ -73,101 +58,109 @@ export function ChatInterface({
   onRateMessage,
   className,
 }: ChatInterfaceProps) {
-  const [inputMessage, setInputMessage] = React.useState('')
-  const [isTyping, setIsTyping] = React.useState(false)
-  const messagesEndRef = React.useRef<HTMLDivElement>(null)
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+  const [inputMessage, setInputMessage] = React.useState("");
+  const [isTyping, setIsTyping] = React.useState(false);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   React.useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    scrollToBottom();
+  }, [messages]);
 
   React.useEffect(() => {
-    setIsTyping(isLoading)
-  }, [isLoading])
+    setIsTyping(isLoading);
+  }, [isLoading]);
 
   const handleSendMessage = () => {
     if (inputMessage.trim() && !isLoading) {
-      onSendMessage?.(inputMessage.trim())
-      setInputMessage('')
+      onSendMessage?.(inputMessage.trim());
+      setInputMessage("");
       // Reset textarea height
       if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto'
+        textareaRef.current.style.height = "auto";
       }
     }
-  }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
     }
-  }
+  };
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputMessage(e.target.value)
+    setInputMessage(e.target.value);
 
     // Auto-resize textarea
-    const textarea = e.target
-    textarea.style.height = 'auto'
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`
-  }
+    const textarea = e.target;
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+  };
 
   const copyToClipboard = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(text)
+      await navigator.clipboard.writeText(text);
     } catch (err) {
-      console.error('Failed to copy text: ', err)
+      console.error("Failed to copy text: ", err);
     }
-  }
+  };
 
   const formatTimestamp = (date: Date) => {
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: false,
-    })
-  }
+    });
+  };
 
   const MessageBubble = ({ message }: { message: Message }) => {
-    const isUser = message.role === 'user'
+    const isUser = message.role === "user";
 
     return (
-      <div className={cn(
-        "flex gap-3 group",
-        isUser ? "justify-end" : "justify-start"
-      )}>
+      <div
+        className={cn(
+          "flex gap-3 group",
+          isUser ? "justify-end" : "justify-start",
+        )}
+      >
         {!isUser && (
           <Avatar className="h-8 w-8 mt-1">
             <AvatarFallback className="bg-primary/10 text-primary">
-              <Bot className="h-4 w-4" />
+              <AppIcon name="Bot" className="h-4 w-4" />
             </AvatarFallback>
           </Avatar>
         )}
 
-        <div className={cn(
-          "max-w-[80%] space-y-2",
-          isUser ? "order-1" : "order-2"
-        )}>
-          <div className={cn(
-            "rounded-lg px-4 py-3 shadow-sm",
-            isUser
-              ? "bg-primary text-primary-foreground ml-auto"
-              : "bg-muted"
-          )}>
+        <div
+          className={cn(
+            "max-w-[80%] space-y-2",
+            isUser ? "order-1" : "order-2",
+          )}
+        >
+          <div
+            className={cn(
+              "rounded-lg px-4 py-3 shadow-sm",
+              isUser
+                ? "bg-primary text-primary-foreground ml-auto"
+                : "bg-muted",
+            )}
+          >
             <div className="whitespace-pre-wrap text-sm leading-relaxed">
               {message.content}
             </div>
 
             {/* Message metadata */}
-            <div className={cn(
-              "flex items-center justify-between mt-2 text-xs opacity-70",
-              isUser ? "text-primary-foreground/70" : "text-muted-foreground"
-            )}>
+            <div
+              className={cn(
+                "flex items-center justify-between mt-2 text-xs opacity-70",
+                isUser ? "text-primary-foreground/70" : "text-muted-foreground",
+              )}
+            >
               <span>{formatTimestamp(message.timestamp)}</span>
               {!isUser && message.tokensUsed && (
                 <span>{message.tokensUsed} tokens</span>
@@ -182,7 +175,7 @@ export function ChatInterface({
           {!isUser && message.sources && message.sources.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <FileText className="h-3 w-3" />
+                <AppIcon name="FileText" className="h-3 w-3" />
                 <span>Sources ({message.sources.length})</span>
               </div>
               <div className="space-y-1">
@@ -202,7 +195,10 @@ export function ChatInterface({
                               className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1 truncate"
                             >
                               {source.title}
-                              <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                              <AppIcon
+                                name="ExternalLink"
+                                className="h-3 w-3 flex-shrink-0"
+                              />
                             </a>
                           ) : (
                             <span className="text-xs font-medium truncate">
@@ -235,27 +231,27 @@ export function ChatInterface({
                 onClick={() => copyToClipboard(message.content)}
                 className="h-8 w-8 p-0"
               >
-                <Copy className="h-3 w-3" />
+                <AppIcon name="Copy" className="h-3 w-3" />
                 <span className="sr-only">Copy message</span>
               </Button>
 
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onRateMessage?.(message.id, 'positive')}
+                onClick={() => onRateMessage?.(message.id, "positive")}
                 className="h-8 w-8 p-0"
               >
-                <ThumbsUp className="h-3 w-3" />
+                <AppIcon name="ThumbsUp" className="h-3 w-3" />
                 <span className="sr-only">Rate positive</span>
               </Button>
 
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onRateMessage?.(message.id, 'negative')}
+                onClick={() => onRateMessage?.(message.id, "negative")}
                 className="h-8 w-8 p-0"
               >
-                <ThumbsDown className="h-3 w-3" />
+                <AppIcon name="ThumbsDown" className="h-3 w-3" />
                 <span className="sr-only">Rate negative</span>
               </Button>
             </div>
@@ -265,19 +261,19 @@ export function ChatInterface({
         {isUser && (
           <Avatar className="h-8 w-8 mt-1 order-2">
             <AvatarFallback className="bg-secondary text-secondary-foreground">
-              <User className="h-4 w-4" />
+              <AppIcon name="User" className="h-4 w-4" />
             </AvatarFallback>
           </Avatar>
         )}
       </div>
-    )
-  }
+    );
+  };
 
   const TypingIndicator = () => (
     <div className="flex gap-3 justify-start">
       <Avatar className="h-8 w-8 mt-1">
         <AvatarFallback className="bg-primary/10 text-primary">
-          <Bot className="h-4 w-4" />
+          <AppIcon name="Bot" className="h-4 w-4" />
         </AvatarFallback>
       </Avatar>
 
@@ -288,13 +284,19 @@ export function ChatInterface({
           </span>
           <div className="flex gap-1">
             <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" />
-            <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-            <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+            <div
+              className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
+              style={{ animationDelay: "0.1s" }}
+            />
+            <div
+              className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
+              style={{ animationDelay: "0.2s" }}
+            />
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
@@ -303,7 +305,7 @@ export function ChatInterface({
         <div className="flex items-center gap-3">
           <Avatar>
             <AvatarFallback className="bg-primary/10 text-primary">
-              <Bot className="h-5 w-5" />
+              <AppIcon name="Bot" className="h-5 w-5" />
             </AvatarFallback>
           </Avatar>
           <div>
@@ -317,18 +319,18 @@ export function ChatInterface({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm">
-              <MoreHorizontal className="h-4 w-4" />
+              <AppIcon name="MoreHorizontal" className="h-4 w-4" />
               <span className="sr-only">Conversation options</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={onExportConversation}>
-              <Download className="h-4 w-4 mr-2" />
+              <AppIcon name="Download" className="h-4 w-4 mr-2" />
               Export Conversation
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onClearConversation}>
-              <Trash2 className="h-4 w-4 mr-2" />
+              <AppIcon name="Trash2" className="h-4 w-4 mr-2" />
               Clear Conversation
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -341,11 +343,16 @@ export function ChatInterface({
           {messages.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-muted-foreground">
-                <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">Start a conversation</h3>
+                <AppIcon
+                  name="MessageSquare"
+                  className="h-12 w-12 mx-auto mb-4 opacity-50"
+                />
+                <h3 className="text-lg font-medium mb-2">
+                  Start a conversation
+                </h3>
                 <p className="text-sm">
-                  Ask {chatbotName} anything about your uploaded documents.
-                  The responses are based solely on your content.
+                  Ask {chatbotName} anything about your uploaded documents. The
+                  responses are based solely on your content.
                 </p>
               </div>
             </div>
@@ -384,9 +391,9 @@ export function ChatInterface({
                   className="h-6 w-6 p-0"
                 >
                   {isLoading ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <AppIcon name="Loader2" className="h-3 w-3 animate-spin" />
                   ) : (
-                    <Send className="h-3 w-3" />
+                    <AppIcon name="Send" className="h-3 w-3" />
                   )}
                 </Button>
               </div>
@@ -394,15 +401,11 @@ export function ChatInterface({
           </div>
 
           <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-            <span>
-              Press Enter to send, Shift+Enter for new line
-            </span>
-            <span>
-              Responses are based on your uploaded documents only
-            </span>
+            <span>Press Enter to send, Shift+Enter for new line</span>
+            <span>Responses are based on your uploaded documents only</span>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -150,8 +150,18 @@ export class ChatService {
     const highestScore = searchResults.length > 0 ? searchResults[0].score : 0;
     const relevanceThreshold = this.config.processing.relevanceThreshold; // 0.75
 
+    console.log("ChatService: retrieval stats", {
+      results: searchResults.length,
+      highestScore,
+      relevanceThreshold,
+    });
+
     if (highestScore < relevanceThreshold) {
       // 8.4: Don't invoke LLM if threshold not met
+      console.log("ChatService: below relevance threshold; returning IDK", {
+        highestScore,
+        relevanceThreshold,
+      });
       return {
         answer: "I don't know",
         sourceCount: 0,

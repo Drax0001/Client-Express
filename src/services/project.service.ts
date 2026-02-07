@@ -44,8 +44,10 @@ export class ProjectService {
     const chromaHost = process.env.CHROMA_HOST || "localhost";
     const chromaPort = process.env.CHROMA_PORT || "8000";
     this.chromaClient = new ChromaClient({
-      path: `http://${chromaHost}:${chromaPort}`,
-    });
+      host: chromaHost,
+      port: chromaPort,
+      ssl: false,
+    } as any);
   }
 
   /**

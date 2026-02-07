@@ -1,174 +1,148 @@
 "use client";
 
-import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
-import { ProjectCard } from "@/components/data/project-card";
 import { Badge } from "@/components/ui/badge";
-import { CreateProjectDialog } from "@/components/projects/create-project-dialog";
-import { ProjectCardSkeleton } from "@/components/ui/skeletons";
-import { useProjects } from "@/lib/api/hooks";
-import { useAppKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
-import { Bot, Plus, FileText, Loader2 } from "lucide-react";
-import { useRef } from "react";
+import { AppIcon } from "@/components/ui/app-icon";
+import Image from "next/image";
+import { Icon } from "@/components/ui/icon";
 
 export default function Home() {
-  const { data: projects, isLoading, error } = useProjects();
-  const createProjectDialogRef = useRef<{ openDialog: () => void }>(null);
-
-  // Keyboard shortcuts
-  useAppKeyboardShortcuts({
-    createProject: () => createProjectDialogRef.current?.openDialog(),
-  });
-
   return (
-    <MainLayout>
-      <div className="space-y-12">
-        {/* Hero Section */}
-        <div className="text-center space-y-6 py-8">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-primary opacity-10 rounded-full blur-3xl transform scale-150"></div>
-            <div className="relative flex items-center justify-center gap-3 mb-6">
-              <div className="p-3 bg-gradient-primary rounded-2xl shadow-medium">
-                <Bot className="h-8 w-8 text-primary-foreground" />
-              </div>
-              <h1 className="text-5xl font-bold tracking-tight bg-gradient-primary bg-clip-text text-transparent">
-                RAG Chatbot
-              </h1>
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border/50 bg-background/80 backdrop-blur-xl">
+        <div className="container flex h-20 items-center justify-between px-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary rounded-xl shadow-medium">
+              <AppIcon name="Bot" className="h-6 w-6 text-primary-foreground" />
             </div>
+            <span className="font-bold text-xl">RAG Chatbot</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button asChild variant="ghost">
+              <a href="/login">Sign in</a>
+            </Button>
+            <Button asChild>
+              <a href="/signup">Create account</a>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="container px-6 py-16">
+        <div className="max-w-5xl mx-auto text-center">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <Badge variant="secondary">RAG for your docs</Badge>
+            <Badge variant="outline">Private by design</Badge>
           </div>
 
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Transform your documents into intelligent conversational assistants.
-            Upload PDFs, DOCX files, or web URLs to create AI-powered knowledge
-            bases that provide accurate, context-aware responses.
+          <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
+            Turn documents into a knowledge assistant
+          </h1>
+
+          <p className="mt-5 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+            Upload PDFs or web pages, then ask questions. Get answers grounded in your
+            content with a clean workflow: Projects → Ingest → Chat.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-6 pt-6">
-            <div className="flex items-center gap-3 px-4 py-2 bg-card rounded-full border shadow-soft hover-lift transition-all">
-              <FileText className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium">PDF, DOCX, TXT, URLs</span>
-            </div>
-            <div className="flex items-center gap-3 px-4 py-2 bg-card rounded-full border shadow-soft hover-lift transition-all">
-              <Bot className="h-5 w-5 text-accent" />
-              <span className="text-sm font-medium">AI-Powered Chat</span>
-            </div>
-            <div className="flex items-center gap-3 px-4 py-2 bg-card rounded-full border shadow-soft hover-lift transition-all">
-              <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium">Real-time Processing</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Projects Section */}
-        <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <h2 className="text-3xl font-bold bg-gradient-accent bg-clip-text text-transparent">
-                Your Knowledge Bases
-              </h2>
-              <p className="text-muted-foreground text-lg">
-                Create and manage AI assistants powered by your documents.
-              </p>
-            </div>
-            <CreateProjectDialog ref={createProjectDialogRef}>
-              <Button className="bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-medium hover-lift flex items-center gap-2 px-6 py-3 rounded-xl font-semibold">
-                <Plus className="h-5 w-5" />
-                Create Project
-              </Button>
-            </CreateProjectDialog>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button asChild size="lg">
+              <a href="/projects">Open the app</a>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <a href="#how-it-works">How it works</a>
+            </Button>
           </div>
 
-          {isLoading ? (
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {[...Array(8)].map((_, i) => (
-                <ProjectCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : error ? (
-            <div className="text-center py-12">
-              <div className="text-red-500 mb-2">Failed to load projects</div>
-              <p className="text-muted-foreground">
-                {error.message || "An unexpected error occurred."}
-              </p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => window.location.reload()}
-              >
-                Try Again
-              </Button>
-            </div>
-          ) : !projects || projects.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="relative mb-8">
-                <div className="absolute inset-0 bg-gradient-secondary opacity-20 rounded-full blur-2xl transform scale-150"></div>
-                <div className="relative p-6 bg-gradient-secondary rounded-3xl shadow-medium">
-                  <Bot className="h-20 w-20 text-secondary-foreground mx-auto" />
+          <div className="mt-10 flex items-center justify-center">
+            <div className="w-full max-w-3xl bg-card border border-border/60 rounded-2xl shadow-soft overflow-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
+                <div className="p-6 md:p-8 border-b md:border-b-0 md:border-r border-border/60">
+                  <div className="mx-auto w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <AppIcon name="Folder" className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="mt-4 font-semibold">Projects</div>
+                  <div className="mt-1 text-sm text-muted-foreground">
+                    Keep knowledge bases isolated.
+                  </div>
+                </div>
+                <div className="p-6 md:p-8 border-b md:border-b-0 md:border-r border-border/60">
+                  <div className="mx-auto w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <AppIcon name="FileText" className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="mt-4 font-semibold">Ingest</div>
+                  <div className="mt-1 text-sm text-muted-foreground">
+                    Upload documents and build context.
+                  </div>
+                </div>
+                <div className="p-6 md:p-8">
+                  <div className="mx-auto w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <AppIcon name="MessageSquare" className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="mt-4 font-semibold">Chat</div>
+                  <div className="mt-1 text-sm text-muted-foreground">
+                    Ask questions, get grounded answers.
+                  </div>
                 </div>
               </div>
-              <h3 className="text-2xl font-bold mb-3 bg-gradient-primary bg-clip-text text-transparent">
-                Ready to Build Your First Assistant?
-              </h3>
-              <p className="text-muted-foreground text-lg mb-8 max-w-md mx-auto leading-relaxed">
-                Transform your documents into intelligent conversational AI
-                assistants. Start by creating your first knowledge base.
+            </div>
+          </div>
+        </div>
+
+        <section id="how-it-works" className="max-w-5xl mx-auto mt-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+            <div className="space-y-4 text-center">
+              <h2 className="text-3xl font-semibold tracking-tight">
+                Built for focus and clarity
+              </h2>
+              <p className="text-muted-foreground leading-relaxed">
+                The assistant retrieves only what's relevant from your project's
+                documents, then answers in plain language. No noisy dashboards.
               </p>
-              <CreateProjectDialog>
-                <Button className="bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-medium hover-lift px-8 py-4 rounded-xl font-semibold text-lg">
-                  <Plus className="h-5 w-5 mr-2" />
-                  Create Your First Project
-                </Button>
-              </CreateProjectDialog>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center justify-center gap-2">
+                  <Icon size={16} className="text-muted-foreground">
+                    <path
+                      d="M12 2c-2.21 0-4 1.79-4 4v1H6a2 2 0 00-2 2v3a6 6 0 006 6h4a6 6 0 006-6V9a2 2 0 00-2-2h-2V6c0-2.21-1.79-4-4-4z"
+                      fill="currentColor"
+                    />
+                  </Icon>
+                  <span>Works great for manuals, policies, and internal docs.</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <AppIcon name="Shield" className="h-4 w-4" />
+                  <span>Keep content separated by project.</span>
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {projects.map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  id={project.id}
-                  name={project.name}
-                  createdAt={new Date(project.createdAt)}
-                  documentCount={project.documentCount || 0}
+
+            <div className="flex items-center justify-center">
+              <div className="w-full max-w-md h-72 bg-muted rounded-2xl border border-border/60 shadow-soft flex items-center justify-center overflow-hidden">
+                <Image
+                  src="/images/hero-placeholder.svg"
+                  alt="Illustration placeholder"
+                  width={360}
+                  height={240}
                 />
-              ))}
+              </div>
             </div>
-          )}
-        </div>
-
-        {/* Features Section */}
-        <div className="grid gap-8 md:grid-cols-3 mt-16">
-          <div className="text-center space-y-3">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto">
-              <FileText className="h-6 w-6 text-primary" />
-            </div>
-            <h3 className="font-semibold">Document Upload</h3>
-            <p className="text-sm text-muted-foreground">
-              Upload PDFs, DOCX files, or provide URLs to build your knowledge
-              base.
-            </p>
           </div>
 
-          <div className="text-center space-y-3">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto">
-              <Bot className="h-6 w-6 text-primary" />
-            </div>
-            <h3 className="font-semibold">AI-Powered Chat</h3>
-            <p className="text-sm text-muted-foreground">
-              Get accurate answers based only on your uploaded documents.
+          <div className="mt-16 text-center">
+            <h3 className="text-2xl font-semibold">Ready to try it?</h3>
+            <p className="text-muted-foreground mt-2 max-w-xl mx-auto">
+              Create a project, ingest a document, and chat with your knowledge base.
             </p>
-          </div>
-
-          <div className="text-center space-y-3">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto">
-              <Plus className="h-6 w-6 text-primary" />
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <Button asChild size="lg">
+                <a href="/projects">Get started</a>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <a href="/signup">Create an account</a>
+              </Button>
             </div>
-            <h3 className="font-semibold">Project Isolation</h3>
-            <p className="text-sm text-muted-foreground">
-              Keep different knowledge domains separate with isolated projects.
-            </p>
           </div>
-        </div>
-      </div>
-    </MainLayout>
+        </section>
+      </main>
+    </div>
   );
 }

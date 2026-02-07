@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Send } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -63,7 +63,7 @@ export function MessageInput({
   return (
     <div
       className={cn(
-        "border-t border-border/50 bg-gradient-to-t from-background to-background/95 backdrop-blur-sm p-4 sm:p-6",
+        "border-t border-border/50 bg-background/95 backdrop-blur-sm p-4 sm:p-6",
         className,
       )}
     >
@@ -72,7 +72,7 @@ export function MessageInput({
         className="flex gap-3 items-end max-w-4xl mx-auto"
       >
         <div className="flex-1 relative">
-          <div className="absolute inset-0 bg-gradient-accent opacity-5 rounded-2xl blur-sm"></div>
+          <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-sm"></div>
           <textarea
             ref={textareaRef}
             value={message}
@@ -82,7 +82,7 @@ export function MessageInput({
             disabled={disabled}
             rows={1}
             className={cn(
-              "relative w-full resize-none rounded-2xl border border-border/30 bg-gradient-to-br from-background via-background/95 to-background/90 px-5 py-4 text-sm",
+              "relative w-full resize-none rounded-2xl border border-border/60 bg-background px-5 py-4 text-sm",
               "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/30",
               "disabled:cursor-not-allowed disabled:opacity-50 shadow-soft hover:shadow-medium transition-all",
               "max-h-32 overflow-y-auto custom-scrollbar",
@@ -97,9 +97,9 @@ export function MessageInput({
           type="submit"
           size="sm"
           disabled={!canSend}
-          className="h-13 w-13 p-0 flex-shrink-0 bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-medium hover:shadow-strong hover-lift transition-all rounded-2xl touch-manipulation"
+          className="h-13 w-13 p-0 flex-shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground shadow-medium hover:shadow-strong hover-lift transition-all rounded-2xl touch-manipulation"
         >
-          <Send className="h-5 w-5" />
+          <AppIcon name="Send" className="h-5 w-5" />
           <span className="sr-only">Send message</span>
         </Button>
       </form>

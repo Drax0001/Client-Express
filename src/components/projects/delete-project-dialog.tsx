@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,15 +11,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button"
-import { useDeleteProject } from "@/lib/api/hooks"
-import { Trash2 } from "lucide-react"
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { useDeleteProject } from "@/lib/api/hooks";
+import { AppIcon } from "@/components/ui/app-icon";
 
 interface DeleteProjectDialogProps {
-  projectId: string
-  projectName: string
-  children?: React.ReactNode
+  projectId: string;
+  projectName: string;
+  children?: React.ReactNode;
 }
 
 export function DeleteProjectDialog({
@@ -27,24 +27,24 @@ export function DeleteProjectDialog({
   projectName,
   children,
 }: DeleteProjectDialogProps) {
-  const [open, setOpen] = React.useState(false)
-  const deleteProjectMutation = useDeleteProject()
+  const [open, setOpen] = React.useState(false);
+  const deleteProjectMutation = useDeleteProject();
 
   const handleDelete = async () => {
     try {
-      await deleteProjectMutation.mutateAsync(projectId)
-      setOpen(false)
+      await deleteProjectMutation.mutateAsync(projectId);
+      setOpen(false);
     } catch (error) {
       // Error is handled by the mutation
     }
-  }
+  };
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
         {children || (
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <Trash2 className="h-4 w-4" />
+            <AppIcon name="Trash2" className="h-4 w-4" />
             <span className="sr-only">Delete project</span>
           </Button>
         )}
@@ -72,5 +72,5 @@ export function DeleteProjectDialog({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }

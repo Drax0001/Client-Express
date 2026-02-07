@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
 
 type DocumentStatus = "pending" | "processing" | "ready" | "failed";
 
@@ -14,14 +14,14 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     case "pending":
       return (
         <Badge variant="secondary" className="flex items-center gap-1">
-          <Loader2 className="h-3 w-3 animate-spin" />
+          <AppIcon name="Clock" className="h-3 w-3" />
           Pending
         </Badge>
       );
     case "processing":
       return (
         <Badge variant="warning" className="flex items-center gap-1">
-          <Loader2 className="h-3 w-3 animate-spin" />
+          <AppIcon name="Sparkles" className="h-3 w-3" />
           Processing
         </Badge>
       );

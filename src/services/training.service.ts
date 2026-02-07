@@ -66,8 +66,10 @@ export class TrainingService {
 
     // Initialize ChromaDB client
     this.chromaClient = new ChromaClient({
-      path: `http://${this.config.vectorStore.host}:${this.config.vectorStore.port}`,
-    });
+      host: this.config.vectorStore.host,
+      port: this.config.vectorStore.port,
+      ssl: false,
+    } as any);
     this.embeddingService = new EmbeddingService();
   }
 

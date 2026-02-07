@@ -5,6 +5,7 @@ import { MessageBubble } from "./message-bubble";
 import { TypingIndicator } from "./typing-indicator";
 import { MessageInput } from "./message-input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AppIcon } from "@/components/ui/app-icon";
 
 export interface Message {
   id: string;
@@ -56,19 +57,26 @@ export function ChatInterface({
         <div className="space-y-6 max-w-4xl mx-auto">
           {messages.length === 0 ? (
             <div
-              className="text-center py-12"
+              className="text-center py-16"
               role="status"
               aria-label="Empty chat"
             >
-              <div className="text-6xl mb-4" aria-hidden="true">
-                💬
+              <div className="relative mx-auto mb-6 w-fit">
+                <div className="absolute inset-0 bg-primary/10 opacity-80 rounded-3xl blur-2xl scale-150"></div>
+                <div className="relative p-5 bg-primary rounded-3xl shadow-medium">
+                  <AppIcon
+                    name="MessageSquare"
+                    className="h-10 w-10 text-primary-foreground"
+                  />
+                </div>
               </div>
-              <h3 className="text-lg font-semibold mb-2">
-                Start a conversation
+
+              <h3 className="text-2xl font-bold tracking-tight mb-2">
+                Ask your documents anything
               </h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                Ask questions about your uploaded documents. The AI will answer
-                based only on the content you've provided.
+              <p className="text-muted-foreground max-w-lg mx-auto leading-relaxed">
+                The assistant will respond using only the content you've uploaded
+                to this project.
               </p>
             </div>
           ) : (

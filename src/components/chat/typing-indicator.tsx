@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Bot } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
 
 interface TypingIndicatorProps {
   className?: string;
@@ -12,7 +12,7 @@ export function TypingIndicator({ className }: TypingIndicatorProps) {
     <div className={`flex gap-3 max-w-4xl mr-auto ${className || ""}`}>
       {/* Avatar */}
       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center">
-        <Bot className="h-4 w-4" />
+        <AppIcon name="Bot" className="h-4 w-4" />
       </div>
 
       {/* Typing Animation */}

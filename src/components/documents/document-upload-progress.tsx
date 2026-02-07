@@ -1,13 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  FileText,
-  CheckCircle,
-  XCircle,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,15 +31,29 @@ export function DocumentUploadProgress({
   const getStatusIcon = () => {
     switch (status) {
       case "uploading":
-        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
+        return (
+          <AppIcon
+            name="Loader2"
+            className="h-4 w-4 animate-spin text-blue-500"
+          />
+        );
       case "processing":
-        return <Loader2 className="h-4 w-4 animate-spin text-yellow-500" />;
+        return (
+          <AppIcon
+            name="Sparkles"
+            className="h-4 w-4 text-yellow-500"
+          />
+        );
       case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return (
+          <AppIcon name="CheckCircle" className="h-4 w-4 text-green-500" />
+        );
       case "failed":
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <AppIcon name="XCircle" className="h-4 w-4 text-red-500" />;
       default:
-        return <FileText className="h-4 w-4 text-muted-foreground" />;
+        return (
+          <AppIcon name="FileText" className="h-4 w-4 text-muted-foreground" />
+        );
     }
   };
 
@@ -54,7 +62,7 @@ export function DocumentUploadProgress({
       case "uploading":
         return `Uploading... ${Math.round(progress)}%`;
       case "processing":
-        return "Processing document...";
+        return `Processing... ${Math.round(progress)}%`;
       case "completed":
         return "Upload completed";
       case "failed":
@@ -98,15 +106,18 @@ export function DocumentUploadProgress({
             {getStatusText()}
           </p>
 
-          {/* Progress bar for uploading */}
-          {status === "uploading" && (
+          {/* Progress bar for uploading/processing */}
+          {(status === "uploading" || status === "processing") && (
             <Progress value={progress} className="h-2 mb-2" />
           )}
 
           {/* Error message */}
           {status === "failed" && error && (
             <div className="flex items-start gap-2 p-2 bg-destructive/10 border border-destructive/20 rounded text-xs text-destructive">
-              <AlertCircle className="h-3 w-3 flex-shrink-0 mt-0.5" />
+              <AppIcon
+                name="AlertCircle"
+                className="h-3 w-3 flex-shrink-0 mt-0.5"
+              />
               <span>{error}</span>
             </div>
           )}

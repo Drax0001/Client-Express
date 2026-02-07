@@ -77,8 +77,10 @@ export class VectorStore {
     if (!this.client) {
       const ChromaClientClass = await getChromaClient();
       this.client = new ChromaClientClass({
-        path: `http://${this.config.vectorStore.host}:${this.config.vectorStore.port}`,
-      });
+        host: this.config.vectorStore.host,
+        port: this.config.vectorStore.port,
+        ssl: false,
+      } as any);
     }
     return this.client;
   }
@@ -113,6 +115,7 @@ export class VectorStore {
             metadata: {
               createdAt: new Date().toISOString(),
               projectId: projectId,
+              "hnsw:space": "cosine",
             },
           });
         }
@@ -129,8 +132,7 @@ export class VectorStore {
       }
 
       throw new VectorStoreError(
-        `Failed to create collection for project ${projectId}: ${
-          error.message || "Unknown error"
+        `Failed to create collection for project ${projectId}: ${error.message || "Unknown error"
         }`,
       );
     }
@@ -189,8 +191,7 @@ export class VectorStore {
       }
 
       throw new VectorStoreError(
-        `Failed to add documents to project ${projectId}: ${
-          error.message || "Unknown error"
+        `Failed to add documents to project ${projectId}: ${error.message || "Unknown error"
         }`,
       );
     }
@@ -264,8 +265,7 @@ export class VectorStore {
       }
 
       throw new VectorStoreError(
-        `Failed to perform similarity search for project ${projectId}: ${
-          error.message || "Unknown error"
+        `Failed to perform similarity search for project ${projectId}: ${error.message || "Unknown error"
         }`,
       );
     }
@@ -306,8 +306,7 @@ export class VectorStore {
       }
 
       throw new VectorStoreError(
-        `Failed to delete collection for project ${projectId}: ${
-          error.message || "Unknown error"
+        `Failed to delete collection for project ${projectId}: ${error.message || "Unknown error"
         }`,
       );
     }

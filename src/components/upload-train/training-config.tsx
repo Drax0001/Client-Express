@@ -1,39 +1,59 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Settings, Info, AlertTriangle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Slider } from "@/components/ui/slider"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
 export interface TrainingConfig {
-  name: string
-  description?: string
-  chunkSize: number
-  chunkOverlap: number
-  embeddingModel: string
-  temperature: number
-  maxTokens: number
+  name: string;
+  description?: string;
+  chunkSize: number;
+  chunkOverlap: number;
+  embeddingModel: string;
+  temperature: number;
+  maxTokens: number;
 }
 
 interface TrainingConfigProps {
-  config: TrainingConfig
-  onConfigChange: (config: TrainingConfig) => void
-  disabled?: boolean
-  className?: string
+  config: TrainingConfig;
+  onConfigChange: (config: TrainingConfig) => void;
+  disabled?: boolean;
+  className?: string;
 }
 
 const EMBEDDING_MODELS = [
-  { value: "gemini", label: "Google Gemini", description: "High-quality embeddings" },
-  { value: "local", label: "Local Model", description: "Run locally for privacy" },
-]
+  {
+    value: "gemini",
+    label: "Google Gemini",
+    description: "High-quality embeddings",
+  },
+  {
+    value: "local",
+    label: "Local Model",
+    description: "Run locally for privacy",
+  },
+];
 
 const RECOMMENDED_PRESETS = {
   general: {
@@ -57,7 +77,7 @@ const RECOMMENDED_PRESETS = {
     maxTokens: 1536,
     name: "Creative Content",
   },
-}
+};
 
 export function TrainingConfig({
   config,
@@ -66,8 +86,8 @@ export function TrainingConfig({
   className,
 }: TrainingConfigProps) {
   const updateConfig = (updates: Partial<TrainingConfig>) => {
-    onConfigChange({ ...config, ...updates })
-  }
+    onConfigChange({ ...config, ...updates });
+  };
 
   const applyPreset = (preset: typeof RECOMMENDED_PRESETS.general) => {
     updateConfig({
@@ -75,52 +95,58 @@ export function TrainingConfig({
       chunkOverlap: preset.chunkOverlap,
       temperature: preset.temperature,
       maxTokens: preset.maxTokens,
-    })
-  }
+    });
+  };
 
   const getEstimatedTokens = (chunkSize: number, overlap: number): number => {
     // Rough estimation: 1 token ≈ 4 characters for English text
-    return Math.round((chunkSize - overlap) / 4)
-  }
+    return Math.round((chunkSize - overlap) / 4);
+  };
 
   const validateConfig = (): string[] => {
-    const errors: string[] = []
+    const errors: string[] = [];
 
     if (!config.name.trim()) {
-      errors.push("Chatbot name is required")
+      errors.push("Chatbot name is required");
     }
 
     if (config.chunkSize < 500 || config.chunkSize > 2000) {
-      errors.push("Chunk size must be between 500 and 2000 characters")
+      errors.push("Chunk size must be between 500 and 2000 characters");
     }
 
     if (config.chunkOverlap < 0 || config.chunkOverlap >= config.chunkSize) {
-      errors.push("Chunk overlap must be less than chunk size and non-negative")
+      errors.push(
+        "Chunk overlap must be less than chunk size and non-negative",
+      );
     }
 
     if (config.temperature < 0 || config.temperature > 1) {
-      errors.push("Temperature must be between 0 and 1")
+      errors.push("Temperature must be between 0 and 1");
     }
 
     if (config.maxTokens < 100 || config.maxTokens > 4096) {
-      errors.push("Max tokens must be between 100 and 4096")
+      errors.push("Max tokens must be between 100 and 4096");
     }
 
-    return errors
-  }
+    return errors;
+  };
 
-  const errors = validateConfig()
-  const estimatedTokens = getEstimatedTokens(config.chunkSize, config.chunkOverlap)
+  const errors = validateConfig();
+  const estimatedTokens = getEstimatedTokens(
+    config.chunkSize,
+    config.chunkOverlap,
+  );
 
   return (
     <div className={cn("space-y-6", className)}>
       <div className="space-y-2">
         <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Settings className="h-5 w-5" />
+          <AppIcon name="Settings" className="h-5 w-5" />
           Training Configuration
         </h3>
         <p className="text-sm text-muted-foreground">
-          Configure how your documents will be processed and how your chatbot will respond
+          Configure how your documents will be processed and how your chatbot
+          will respond
         </p>
       </div>
 
@@ -128,7 +154,9 @@ export function TrainingConfig({
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">Quick Presets</CardTitle>
-          <CardDescription>Choose a recommended configuration for your use case</CardDescription>
+          <CardDescription>
+            Choose a recommended configuration for your use case
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
@@ -167,7 +195,8 @@ export function TrainingConfig({
               onChange={(e) => updateConfig({ name: e.target.value })}
               disabled={disabled}
               className={cn(
-                !config.name.trim() && "border-destructive focus-visible:ring-destructive"
+                !config.name.trim() &&
+                  "border-destructive focus-visible:ring-destructive",
               )}
             />
           </div>
@@ -191,7 +220,7 @@ export function TrainingConfig({
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
             Document Processing
-            <Info className="h-4 w-4 text-muted-foreground" />
+            <AppIcon name="Info" className="h-4 w-4 text-muted-foreground" />
           </CardTitle>
           <CardDescription>
             Configure how documents are split into chunks for processing
@@ -200,7 +229,9 @@ export function TrainingConfig({
         <CardContent className="space-y-6">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label htmlFor="chunk-size">Chunk Size: {config.chunkSize} characters</Label>
+              <Label htmlFor="chunk-size">
+                Chunk Size: {config.chunkSize} characters
+              </Label>
               <Badge variant="secondary">{estimatedTokens} tokens/chunk</Badge>
             </div>
             <Slider
@@ -263,7 +294,9 @@ export function TrainingConfig({
                   <SelectItem key={model.value} value={model.value}>
                     <div>
                       <div className="font-medium">{model.label}</div>
-                      <div className="text-xs text-muted-foreground">{model.description}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {model.description}
+                      </div>
                     </div>
                   </SelectItem>
                 ))}
@@ -282,7 +315,9 @@ export function TrainingConfig({
                 max={1}
                 step={0.1}
                 value={[config.temperature]}
-                onValueChange={([value]) => updateConfig({ temperature: value })}
+                onValueChange={([value]) =>
+                  updateConfig({ temperature: value })
+                }
                 disabled={disabled}
                 className="w-full"
               />
@@ -292,9 +327,7 @@ export function TrainingConfig({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="max-tokens">
-                Max Tokens: {config.maxTokens}
-              </Label>
+              <Label htmlFor="max-tokens">Max Tokens: {config.maxTokens}</Label>
               <Slider
                 id="max-tokens"
                 min={100}
@@ -350,5 +383,5 @@ export function TrainingConfig({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

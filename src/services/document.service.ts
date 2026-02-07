@@ -66,8 +66,33 @@ export class DocumentService {
     // Initialize ChromaDB client for vector store operations
     const config = getConfig();
     this.chromaClient = new ChromaClient({
-      path: `http://${config.vectorStore.host}:${config.vectorStore.port}`,
+      host: config.vectorStore.host,
+      port: config.vectorStore.port,
+      ssl: false,
+    } as any);
+  }
+
+  /**
+   * Retrieve a document by id
+   */
+  async getDocument(documentId: string): Promise<Document> {
+    const document = await prisma.document.findUnique({
+      where: { id: documentId },
     });
+
+    if (!document) {
+      throw new NotFoundError(`Document with id ${documentId} not found`);
+    }
+
+    return {
+      id: document.id,
+      projectId: document.projectId,
+      filename: document.filename,
+      fileType: document.fileType as "pdf" | "docx" | "txt" | "url",
+      status: document.status as DocumentStatus,
+      uploadedAt: document.uploadedAt,
+      errorMessage: document.errorMessage || undefined,
+    };
   }
 
   /**
@@ -407,6 +432,18 @@ export class DocumentService {
         throw error;
       }
 
+      // If extraction produced no usable text, fail early (otherwise embedding providers may return empty vectors)
+      if (!extractedText || extractedText.trim().length === 0) {
+        await prisma.document.update({
+          where: { id: documentId },
+          data: {
+            status: "failed",
+            errorMessage: "No text could be extracted from document",
+          },
+        });
+        return;
+      }
+
       // Step 2: Chunk text
       // Requirements: 4.1, 4.2, 4.3, 4.4
       const chunks = await this.textChunker.chunkText(extractedText, {
@@ -414,7 +451,9 @@ export class DocumentService {
         filename: document.filename,
       });
 
-      if (chunks.length === 0) {
+      const nonEmptyChunks = chunks.filter((c) => c.text.trim().length > 0);
+
+      if (nonEmptyChunks.length === 0) {
         await prisma.document.update({
           where: { id: documentId },
           data: {
@@ -428,9 +467,33 @@ export class DocumentService {
       // Step 3: Generate embeddings via EmbeddingService
       let embeddings: number[][];
       try {
-        const chunkTexts = chunks.map((chunk) => chunk.text);
+        const chunkTexts = nonEmptyChunks.map((chunk) => chunk.text);
         embeddings =
           await this.embeddingService.generateBatchEmbeddings(chunkTexts);
+
+        // Defensive validation: embeddings must be present, numeric, and 1:1 with chunks
+        if (embeddings.length !== nonEmptyChunks.length) {
+          throw new ValidationError(
+            `Embedding generation returned ${embeddings.length} embeddings for ${nonEmptyChunks.length} chunks`,
+          );
+        }
+
+        for (let i = 0; i < embeddings.length; i++) {
+          const e = embeddings[i];
+          if (!Array.isArray(e) || e.length === 0) {
+            throw new ValidationError(
+              `Embedding generation produced an empty embedding at index ${i}`,
+            );
+          }
+
+          for (const v of e) {
+            if (typeof v !== "number" || Number.isNaN(v)) {
+              throw new ValidationError(
+                `Embedding generation produced a non-numeric value at index ${i}`,
+              );
+            }
+          }
+        }
       } catch (error) {
         // Requirement 5.5: Mark document as failed if embedding fails
         await prisma.document.update({
@@ -447,6 +510,7 @@ export class DocumentService {
       // Requirements: 5.2, 5.3
       try {
         const collectionName = `project_${document.projectId}`;
+        const embeddingDim = embeddings?.[0]?.length || 0;
 
         // Get or create collection for this project
         // Requirement 5.3: Store in project-specific collection
@@ -464,12 +528,43 @@ export class DocumentService {
 
         // Add documents to collection
         // Requirement 5.2: Store embedding vector with chunk text
-        await collection.add({
-          ids: chunks.map((chunk, i) => `${documentId}_${i}`),
+        const addPayload = {
+          ids: nonEmptyChunks.map((chunk, i) => `${documentId}_${i}`),
           embeddings: embeddings,
-          documents: chunks.map((chunk) => chunk.text),
-          metadatas: chunks.map((chunk) => chunk.metadata),
-        });
+          documents: nonEmptyChunks.map((chunk) => chunk.text),
+          metadatas: nonEmptyChunks.map((chunk) => chunk.metadata),
+        };
+
+        try {
+          await collection.add(addPayload);
+        } catch (addError) {
+          const msg = (addError as Error)?.message || "";
+          const isDimMismatch =
+            msg.includes("Collection expecting embedding with dimension") ||
+            msg.includes("expecting embedding with dimension");
+
+          if (!isDimMismatch) {
+            throw addError;
+          }
+
+          // Dimension mismatch usually means the project collection was created
+          // under a different embedding model/dimension. Recreate collection and retry once.
+          try {
+            await this.chromaClient.deleteCollection({ name: collectionName });
+          } catch {
+            // ignore delete failures; create will fail if it still exists
+          }
+
+          collection = await this.chromaClient.createCollection({
+            name: collectionName,
+            metadata: {
+              recreatedAt: new Date().toISOString(),
+              embeddingDim,
+            },
+          });
+
+          await collection.add(addPayload);
+        }
       } catch (error) {
         // Mark document as failed if vector storage fails
         await prisma.document.update({

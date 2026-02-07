@@ -31,6 +31,72 @@ export function UploadInterface({
   const [uploads, setUploads] = React.useState<UploadItem[]>([])
   const uploadMutation = useUploadDocument()
 
+  const pollDocumentUntilDone = React.useCallback(
+    async (documentId: string, uploadId: string) => {
+      // Drive a visible progress bar while we wait for background processing
+      let processingProgress = 10
+
+      const processingTick = setInterval(() => {
+        processingProgress = Math.min(processingProgress + 3, 95)
+        setUploads(prev => prev.map(u =>
+          u.id === uploadId && u.status === "processing"
+            ? { ...u, progress: processingProgress }
+            : u,
+        ))
+      }, 600)
+
+      try {
+        // Poll until ready/failed (or timeout)
+        const startedAt = Date.now()
+        const timeoutMs = 120000
+
+        while (Date.now() - startedAt < timeoutMs) {
+          const res = await fetch(`/api/documents/${documentId}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          })
+
+          if (!res.ok) {
+            throw new Error(`Failed to check document status (${res.status})`)
+          }
+
+          const doc = await res.json()
+
+          if (doc.status === "ready") {
+            setUploads(prev => prev.map(u =>
+              u.id === uploadId
+                ? { ...u, status: "completed" as const, progress: 100 }
+                : u,
+            ))
+            onUploadSuccess?.()
+            return
+          }
+
+          if (doc.status === "failed") {
+            setUploads(prev => prev.map(u =>
+              u.id === uploadId
+                ? {
+                    ...u,
+                    status: "failed" as const,
+                    progress: 100,
+                    error: doc.errorMessage || "Document processing failed",
+                  }
+                : u,
+            ))
+            return
+          }
+
+          await new Promise(r => setTimeout(r, 1200))
+        }
+
+        throw new Error("Timed out waiting for document processing")
+      } finally {
+        clearInterval(processingTick)
+      }
+    },
+    [onUploadSuccess],
+  )
+
   const handleFileUpload = async (files: File[]) => {
     const newUploads: UploadItem[] = files.map((file) => ({
       id: `${Date.now()}-${Math.random()}`,
@@ -69,16 +135,17 @@ export function UploadInterface({
         }
 
         console.log("UploadInterface: Sending upload request");
-        await uploadMutation.mutateAsync(uploadRequest)
+        const uploadedDoc = await uploadMutation.mutateAsync(uploadRequest)
 
         clearInterval(progressInterval)
         setUploads(prev => prev.map(upload =>
           upload.id === uploadId
-            ? { ...upload, status: "completed" as const, progress: 100 }
+            ? { ...upload, status: "processing" as const, progress: 10 }
             : upload
         ))
 
-        onUploadSuccess?.()
+        // Wait for background processing (extract → chunk → embed → store)
+        await pollDocumentUntilDone(uploadedDoc.id, uploadId)
       } catch (error: any) {
         setUploads(prev => prev.map(upload =>
           upload.id === uploadId
@@ -120,15 +187,15 @@ export function UploadInterface({
         url,
       }
 
-      await uploadMutation.mutateAsync(uploadRequest)
+      const uploadedDoc = await uploadMutation.mutateAsync(uploadRequest)
 
       setUploads(prev => prev.map(upload =>
         upload.id === uploadId
-          ? { ...upload, status: "completed" as const, progress: 100 }
+          ? { ...upload, status: "processing" as const, progress: 10 }
           : upload
       ))
 
-      onUploadSuccess?.()
+      await pollDocumentUntilDone(uploadedDoc.id, uploadId)
     } catch (error: any) {
       setUploads(prev => prev.map(upload =>
         upload.id === uploadId

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bot, FileText, Trash2 } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +28,7 @@ export function ProjectCard({
     <Card
       role="button"
       tabIndex={0}
-      className="group relative overflow-hidden hover-lift transition-all duration-300 touch-manipulation border-0 shadow-soft bg-gradient-to-br from-card via-card to-card/50 cursor-pointer"
+      className="group relative overflow-hidden transition-all duration-200 touch-manipulation border border-border/60 shadow-medium bg-card cursor-pointer hover:shadow-strong"
       onClick={() => router.push(`/projects/${id}`)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -37,16 +37,15 @@ export function ProjectCard({
         }
       }}
     >
-      <div className="absolute inset-0 bg-gradient-accent opacity-0 group-hover:opacity-5 transition-opacity duration-300 rounded-lg" />
-      <CardHeader className="pb-4 relative">
+      <CardHeader className="pb-4 relative p-6">
         <div className="flex items-start justify-between">
-          <CardTitle className="text-xl font-bold truncate pr-2 bg-gradient-primary bg-clip-text text-transparent">
+          <CardTitle className="text-xl font-semibold leading-tight pr-2 text-foreground">
             <Link
               href={`/projects/${id}`}
               className="focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
               onClick={(e) => e.stopPropagation()}
             >
-              {name}
+              <span className="line-clamp-2">{name}</span>
             </Link>
           </CardTitle>
           <DeleteProjectDialog projectId={id} projectName={name}>
@@ -56,55 +55,40 @@ export function ProjectCard({
               className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 touch-manipulation flex-shrink-0 rounded-full transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
-              <Trash2 className="h-4 w-4" />
+              <AppIcon name="Trash2" className="h-4 w-4" />
               <span className="sr-only">Delete project</span>
             </Button>
           </DeleteProjectDialog>
         </div>
-        <div className="flex items-center gap-2 mt-2">
-          <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-sm text-muted-foreground">
-            {documentCount} {documentCount === 1 ? "document" : "documents"}
-          </span>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mt-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <FileText className="h-4 w-4" />
-            <span>{documentCount} documents</span>
+            <AppIcon name="FileText" className="h-4 w-4" />
+            <span>
+              {documentCount} {documentCount === 1 ? "document" : "documents"}
+            </span>
           </div>
-          <Badge variant="outline">
+          <Badge variant="secondary" className="font-medium">
             {documentCount > 0 ? "Ready" : "Empty"}
           </Badge>
         </div>
-
-        <div className="flex gap-3" onClick={(e) => e.stopPropagation()}>
-          <Button
-            asChild
-            className="flex-1 bg-gradient-secondary hover:opacity-90 text-secondary-foreground shadow-soft hover:shadow-medium transition-all font-semibold"
-          >
-            <Link href={`/projects/${id}`} className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
+      </CardHeader>
+      <CardContent className="pt-0 p-6">
+        <div className="grid grid-cols-2 gap-3" onClick={(e) => e.stopPropagation()}>
+          <Button asChild className="w-full font-medium">
+            <Link href={`/projects/${id}`} className="flex items-center justify-center gap-2">
+              <AppIcon name="Settings" className="h-4 w-4" />
               Manage
             </Link>
           </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="bg-gradient-accent hover:bg-accent text-accent-foreground border-accent/20 shadow-soft hover:shadow-medium transition-all font-semibold"
-          >
-            <Link
-              href={`/projects/${id}/chat`}
-              className="flex items-center gap-2"
-            >
-              <Bot className="h-4 w-4" />
+          <Button asChild variant="outline" className="w-full font-medium">
+            <Link href={`/projects/${id}/chat`} className="flex items-center justify-center gap-2">
+              <AppIcon name="MessageSquare" className="h-4 w-4" />
               Chat
             </Link>
           </Button>
         </div>
 
-        <p className="text-xs text-muted-foreground mt-3">
+        <p className="text-xs text-muted-foreground mt-4">
           Created {createdAt.toLocaleDateString()}
         </p>
       </CardContent>

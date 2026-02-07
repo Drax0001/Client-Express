@@ -5,105 +5,23 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { TrainingService, TrainingConfig } from "@/services/training.service";
-import { UploadService } from "@/services/upload.service";
-import { errorHandler } from "@/lib/error-handler";
-import { auditLog } from "@/lib/audit";
-
-const trainingService = new TrainingService();
-const uploadService = new UploadService();
+ 
+function disabledResponse() {
+  return NextResponse.json(
+    {
+      error: "Disabled",
+      details: "Legacy training endpoints are currently disabled.",
+    },
+    { status: 410 },
+  );
+}
 
 /**
  * POST /api/train
  * Starts training with validated configuration
  */
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-
-    console.log("API: Train - received request:", {
-      uploadId: body.uploadId,
-      hasConfig: !!body.configuration,
-    });
-
-    // Validate required fields
-    if (!body.uploadId) {
-      return NextResponse.json(
-        {
-          error: "Validation failed",
-          details: "uploadId is required",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (!body.configuration) {
-      return NextResponse.json(
-        {
-          error: "Validation failed",
-          details: "configuration is required",
-        },
-        { status: 400 }
-      );
-    }
-
-    const { uploadId, configuration } = body;
-
-    // Validate configuration
-    const configErrors = validateTrainingConfig(configuration);
-    if (configErrors.length > 0) {
-      return NextResponse.json(
-        {
-          error: "Validation failed",
-          details: configErrors.join(", "),
-        },
-        { status: 400 }
-      );
-    }
-
-    // Check if upload session exists and is valid for training
-    const validation = uploadService.validateSessionForTraining(uploadId);
-    if (!validation.isValid) {
-      return NextResponse.json(
-        {
-          error: "Invalid upload session",
-          details: validation.issues.join(", "),
-        },
-        { status: 400 }
-      );
-    }
-
-    console.log(`API: Train - starting training for upload ${uploadId} with config:`, configuration);
-
-    // Start training
-    const result = await trainingService.startTraining(uploadId, configuration);
-
-    auditLog({
-      action: "training.start",
-      resourceId: result.trainingId,
-      metadata: { chatbotId: result.chatbotId, uploadId },
-    });
-
-    const response = {
-      trainingId: result.trainingId,
-      chatbotId: result.chatbotId,
-      status: "queued",
-      message: "Training started successfully",
-      estimatedDuration: Math.round(validation.totalSize / 1000000 * 60), // Rough estimate: 1 minute per MB
-      config: configuration,
-    };
-
-    console.log(`API: Train - training started:`, {
-      trainingId: result.trainingId,
-      chatbotId: result.chatbotId
-    });
-
-    return NextResponse.json(response, { status: 201 });
-
-  } catch (error) {
-    console.error("API: Train - unexpected error:", error);
-    return errorHandler(error);
-  }
+  return disabledResponse();
 }
 
 /**

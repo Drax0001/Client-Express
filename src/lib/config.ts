@@ -159,7 +159,7 @@ export function loadConfig(): AppConfig {
   const chromaPort = parseInt(process.env.CHROMA_PORT || "8000", 10);
   const maxFileSizeMB = parseInt(process.env.MAX_FILE_SIZE_MB || "10", 10);
   const relevanceThreshold = parseFloat(
-    process.env.RELEVANCE_THRESHOLD || "0.75"
+    process.env.RELEVANCE_THRESHOLD || "0.4"
   );
   const llmTemperature = parseFloat(process.env.LLM_TEMPERATURE || "0.3");
   const llmMaxTokens = parseInt(process.env.LLM_MAX_TOKENS || "1024", 10);
@@ -223,7 +223,7 @@ export function loadConfig(): AppConfig {
       provider: llmProvider,
       apiKey: llmApiKey,
       endpoint: llmEndpoint,
-      modelName: process.env.LLM_MODEL_NAME || "gemini-pro",
+      modelName: process.env.LLM_MODEL_NAME || "gemini-2.5-flash",
       temperature: llmTemperature,
       maxTokens: llmMaxTokens,
     },
@@ -231,7 +231,7 @@ export function loadConfig(): AppConfig {
       provider: embeddingProvider,
       apiKey: embeddingApiKey,
       endpoint: embeddingEndpoint,
-      modelName: process.env.EMBEDDING_MODEL_NAME || "text-embedding-004",
+      modelName: process.env.EMBEDDING_MODEL_NAME || "gemini-embedding-001",
       dimensions: embeddingDimensions,
     },
     vectorStore: {

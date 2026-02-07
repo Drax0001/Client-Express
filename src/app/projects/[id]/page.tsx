@@ -2,7 +2,8 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MessageSquare, FileText } from "lucide-react";
+import { useEffect } from "react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,10 +21,26 @@ export default function ProjectPage() {
   const params = useParams();
   const projectId = params.id as string;
 
-  const { data: project, isLoading, error } = useProject(projectId);
+  const { data: project, isLoading, error, refetch } = useProject(projectId);
 
   const deleteDocument = useDeleteDocument();
   const retryDocument = useRetryDocument();
+
+  useEffect(() => {
+    const hasInFlightDocs =
+      (project?.documents || []).some(
+        (d) => d.status === "pending" || d.status === "processing",
+      ) ?? false;
+
+    if (!hasInFlightDocs) return;
+
+    const interval = setInterval(() => {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      refetch();
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, [project?.documents, refetch]);
 
   if (isLoading) {
     return (
@@ -49,8 +66,8 @@ export default function ProjectPage() {
             don&apos;t have access to it.
           </p>
           <Button asChild>
-            <Link href="/">
-              <ArrowLeft className="mr-2 h-4 w-4" />
+            <Link href="/projects">
+              <AppIcon name="ArrowLeft" className="mr-2 h-4 w-4" />
               Back to Projects
             </Link>
           </Button>
@@ -63,11 +80,11 @@ export default function ProjectPage() {
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/">
-                <ArrowLeft className="mr-2 h-4 w-4" />
+              <Link href="/projects">
+                <AppIcon name="ArrowLeft" className="mr-2 h-4 w-4" />
                 Back to Projects
               </Link>
             </Button>
@@ -84,7 +101,10 @@ export default function ProjectPage() {
           <div className="flex items-center gap-4">
             <div className="text-right">
               <div className="flex items-center gap-2 mb-1">
-                <FileText className="h-4 w-4 text-muted-foreground" />
+                <AppIcon
+                  name="FileText"
+                  className="h-4 w-4 text-muted-foreground"
+                />
                 <span className="text-sm font-medium">
                   {project.documentCount} documents
                 </span>
@@ -96,7 +116,7 @@ export default function ProjectPage() {
 
             <Button asChild>
               <Link href={`/projects/${projectId}/chat`}>
-                <MessageSquare className="mr-2 h-4 w-4" />
+                <AppIcon name="MessageSquare" className="mr-2 h-4 w-4" />
                 Start Chat
               </Link>
             </Button>

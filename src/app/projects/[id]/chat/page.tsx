@@ -2,10 +2,10 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MessageSquare } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { MainLayout } from "@/components/layout/main-layout";
-import { ChatInterface, Message } from "@/components/chat/chat-interface";
+import { ChatPanel, Message } from "@/components/chat/chat-panel";
 import { useProject, useSendChatMessage } from "@/lib/api/hooks";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -110,8 +110,8 @@ export default function ChatPage() {
             access to it.
           </p>
           <Button asChild>
-            <Link href="/">
-              <ArrowLeft className="mr-2 h-4 w-4" />
+            <Link href="/projects">
+              <AppIcon name="ArrowLeft" className="mr-2 h-4 w-4" />
               Back to Projects
             </Link>
           </Button>
@@ -121,23 +121,29 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center">
+    <MainLayout>
+      <div className="flex flex-col min-h-0">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" asChild>
               <Link href={`/projects/${projectId}`}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <AppIcon name="ArrowLeft" className="mr-2 h-4 w-4" />
                 Back to Project
               </Link>
             </Button>
 
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary rounded-lg shadow-soft">
+                <AppIcon
+                  name="MessageSquare"
+                  className="h-5 w-5 text-primary-foreground"
+                />
+              </div>
               <div>
-                <h1 className="font-semibold">{project.name}</h1>
-                <p className="text-xs text-muted-foreground">
+                <h1 className="text-2xl font-bold tracking-tight">
+                  {project.name}
+                </h1>
+                <p className="text-sm text-muted-foreground">
                   {project.documentCount} document
                   {project.documentCount !== 1 ? "s" : ""} • Chat
                 </p>
@@ -146,43 +152,43 @@ export default function ChatPage() {
           </div>
 
           {!hasDocuments && (
-            <div className="ml-auto">
-              <Button asChild variant="outline" size="sm">
-                <Link href={`/projects/${projectId}`}>Upload Documents</Link>
-              </Button>
+            <Button asChild variant="outline">
+              <Link href={`/projects/${projectId}`}>Upload Documents</Link>
+            </Button>
+          )}
+        </div>
+
+        <div className="flex-1 min-h-0 mt-6">
+          {hasDocuments ? (
+            <ChatPanel
+              messages={messages}
+              onSendMessage={handleSendMessage}
+              isTyping={isTyping}
+              disabled={sendMessageMutation.isPending}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center max-w-md mx-auto p-8">
+                <AppIcon
+                  name="MessageSquare"
+                  className="h-16 w-16 text-muted-foreground mx-auto mb-4"
+                />
+                <h2 className="text-xl font-semibold mb-2">
+                  No documents available
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                  You need to upload some documents to your project before you can
+                  start chatting. The AI will answer questions based on your
+                  uploaded content.
+                </p>
+                <Button asChild>
+                  <Link href={`/projects/${projectId}`}>Upload Documents</Link>
+                </Button>
+              </div>
             </div>
           )}
         </div>
-      </header>
-
-      {/* Chat Interface */}
-      <div className="flex-1">
-        {hasDocuments ? (
-          <ChatInterface
-            messages={messages}
-            onSendMessage={handleSendMessage}
-            isTyping={isTyping}
-            disabled={sendMessageMutation.isPending}
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center max-w-md mx-auto p-8">
-              <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">
-                No documents available
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                You need to upload some documents to your project before you can
-                start chatting. The AI will answer questions based on your
-                uploaded content.
-              </p>
-              <Button asChild>
-                <Link href={`/projects/${projectId}`}>Upload Documents</Link>
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
-    </div>
+    </MainLayout>
   );
 }

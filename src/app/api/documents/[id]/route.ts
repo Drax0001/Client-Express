@@ -8,6 +8,19 @@ import { errorHandler } from "@/lib/error-handler";
 
 const documentService = new DocumentService();
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+    const doc = await documentService.getDocument(id);
+    return NextResponse.json(doc, { status: 200 });
+  } catch (error) {
+    return errorHandler(error);
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },

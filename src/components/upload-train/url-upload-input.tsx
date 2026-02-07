@@ -1,32 +1,32 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Link, AlertCircle, CheckCircle, X, ExternalLink, Globe } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface ValidatedUrl {
-  id: string
-  url: string
-  status: 'pending' | 'validating' | 'ready' | 'error'
-  validationErrors: string[]
+  id: string;
+  url: string;
+  status: "pending" | "validating" | "ready" | "error";
+  validationErrors: string[];
   metadata?: {
-    title?: string
-    contentType?: string
-    size?: number
-    lastModified?: string
-  }
+    title?: string;
+    contentType?: string;
+    size?: number;
+    lastModified?: string;
+  };
 }
 
 interface UrlUploadInputProps {
-  urls: ValidatedUrl[]
-  onUrlsChange: (urls: ValidatedUrl[]) => void
-  maxUrls?: number
-  disabled?: boolean
-  className?: string
+  urls: ValidatedUrl[];
+  onUrlsChange: (urls: ValidatedUrl[]) => void;
+  maxUrls?: number;
+  disabled?: boolean;
+  className?: string;
 }
 
 export function UrlUploadInput({
@@ -36,180 +36,194 @@ export function UrlUploadInput({
   disabled = false,
   className,
 }: UrlUploadInputProps) {
-  const [currentUrl, setCurrentUrl] = React.useState("")
-  const [isValidating, setIsValidating] = React.useState(false)
-  const [error, setError] = React.useState("")
+  const [currentUrl, setCurrentUrl] = React.useState("");
+  const [isValidating, setIsValidating] = React.useState(false);
+  const [error, setError] = React.useState("");
 
   const validateUrl = (urlString: string): boolean => {
     try {
-      const url = new URL(urlString.trim())
-      return url.protocol === "http:" || url.protocol === "https:"
+      const url = new URL(urlString.trim());
+      return url.protocol === "http:" || url.protocol === "https:";
     } catch {
-      return false
+      return false;
     }
-  }
+  };
 
-  const fetchUrlMetadata = async (url: string): Promise<{ title?: string; contentType?: string; size?: number }> => {
+  const fetchUrlMetadata = async (
+    url: string,
+  ): Promise<{ title?: string; contentType?: string; size?: number }> => {
     try {
-      const response = await fetch(url, { method: 'HEAD' })
-      const contentType = response.headers.get('content-type') || undefined
-      const contentLength = response.headers.get('content-length')
-      const size = contentLength ? parseInt(contentLength) : undefined
+      const response = await fetch(url, { method: "HEAD" });
+      const contentType = response.headers.get("content-type") || undefined;
+      const contentLength = response.headers.get("content-length");
+      const size = contentLength ? parseInt(contentLength) : undefined;
 
-      return { contentType, size }
+      return { contentType, size };
     } catch {
       // If HEAD fails, try GET with limited range
       try {
         const response = await fetch(url, {
-          method: 'GET',
-          headers: { Range: 'bytes=0-1023' } // Just get first 1KB
-        })
-        const contentType = response.headers.get('content-type') || undefined
-        return { contentType }
+          method: "GET",
+          headers: { Range: "bytes=0-1023" }, // Just get first 1KB
+        });
+        const contentType = response.headers.get("content-type") || undefined;
+        return { contentType };
       } catch {
-        return {}
+        return {};
       }
     }
-  }
+  };
 
   const addUrl = async () => {
-    const trimmedUrl = currentUrl.trim()
+    const trimmedUrl = currentUrl.trim();
 
     if (!trimmedUrl) {
-      setError("URL is required")
-      return
+      setError("URL is required");
+      return;
     }
 
     if (!validateUrl(trimmedUrl)) {
-      setError("Please enter a valid HTTP or HTTPS URL")
-      return
+      setError("Please enter a valid HTTP or HTTPS URL");
+      return;
     }
 
     if (urls.length >= maxUrls) {
-      setError(`Maximum ${maxUrls} URLs allowed`)
-      return
+      setError(`Maximum ${maxUrls} URLs allowed`);
+      return;
     }
 
-    if (urls.some(u => u.url === trimmedUrl)) {
-      setError("This URL has already been added")
-      return
+    if (urls.some((u) => u.url === trimmedUrl)) {
+      setError("This URL has already been added");
+      return;
     }
 
-    setError("")
-    setIsValidating(true)
+    setError("");
+    setIsValidating(true);
 
     try {
       // Create validating entry
       const validatingUrl: ValidatedUrl = {
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         url: trimmedUrl,
-        status: 'validating',
+        status: "validating",
         validationErrors: [],
-      }
+      };
 
-      onUrlsChange([...urls, validatingUrl])
+      onUrlsChange([...urls, validatingUrl]);
 
       // Fetch metadata
-      const metadata = await fetchUrlMetadata(trimmedUrl)
+      const metadata = await fetchUrlMetadata(trimmedUrl);
 
       // Validate content type if available
-      const errors: string[] = []
+      const errors: string[] = [];
       if (metadata.contentType) {
         const supportedTypes = [
-          'application/pdf',
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'text/plain',
-          'text/markdown',
-          'text/html',
-        ]
-        if (!supportedTypes.some(type => metadata.contentType?.includes(type))) {
-          errors.push(`Content type ${metadata.contentType} may not be supported`)
+          "application/pdf",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "text/plain",
+          "text/markdown",
+          "text/html",
+        ];
+        if (
+          !supportedTypes.some((type) => metadata.contentType?.includes(type))
+        ) {
+          errors.push(
+            `Content type ${metadata.contentType} may not be supported`,
+          );
         }
       }
 
       // Update URL with validation results
-      const updatedUrls = urls.map(u =>
+      const updatedUrls = urls.map((u) =>
         u.id === validatingUrl.id
           ? {
               ...u,
-              status: errors.length === 0 ? 'ready' : 'error',
+              status: errors.length === 0 ? "ready" : "error",
               validationErrors: errors,
               metadata,
             }
-          : u
-      )
+          : u,
+      );
 
-      onUrlsChange([...updatedUrls, {
-        ...validatingUrl,
-        status: errors.length === 0 ? 'ready' : 'error',
-        validationErrors: errors,
-        metadata,
-      }])
-
+      onUrlsChange([
+        ...updatedUrls,
+        {
+          ...validatingUrl,
+          status: errors.length === 0 ? "ready" : "error",
+          validationErrors: errors,
+          metadata,
+        },
+      ]);
     } catch (fetchError) {
       // Update with error status
-      const updatedUrls = urls.map(u =>
+      const updatedUrls = urls.map((u) =>
         u.id === validatingUrl.id
           ? {
               ...u,
-              status: 'error',
-              validationErrors: ['Failed to validate URL - may be inaccessible'],
+              status: "error",
+              validationErrors: [
+                "Failed to validate URL - may be inaccessible",
+              ],
             }
-          : u
-      )
+          : u,
+      );
 
-      onUrlsChange(updatedUrls)
+      onUrlsChange(updatedUrls);
     }
 
-    setCurrentUrl("")
-    setIsValidating(false)
-  }
+    setCurrentUrl("");
+    setIsValidating(false);
+  };
 
   const removeUrl = (urlId: string) => {
-    onUrlsChange(urls.filter(u => u.id !== urlId))
-  }
+    onUrlsChange(urls.filter((u) => u.id !== urlId));
+  };
 
   const clearAll = () => {
-    onUrlsChange([])
-  }
+    onUrlsChange([]);
+  };
 
-  const getStatusIcon = (status: ValidatedUrl['status']) => {
+  const getStatusIcon = (status: ValidatedUrl["status"]) => {
     switch (status) {
-      case 'ready':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'error':
-        return <AlertCircle className="h-4 w-4 text-red-500" />
-      case 'validating':
-        return <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+      case "ready":
+        return (
+          <AppIcon name="CheckCircle" className="h-4 w-4 text-green-500" />
+        );
+      case "error":
+        return <AppIcon name="AlertCircle" className="h-4 w-4 text-red-500" />;
+      case "validating":
+        return (
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
-  const getStatusColor = (status: ValidatedUrl['status']) => {
+  const getStatusColor = (status: ValidatedUrl["status"]) => {
     switch (status) {
-      case 'ready':
-        return 'border-green-200 bg-green-50'
-      case 'error':
-        return 'border-red-200 bg-red-50'
-      case 'validating':
-        return 'border-blue-200 bg-blue-50'
+      case "ready":
+        return "border-green-200 bg-green-50";
+      case "error":
+        return "border-red-200 bg-red-50";
+      case "validating":
+        return "border-blue-200 bg-blue-50";
       default:
-        return 'border-gray-200'
+        return "border-gray-200";
     }
-  }
+  };
 
   const formatFileSize = (bytes?: number): string => {
-    if (!bytes) return 'Unknown'
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-  }
+    if (!bytes) return "Unknown";
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  };
 
-  const readyCount = urls.filter(u => u.status === 'ready').length
-  const errorCount = urls.filter(u => u.status === 'error').length
+  const readyCount = urls.filter((u) => u.status === "ready").length;
+  const errorCount = urls.filter((u) => u.status === "error").length;
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -224,7 +238,7 @@ export function UrlUploadInput({
       <div className="flex gap-2">
         <div className="flex-1 relative">
           <div className="absolute left-3 top-1/2 -translate-y-1/2">
-            <Globe className="h-4 w-4 text-muted-foreground" />
+            <AppIcon name="Globe" className="h-4 w-4 text-muted-foreground" />
           </div>
           <Input
             id="url-input"
@@ -232,18 +246,18 @@ export function UrlUploadInput({
             placeholder="https://example.com/document.pdf"
             value={currentUrl}
             onChange={(e) => {
-              setCurrentUrl(e.target.value)
-              if (error) setError("")
+              setCurrentUrl(e.target.value);
+              if (error) setError("");
             }}
             disabled={disabled || isValidating}
             className={cn(
               "pl-10",
-              error && "border-destructive focus-visible:ring-destructive"
+              error && "border-destructive focus-visible:ring-destructive",
             )}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                addUrl()
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addUrl();
               }
             }}
           />
@@ -251,7 +265,12 @@ export function UrlUploadInput({
         <Button
           type="button"
           onClick={addUrl}
-          disabled={disabled || isValidating || !currentUrl.trim() || urls.length >= maxUrls}
+          disabled={
+            disabled ||
+            isValidating ||
+            !currentUrl.trim() ||
+            urls.length >= maxUrls
+          }
         >
           {isValidating ? (
             <>
@@ -280,14 +299,15 @@ export function UrlUploadInput({
                 URLs ({urls.length}/{maxUrls})
               </h4>
               {readyCount > 0 && (
-                <Badge variant="secondary" className="text-green-700 bg-green-100">
+                <Badge
+                  variant="secondary"
+                  className="text-green-700 bg-green-100"
+                >
                   {readyCount} ready
                 </Badge>
               )}
               {errorCount > 0 && (
-                <Badge variant="destructive">
-                  {errorCount} errors
-                </Badge>
+                <Badge variant="destructive">{errorCount} errors</Badge>
               )}
             </div>
             <Button
@@ -307,11 +327,14 @@ export function UrlUploadInput({
                 key={url.id}
                 className={cn(
                   "flex items-center gap-3 p-3 border rounded-lg transition-colors",
-                  getStatusColor(url.status)
+                  getStatusColor(url.status),
                 )}
               >
                 <div className="flex-shrink-0">
-                  <Link className="h-4 w-4 text-muted-foreground" />
+                  <AppIcon
+                    name="Link"
+                    className="h-4 w-4 text-muted-foreground"
+                  />
                 </div>
 
                 <div className="flex-1 min-w-0 space-y-1">
@@ -323,7 +346,10 @@ export function UrlUploadInput({
                       className="text-sm font-medium text-blue-600 hover:text-blue-800 truncate flex items-center gap-1"
                     >
                       {url.url}
-                      <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                      <AppIcon
+                        name="ExternalLink"
+                        className="h-3 w-3 flex-shrink-0"
+                      />
                     </a>
                     {getStatusIcon(url.status)}
                   </div>
@@ -360,7 +386,7 @@ export function UrlUploadInput({
                   onClick={() => removeUrl(url.id)}
                   className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive flex-shrink-0"
                 >
-                  <X className="h-4 w-4" />
+                  <AppIcon name="X" className="h-4 w-4" />
                   <span className="sr-only">Remove URL</span>
                 </Button>
               </div>
@@ -370,9 +396,15 @@ export function UrlUploadInput({
       )}
 
       <div className="text-xs text-muted-foreground space-y-1">
-        <p>Supported formats: PDF, DOCX, TXT, HTML, Markdown files accessible via HTTP/HTTPS</p>
-        <p>URLs will be validated and documents will be downloaded during training</p>
+        <p>
+          Supported formats: PDF, DOCX, TXT, HTML, Markdown files accessible via
+          HTTP/HTTPS
+        </p>
+        <p>
+          URLs will be validated and documents will be downloaded during
+          training
+        </p>
       </div>
     </div>
-  )
+  );
 }
