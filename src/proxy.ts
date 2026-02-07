@@ -28,33 +28,33 @@ export async function proxy(request: NextRequest) {
     secret: authSecret,
   });
 
-  if (!token) {
-    if (pathname.startsWith("/api")) {
-      return NextResponse.json(
-        { error: "Unauthorized", details: "Authentication required" },
-        { status: 401 }
-      );
-    }
-    const landingUrl = request.nextUrl.clone();
-    landingUrl.pathname = "/";
-    return NextResponse.redirect(landingUrl);
-  }
+  // if (!token) {
+  //   if (pathname.startsWith("/api")) {
+  //     return NextResponse.json(
+  //       { error: "Unauthorized", details: "Authentication required" },
+  //       { status: 401 }
+  //     );
+  //   }
+  //   // const landingUrl = request.nextUrl.clone();
+  //   // landingUrl.pathname = "/";
+  //   // return NextResponse.redirect(landingUrl);
+  // }
 
-  if ((pathname === "/login" || pathname === "/signup") && token) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = token.name ? "/projects" : "/onboarding";
-    return NextResponse.redirect(redirectUrl);
-  }
+  // if ((pathname === "/login" || pathname === "/signup") && token) {
+  //   const redirectUrl = request.nextUrl.clone();
+  //   redirectUrl.pathname = token.name ? "/projects" : "/onboarding";
+  //   return NextResponse.redirect(redirectUrl);
+  // }
 
-  if (
-    !token.name &&
-    !pathname.startsWith("/onboarding") &&
-    !pathname.startsWith("/api")
-  ) {
-    const onboardingUrl = request.nextUrl.clone();
-    onboardingUrl.pathname = "/onboarding";
-    return NextResponse.redirect(onboardingUrl);
-  }
+  // if (
+  //   !token.name &&
+  //   !pathname.startsWith("/onboarding") &&
+  //   !pathname.startsWith("/api")
+  // ) {
+  //   const onboardingUrl = request.nextUrl.clone();
+  //   onboardingUrl.pathname = "/onboarding";
+  //   return NextResponse.redirect(onboardingUrl);
+  // }
 
   return NextResponse.next();
 }

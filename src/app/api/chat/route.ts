@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
     const result = await chatService.processQuery({
       projectId,
       message: message.trim(),
+      conversationHistory: body.conversationHistory,
     });
 
     console.log(`API: Chat - response generated for project ${projectId}`);

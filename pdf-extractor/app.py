@@ -32,8 +32,8 @@ async def extract_pdf(file: UploadFile = File(...), request: Request = None):
 
     contents = await file.read()
     try:
-        # Synchronous extraction (fast path). No OCR by default.
-        text, meta = await extract_text_from_pdf(contents, ocr=False)
+        # Synchronous extraction with intelligent OCR fallback for scanned PDFs
+        text, meta = await extract_text_from_pdf(contents, ocr=True)
         # print(f"text: {text}, meta: {meta}")
         return {"text": text, "meta": meta}
     except Exception as e:

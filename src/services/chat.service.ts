@@ -23,6 +23,7 @@ import { getUserApiKeys } from "../lib/user-api-key";
 export interface ChatRequest {
   projectId: string;
   message: string;
+  conversationHistory?: Array<{ role: "user" | "assistant"; content: string }>;
 }
 
 /**
@@ -119,7 +120,7 @@ export class ChatService {
    * @throws ServiceUnavailableError if external services are unavailable
    */
   async processQuery(request: ChatRequest): Promise<ChatResponse> {
-    const { projectId, message } = request;
+    const { projectId, message, conversationHistory } = request;
     const { embeddingService, llmService, config } =
       await this.getActiveServices();
 
@@ -197,6 +198,14 @@ export class ChatService {
       };
     }
 
+    // Count unique documents from search results
+    const uniqueDocumentIds = new Set(
+      searchResults
+        .map((result) => result.metadata?.documentId)
+        .filter((id) => id != null)
+    );
+    const sourceCount = uniqueDocumentIds.size;
+
     // 8.3: Assemble context if threshold met
     const context = this.assembleContext(searchResults);
 
@@ -205,10 +214,18 @@ export class ChatService {
 If the answer is not explicitly present in the context, respond exactly: "I don't know"
 Do not make assumptions or provide information not contained in the context.`;
 
+    // Build conversation context from history
+    let conversationContext = "";
+    if (conversationHistory && conversationHistory.length > 0) {
+      conversationContext = "\n\nPrevious conversation:\n" +
+        conversationHistory.map(msg => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`).join("\n") +
+        "\n\n";
+    }
+
     const userPrompt = `Context:
 ${context}
 
-Question: ${message}
+${conversationContext}Current question: ${message}
 
 Answer the question based only on the context provided above.`;
 
@@ -233,7 +250,7 @@ Answer the question based only on the context provided above.`;
     // 11.1, 11.2, 11.3: Return response verbatim with source count
     return {
       answer: llmResponse,
-      sourceCount: searchResults.length,
+      sourceCount,
     };
   }
 

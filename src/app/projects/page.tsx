@@ -9,14 +9,30 @@ import { useProjects } from "@/lib/api/hooks";
 import { useAppKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { AppIcon } from "@/components/ui/app-icon";
 import { useRef } from "react";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
 
 export default function ProjectsPage() {
+  // const { data: session, status } = useSession();
   const { data: projects, isLoading, error } = useProjects();
   const createProjectDialogRef = useRef<{ openDialog: () => void }>(null);
 
   useAppKeyboardShortcuts({
     createProject: () => createProjectDialogRef.current?.openDialog(),
   });
+
+  // if (status === "loading") {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  //     </div>
+  //   );
+  // }
+
+  // if (status === "unauthenticated") {
+  //   redirect("/login");
+  //   return null;
+  // }
 
   return (
     <MainLayout>

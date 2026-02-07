@@ -13,6 +13,49 @@ import * as cheerio from "cheerio";
  */
 export class TextExtractor {
   /**
+   * Main method to extract text from a document
+   * Dispatches to appropriate extractor based on filename (URL or file extension)
+   *
+   * @param filename - Document filename or URL
+   * @param buffer - File buffer (required for non-URL documents)
+   * @returns Extracted text content
+   * @throws ValidationError if extraction fails or unsupported format
+   */
+  async extractText(filename: string, buffer?: Buffer): Promise<string> {
+    try {
+      // Check if it's a URL
+      if (filename.startsWith("http://") || filename.startsWith("https://")) {
+        return await this.extractFromUrl(filename);
+      }
+
+      // For files, require buffer
+      if (!buffer) {
+        throw new ValidationError("Buffer is required for file extraction");
+      }
+
+      // Determine file type from extension
+      const lowerFilename = filename.toLowerCase();
+      if (lowerFilename.endsWith(".pdf")) {
+        return await this.extractFromPdf(buffer);
+      } else if (lowerFilename.endsWith(".docx")) {
+        return await this.extractFromDocx(buffer);
+      } else if (lowerFilename.endsWith(".txt")) {
+        return await this.extractFromTxt(buffer);
+      } else {
+        throw new ValidationError(`Unsupported file format: ${filename}`);
+      }
+    } catch (error) {
+      // Re-throw known errors
+      if (error instanceof ValidationError || error instanceof ServiceUnavailableError) {
+        throw error;
+      }
+      // Wrap unexpected errors
+      throw new ValidationError(
+        `Failed to extract text: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  }
+  /**
    * Extract text from PDF file using Python PDF extractor service
    * Requirements: 3.1
    *

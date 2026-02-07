@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 
@@ -18,7 +18,7 @@ export function Sidebar() {
     >
       <div className="flex items-center gap-3 px-3 py-2">
         <Link href="/projects" className="flex items-center gap-3">
-          <Image src="/images/clientExpressLogo.png" alt="ClientExpress" width={37} height={20} className="rounded-lg shadow-soft" />
+          <Image src="/images/clientExpressLogo.png" alt="ClientExpress" width={50} height={50} className="" />
           {!collapsed && (
             <span className="font-bold">
               ClientExpress
@@ -44,20 +44,21 @@ export function Sidebar() {
         </Link>
       </nav>
 
-      <div className="pt-3 mt-3 border-t border-border/50 flex items-center justify-between gap-2">
-        {!collapsed && (
+      <div className="pt-3 mt-3 border-t border-border/50 flex items-center justify-between">
+        {!collapsed && session?.user && (
           <div className="flex flex-col gap-1 px-2 text-xs">
             <span className="text-muted-foreground truncate">
-              {displayName || "Complete your profile"}
+              {displayName || session.user.email || "User"}
             </span>
-            {!displayName && (
-              <Link
-                href="/onboarding"
-                className="text-primary text-xs font-medium"
-              >
-                Add your name
-              </Link>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="w-full justify-start h-8 text-xs"
+            >
+              <AppIcon name="LogOut" className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
           </div>
         )}
         <Button

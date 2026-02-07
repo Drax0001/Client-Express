@@ -13,6 +13,8 @@ datasource db {
 model Project {
   id        String     @id @default(cuid())
   name      String
+  userId    String?
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime   @default(now())
   documents Document[]
 }
@@ -29,6 +31,7 @@ model User {
   sessions         Session[]
   apiKeys          UserApiKey[]
   technicalSetting TechnicalSetting?
+  projects         Project[]
 }
 
 model Account {
