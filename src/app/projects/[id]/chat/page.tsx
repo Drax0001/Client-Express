@@ -8,7 +8,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { ChatPanel, Message } from "@/components/chat/chat-panel";
 import { useProject, useSendChatMessage } from "@/lib/api/hooks";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function ChatPage() {
   const params = useParams();
@@ -24,6 +24,34 @@ export default function ChatPage() {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+
+  // Load messages from localStorage on mount and when projectId changes
+  useEffect(() => {
+    const storedMessages = localStorage.getItem(`chat-messages-${projectId}`);
+    if (storedMessages) {
+      try {
+        const parsedMessages = JSON.parse(storedMessages);
+        // Ensure timestamps are Date objects
+        const messagesWithDates = parsedMessages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        }));
+        setMessages(messagesWithDates);
+      } catch (error) {
+        console.error(
+          "Failed to load chat messages from localStorage:",
+          error,
+        );
+      }
+    }
+  }, [projectId]);
+
+  // Save messages to localStorage whenever messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem(`chat-messages-${projectId}`, JSON.stringify(messages));
+    }
+  }, [messages, projectId]);
 
   // Check if project has documents
   const hasDocuments = project && project.documentCount > 0;

@@ -1,6 +1,5 @@
-"use client";
-
 import Link from "next/link";
+import Image from "next/image";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -16,11 +15,9 @@ export function Header() {
             className="mr-6 flex items-center space-x-3 hover:opacity-90 transition-all hover-lift group"
             href="/projects"
           >
-            <div className="p-2 bg-primary rounded-xl shadow-medium group-hover:shadow-strong transition-shadow">
-              <AppIcon name="Bot" className="h-6 w-6 text-primary-foreground" />
-            </div>
+            <Image src="/images/clientExpressLogo.png" alt="ClientExpress" width={44} height={24} className="rounded-xl shadow-medium group-hover:shadow-strong transition-shadow" />
             <span className="hidden font-bold text-xl sm:inline-block">
-              RAG Chatbot
+              ClientExpress
             </span>
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
@@ -58,14 +55,9 @@ export function Header() {
               className="flex items-center space-x-3 mb-8 p-3 rounded-xl bg-card shadow-soft"
               href="/projects"
             >
-              <div className="p-2 bg-primary rounded-lg">
-                <AppIcon
-                  name="Bot"
-                  className="h-5 w-5 text-primary-foreground"
-                />
-              </div>
+              <Image src="/images/clientExpressLogo.png" alt="ClientExpress" width={37} height={20} className="rounded-lg" />
               <span className="font-bold text-lg">
-                RAG Chatbot
+                ClientExpress
               </span>
             </Link>
             <div className="flex flex-col space-y-2">
@@ -88,8 +80,8 @@ export function Header() {
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <div className="w-full flex-1 md:w-auto md:flex-none">
             <Link className="flex items-center space-x-2 md:hidden" href="/projects">
-              <AppIcon name="Bot" className="h-6 w-6" />
-              <span className="font-bold">RAG Chatbot</span>
+              <Image src="/images/clientExpressLogo.png" alt="ClientExpress" width={44} height={24} />
+              <span className="font-bold">ClientExpress</span>
             </Link>
           </div>
           <nav className="flex items-center gap-3">

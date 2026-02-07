@@ -1,6 +1,5 @@
-"use client";
-
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
@@ -14,12 +13,10 @@ export function Sidebar() {
     >
       <div className="flex items-center gap-3 px-3 py-2">
         <Link href="/projects" className="flex items-center gap-3">
-          <div className="p-2 bg-primary rounded-lg shadow-soft">
-            <AppIcon name="Bot" className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <Image src="/images/clientExpressLogo.png" alt="ClientExpress" width={37} height={20} className="rounded-lg shadow-soft" />
           {!collapsed && (
             <span className="font-bold">
-              RAG Chatbot
+              ClientExpress
             </span>
           )}
         </Link>

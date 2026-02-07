@@ -16,7 +16,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "RAG Chatbot",
+  title: "ClientExpress",
   description:
     "AI-powered knowledge assistant with document upload and chat capabilities",
 };

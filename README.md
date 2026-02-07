@@ -1,4 +1,4 @@
-# RAG Chatbot Backend
+# ClientExpress Backend
 
 A Retrieval-Augmented Generation (RAG) based knowledge-restricted chatbot backend that enables users to upload documents and create AI chatbots that answer questions exclusively based on the uploaded content.
 
