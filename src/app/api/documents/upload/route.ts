@@ -8,8 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { DocumentService } from "@/services/document.service";
 import { UploadDocumentSchema } from "@/lib/schemas";
 import { errorHandler } from "@/lib/error-handler";
-
-const documentService = new DocumentService();
+import { auth } from "@/lib/auth";
 
 /**
  * POST /api/documents/upload
@@ -17,6 +16,8 @@ const documentService = new DocumentService();
  */
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth();
+    const documentService = new DocumentService(session?.user?.id);
     // Parse multipart form data
     const formData = await request.formData();
 

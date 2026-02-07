@@ -9,7 +9,7 @@
 
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { getConfig } from "./config";
+import { AppConfig, LLMConfig, getConfig } from "./config";
 import {
   LLMError,
   QuotaExceededError,
@@ -41,11 +41,13 @@ interface LocalLLMResponse {
  */
 export class LLMService {
   private model: ChatGoogleGenerativeAI | null = null;
-  private config = getConfig();
+  private config: AppConfig;
   private circuitBreaker: CircuitBreaker;
   private isLocalProvider: boolean = false;
 
-  constructor() {
+  constructor(override?: Partial<LLMConfig>) {
+    const config = getConfig();
+    this.config = override ? { ...config, llm: { ...config.llm, ...override } } : config;
     this.circuitBreaker = new CircuitBreaker();
   }
 

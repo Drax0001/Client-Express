@@ -8,7 +8,7 @@
  */
 
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
-import { getConfig } from "./config";
+import { AppConfig, EmbeddingConfig, getConfig } from "./config";
 import {
   LLMError,
   QuotaExceededError,
@@ -42,12 +42,16 @@ type OpenAIEmbeddingsResponse = {
  */
 export class EmbeddingService {
   private model: GoogleGenerativeAIEmbeddings | null = null;
-  private config = getConfig();
+  private config: AppConfig;
   private circuitBreaker: CircuitBreaker;
   private isLocalProvider: boolean = false;
   private cache = getEmbeddingCache();
 
-  constructor() {
+  constructor(override?: Partial<EmbeddingConfig>) {
+    const config = getConfig();
+    this.config = override
+      ? { ...config, embedding: { ...config.embedding, ...override } }
+      : config;
     this.circuitBreaker = new CircuitBreaker();
   }
 

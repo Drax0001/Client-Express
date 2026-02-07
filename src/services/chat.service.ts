@@ -14,7 +14,8 @@ import {
   ValidationError,
   ServiceUnavailableError,
 } from "../lib/errors";
-import { getConfig } from "../lib/config";
+import { AppConfig, getConfig } from "../lib/config";
+import { getUserApiKeys } from "../lib/user-api-key";
 
 /**
  * Chat query request interface
@@ -41,12 +42,38 @@ export class ChatService {
   private vectorStore: VectorStore;
   private llmService: LLMService;
   private config = getConfig();
+  private userId?: string;
 
-  constructor() {
+  constructor(userId?: string) {
     this.projectService = new ProjectService();
     this.embeddingService = new EmbeddingService();
     this.vectorStore = new VectorStore();
     this.llmService = new LLMService();
+    this.userId = userId;
+  }
+
+  private async getActiveServices(): Promise<{
+    embeddingService: EmbeddingService;
+    llmService: LLMService;
+    config: AppConfig;
+  }> {
+    if (!this.userId) {
+      return {
+        embeddingService: this.embeddingService,
+        llmService: this.llmService,
+        config: this.config,
+      };
+    }
+
+    const keys = await getUserApiKeys(this.userId);
+    const embeddingService = keys.embedding
+      ? new EmbeddingService({ apiKey: keys.embedding })
+      : this.embeddingService;
+    const llmService = keys.llm
+      ? new LLMService({ apiKey: keys.llm })
+      : this.llmService;
+
+    return { embeddingService, llmService, config: this.config };
   }
 
   /**
@@ -93,6 +120,8 @@ export class ChatService {
    */
   async processQuery(request: ChatRequest): Promise<ChatResponse> {
     const { projectId, message } = request;
+    const { embeddingService, llmService, config } =
+      await this.getActiveServices();
 
     // Validate request
     if (!projectId || !projectId.trim()) {
@@ -119,7 +148,7 @@ export class ChatService {
       const embedStart = Date.now();
       // Timeout embedding if it takes too long
       queryEmbedding = await this.withTimeout(
-        this.embeddingService.generateEmbedding(message),
+        embeddingService.generateEmbedding(message),
         10000,
         "embedding",
       );
@@ -148,7 +177,7 @@ export class ChatService {
 
     // 8.1, 8.2: Check relevance threshold
     const highestScore = searchResults.length > 0 ? searchResults[0].score : 0;
-    const relevanceThreshold = this.config.processing.relevanceThreshold; // 0.75
+    const relevanceThreshold = config.processing.relevanceThreshold; // 0.75
 
     console.log("ChatService: retrieval stats", {
       results: searchResults.length,
@@ -189,7 +218,7 @@ Answer the question based only on the context provided above.`;
       const llmStart = Date.now();
       // Allow a longer timeout for LLM
       llmResponse = await this.withTimeout(
-        this.llmService.generateResponse(systemPrompt, userPrompt),
+        llmService.generateResponse(systemPrompt, userPrompt),
         60000,
         "llm",
       );

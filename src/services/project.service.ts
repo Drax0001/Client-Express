@@ -213,33 +213,20 @@ export class ProjectService {
         orderBy: {
           createdAt: "desc",
         },
+        include: {
+          _count: {
+            select: { documents: true },
+          },
+        },
       });
 
-      // Get document counts for each project
-      const projectsWithCounts = await Promise.all(
-        projects.map(async (project) => {
-          try {
-            // Try to get document count from vector store (if collection exists)
-            const collection = await this.chromaClient.getCollection({
-              name: `project_${project.id}`,
-            });
-            const documentCount = await collection.count();
-
-            return {
-              ...project,
-              documentCount,
-            };
-          } catch (error) {
-            // If collection doesn't exist or vector store is unavailable, return 0
-            return {
-              ...project,
-              documentCount: 0,
-            };
-          }
-        }),
-      );
-
-      return projectsWithCounts;
+      return projects.map((project) => ({
+        id: project.id,
+        name: project.name,
+        createdAt: project.createdAt,
+        documentCount: project._count.documents,
+        documents: [],
+      }));
     } catch (error) {
       throw new DatabaseError(
         `Failed to retrieve projects: ${(error as Error).message}`,

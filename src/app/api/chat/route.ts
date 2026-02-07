@@ -6,8 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ChatService } from "@/services/chat.service";
 import { errorHandler } from "@/lib/error-handler";
-
-const chatService = new ChatService();
+import { auth } from "@/lib/auth";
 
 /**
  * POST /api/chat
@@ -15,6 +14,7 @@ const chatService = new ChatService();
  */
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth();
     const body = await request.json();
 
     console.log("API: Chat - received request:", {
@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
     console.log(`API: Chat - processing message for project ${projectId}`);
 
     // Process the chat message using project-level RAG pipeline
+    const chatService = new ChatService(session?.user?.id);
     const result = await chatService.processQuery({
       projectId,
       message: message.trim(),

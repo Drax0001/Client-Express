@@ -16,6 +16,7 @@ import { TextChunker } from "../lib/text-chunker";
 import { getConfig } from "../lib/config";
 import { ChromaClient } from "chromadb";
 import { EmbeddingService } from "../lib/embedding-service";
+import { getUserApiKeys } from "../lib/user-api-key";
 
 /**
  * Document interface matching Prisma schema
@@ -57,11 +58,13 @@ export class DocumentService {
   private textChunker: TextChunker;
   private chromaClient: ChromaClient;
   private embeddingService: EmbeddingService;
+  private userId?: string;
 
-  constructor() {
+  constructor(userId?: string) {
     this.textExtractor = new TextExtractor();
     this.textChunker = new TextChunker();
     this.embeddingService = new EmbeddingService();
+    this.userId = userId;
 
     // Initialize ChromaDB client for vector store operations
     const config = getConfig();
@@ -70,6 +73,19 @@ export class DocumentService {
       port: config.vectorStore.port,
       ssl: false,
     } as any);
+  }
+
+  private async getActiveEmbeddingService(): Promise<EmbeddingService> {
+    if (!this.userId) {
+      return this.embeddingService;
+    }
+
+    const keys = await getUserApiKeys(this.userId);
+    if (!keys.embedding) {
+      return this.embeddingService;
+    }
+
+    return new EmbeddingService({ apiKey: keys.embedding });
   }
 
   /**
@@ -468,8 +484,8 @@ export class DocumentService {
       let embeddings: number[][];
       try {
         const chunkTexts = nonEmptyChunks.map((chunk) => chunk.text);
-        embeddings =
-          await this.embeddingService.generateBatchEmbeddings(chunkTexts);
+        const embeddingService = await this.getActiveEmbeddingService();
+        embeddings = await embeddingService.generateBatchEmbeddings(chunkTexts);
 
         // Defensive validation: embeddings must be present, numeric, and 1:1 with chunks
         if (embeddings.length !== nonEmptyChunks.length) {

@@ -1,11 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const { data: session } = useSession();
+  const displayName = session?.user?.name?.trim();
 
   return (
     <aside
@@ -41,8 +46,18 @@ export function Sidebar() {
 
       <div className="pt-3 mt-3 border-t border-border/50 flex items-center justify-between gap-2">
         {!collapsed && (
-          <div className="text-xs text-muted-foreground truncate px-2">
-            v0
+          <div className="flex flex-col gap-1 px-2 text-xs">
+            <span className="text-muted-foreground truncate">
+              {displayName || "Complete your profile"}
+            </span>
+            {!displayName && (
+              <Link
+                href="/onboarding"
+                className="text-primary text-xs font-medium"
+              >
+                Add your name
+              </Link>
+            )}
           </div>
         )}
         <Button
