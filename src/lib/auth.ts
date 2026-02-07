@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Email from "next-auth/providers/email";
+import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "../../lib/prisma";
 
@@ -24,6 +25,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
         : undefined,
     }),
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
   ],
   session: { strategy: "jwt" },
   pages: {
@@ -38,11 +43,44 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     session: async ({ session, token }) => {
-      if (session.user) {
-        session.user.id = token.sub ?? session.user.id;
-        session.user.name = token.name ?? session.user.name ?? null;
+      if (token?.name) {
+        session.user.name = token.name;
       }
       return session;
+    },
+    signIn: async ({ user, account }) => {
+      if (account?.provider === "google" && user.email) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+          include: { accounts: true },
+        });
+        if (existingUser) {
+          // Check if Google account is already linked
+          const existingGoogleAccount = existingUser.accounts.find(
+            (acc) => acc.provider === "google"
+          );
+          if (existingGoogleAccount) {
+            return true; // Already linked
+          }
+          // Link the Google account to the existing user
+          await prisma.account.create({
+            data: {
+              userId: existingUser.id,
+              type: account.type,
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+              access_token: account.access_token,
+              expires_at: account.expires_at,
+              token_type: account.token_type,
+              scope: account.scope,
+              id_token: account.id_token ? String(account.id_token) : null,
+              session_state: account.session_state,
+            },
+          });
+          return true;
+        }
+      }
+      return true;
     },
   },
 });

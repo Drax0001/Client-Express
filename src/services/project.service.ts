@@ -59,13 +59,13 @@ export class ProjectService {
    * @throws ValidationError if name is invalid
    * @throws DatabaseError if database operation fails
    */
-  async createProject(name: string): Promise<Project> {
+  async createProject(name: string, userId?: string): Promise<Project> {
     try {
       // Prisma will automatically generate a unique CUID for the id field
+      const data: any = { name };
+      if (userId) data.userId = userId;
       const project = await prisma.project.create({
-        data: {
-          name,
-        },
+        data,
       });
 
       return {
@@ -167,7 +167,8 @@ export class ProjectService {
         const errorMessage = (chromaError as Error).message || "";
         if (
           !errorMessage.includes("does not exist") &&
-          !errorMessage.includes("not found")
+          !errorMessage.includes("not found") &&
+          !errorMessage.includes("could not be found")
         ) {
           throw new VectorStoreError(
             `Failed to delete vector collection: ${errorMessage}`,
@@ -203,13 +204,15 @@ export class ProjectService {
    * Retrieves all projects with document counts
    * Returns projects sorted by creation date (newest first)
    *
-   * @returns Promise<ProjectWithDocuments[]> - Array of all projects
+   * @param userId - Optional user ID to filter projects
+   * @returns Promise<ProjectWithDocuments[]> - Array of projects
    * @throws DatabaseError if database operation fails
    */
-  async getAllProjects(): Promise<ProjectWithDocuments[]> {
+  async getAllProjects(userId?: string): Promise<ProjectWithDocuments[]> {
     try {
       // Get all projects from database
       const projects = await prisma.project.findMany({
+        where: userId ? { userId } : {},
         orderBy: {
           createdAt: "desc",
         },

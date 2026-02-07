@@ -14,10 +14,10 @@ export function Header() {
       <div className="container flex h-20 items-center justify-between px-6">
         <div className="mr-4 hidden md:flex">
           <Link
-            className="mr-6 flex items-center space-x-3 hover:opacity-90 transition-all hover-lift group"
+            className="mr-6 flex items-center space-x-3 hover:opacity-90 transition-all group"
             href="/projects"
           >
-            <Image src="/images/clientExpressLogo.png" alt="ClientExpress" width={44} height={24} className="rounded-xl shadow-medium group-hover:shadow-strong transition-shadow" />
+            <Image src="/images/clientExpressLogo.png" alt="ClientExpress" width={60} height={60} className="" />
             <span className="hidden font-bold text-xl sm:inline-block">
               ClientExpress
             </span>

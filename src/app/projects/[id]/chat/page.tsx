@@ -79,9 +79,16 @@ export default function ChatPage() {
     setIsTyping(true);
 
     try {
+      // Convert messages to conversation history format
+      const conversationHistory = messages.map(msg => ({
+        role: msg.isUser ? "user" as const : "assistant" as const,
+        content: msg.content,
+      }));
+
       const response = await sendMessageMutation.mutateAsync({
         projectId,
         message: content,
+        conversationHistory,
       });
 
       // Add assistant message
@@ -179,11 +186,31 @@ export default function ChatPage() {
             </div>
           </div>
 
-          {!hasDocuments && (
-            <Button asChild variant="outline">
-              <Link href={`/projects/${projectId}`}>Upload Documents</Link>
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {!hasDocuments && (
+              <Button asChild variant="outline">
+                <Link href={`/projects/${projectId}`}>Upload Documents</Link>
+              </Button>
+            )}
+
+            {messages.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setMessages([]);
+                  localStorage.removeItem(`chat-messages-${projectId}`);
+                  toast({
+                    title: "Chat cleared",
+                    description: "All messages have been removed from this chat.",
+                  });
+                }}
+              >
+                <AppIcon name="Trash2" className="mr-2 h-4 w-4" />
+                Clear Chat
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 min-h-0 mt-6">

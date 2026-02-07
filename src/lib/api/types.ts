@@ -111,6 +111,7 @@ export interface UploadDocumentResponse {
 export interface ChatRequest {
   projectId: string;
   message: string;
+  conversationHistory?: Array<{ role: "user" | "assistant"; content: string }>;
 }
 
 /**
