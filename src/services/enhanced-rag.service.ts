@@ -403,7 +403,7 @@ export class EnhancedRagService {
       const results = await this.vectorStore.similaritySearch(
         projectId,
         embedding,
-        10, // Get top 10 results
+        15, // Get top 15 results for better coverage
       );
 
       // Extract scores and log
@@ -547,7 +547,7 @@ export class EnhancedRagService {
    * @returns The assembled context string
    */
   private assembleContext(searchResults: SearchResult[]): string {
-    const maxContextTokens = 3000;
+    const maxContextTokens = 6000; // Increased for better coverage
     const maxContextChars = maxContextTokens * 4;
 
     let context = "";
@@ -555,7 +555,15 @@ export class EnhancedRagService {
       const chunkText = result.text.trim();
       if (!chunkText) continue;
 
-      const newContext = context ? `${context}\n\n${chunkText}` : chunkText;
+      // Build source label from metadata for attribution
+      const meta = result.metadata || {};
+      const source = meta.filename || meta.sourceUrl || "Unknown";
+      const section = meta.sectionTitle || meta.section || "";
+      const page = meta.pageNumber ? `Page ${meta.pageNumber}` : "";
+      const label = [source, section, page].filter(Boolean).join(" > ");
+      const tagged = `[Source: ${label}]\n${chunkText}`;
+
+      const newContext = context ? `${context}\n\n---\n\n${tagged}` : tagged;
 
       if (newContext.length > maxContextChars) {
         break;
@@ -580,16 +588,22 @@ export class EnhancedRagService {
     query: string,
     logContext: LogContext,
   ): Promise<string> {
-    const systemPrompt = `You are a helpful assistant that answers questions based ONLY on the provided context.
-If the answer is not explicitly present in the context, respond exactly: "I don't know"
-Do not make assumptions or provide information not contained in the context.`;
+    const systemPrompt = `You are a knowledgeable assistant answering questions based ONLY on the provided context documents.
 
-    const userPrompt = `Context:
+RULES:
+1. Answer ONLY using information from the provided context
+2. When you reference information, ALWAYS cite the source using [Source: filename/url] format shown in the context
+3. If information spans multiple sources, synthesize them and cite each
+4. If the answer is partially in the context, share what you can and note what's missing
+5. If the answer is NOT in the context at all, say: "I don't have enough information in the provided documents to answer this question."
+6. Be detailed and thorough — users uploaded these documents for comprehensive answers`;
+
+    const userPrompt = `Context (each block is tagged with its source document):
 ${context}
 
 Question: ${query}
 
-Answer the question based only on the context provided above.`;
+Answer the question based on the context provided above. Cite your sources.`;
 
     try {
       const response = await this.llmService.generateResponse(

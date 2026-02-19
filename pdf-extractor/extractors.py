@@ -325,7 +325,7 @@ async def extract_text_from_pdf(buffer: bytes, ocr: bool = False) -> Tuple[str, 
                 page_text = pytesseract.image_to_string(preprocessed, config=custom_config, lang='eng')
 
                 if page_text.strip():
-                    texts.append(page_text)
+                    texts.append(f"--- PAGE {i+1} ---\n{page_text}")
                     ocr_metadata['pages_processed'] += 1
                     print(f"✓ OCR successful for page {i+1}")
                 else:
@@ -341,9 +341,18 @@ async def extract_text_from_pdf(buffer: bytes, ocr: bool = False) -> Tuple[str, 
         text = "\n\n".join(texts)
 
         if text.strip():
+            # Build per-page info for metadata
+            pages_info = []
+            for idx, t in enumerate(texts):
+                pages_info.append({
+                    "page_num": idx + 1,
+                    "char_count": len(t),
+                    "method": "enhanced_ocr"
+                })
             return text, {
                 "method": "enhanced_ocr",
-                "pages": len(images),
+                "page_count": len(images),
+                "pages": pages_info,
                 "has_ocr": True,
                 "pages_processed": ocr_metadata['pages_processed'],
                 "pages_failed": ocr_metadata['pages_failed'],
@@ -377,7 +386,7 @@ async def extract_text_from_pdf(buffer: bytes, ocr: bool = False) -> Tuple[str, 
                 try:
                     page_text = pytesseract.image_to_string(img, lang='eng')
                     if page_text.strip():
-                        texts.append(page_text)
+                        texts.append(f"--- PAGE {i+1} ---\n{page_text}")
                 except Exception as e:
                     print(f"Basic OCR failed for page {i+1}: {e}")
                     continue
@@ -386,7 +395,8 @@ async def extract_text_from_pdf(buffer: bytes, ocr: bool = False) -> Tuple[str, 
             if text.strip():
                 return text, {
                     "method": "basic_ocr",
-                    "pages": len(images),
+                    "page_count": len(images),
+                    "pages": [{"page_num": i+1, "char_count": len(t), "method": "basic_ocr"} for i, t in enumerate(texts)],
                     "has_ocr": True,
                     "note": "Enhanced OCR failed, used basic fallback"
                 }

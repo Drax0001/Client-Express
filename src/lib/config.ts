@@ -241,8 +241,8 @@ export function loadConfig(): AppConfig {
     processing: {
       maxFileSizeMB,
       relevanceThreshold,
-      chunkSize: 1000,
-      chunkOverlap: 200,
+      chunkSize: parseInt(process.env.CHUNK_SIZE || "1500", 10),
+      chunkOverlap: parseInt(process.env.CHUNK_OVERLAP || "300", 10),
     },
     pdfExtractor: {
       url: pdfExtractorUrl,

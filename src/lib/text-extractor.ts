@@ -130,11 +130,13 @@ export class TextExtractor {
   }
 
   /**
-   * Extract text from URL using Cheerio
+   * Extract text from URL using Cheerio with structured HTML preservation
+   * Preserves semantic HTML elements (headings, paragraphs, lists) as tagged blocks
+   * so the chunker can detect sections and provide proper source attribution.
    * Requirements: 3.4
    *
    * @param url - URL to extract text from
-   * @returns Extracted text content
+   * @returns Extracted text content with semantic tags
    * @throws ValidationError if extraction fails or URL is invalid
    */
   async extractFromUrl(url: string): Promise<string> {
@@ -153,14 +155,43 @@ export class TextExtractor {
       // Parse HTML and extract text using Cheerio
       const $ = cheerio.load(html);
 
-      // Remove script and style elements
-      $("script, style").remove();
+      // Remove script, style, nav, footer, and other non-content elements
+      $("script, style, nav, footer, header, aside, .cookie-banner, .sidebar, [role='navigation']").remove();
 
-      // Extract text content
-      const text = $("body").text();
+      // Build structured text with semantic tag labels
+      // This preserves document structure so the chunker can detect sections
+      const blocks: string[] = [];
 
-      // Clean up whitespace
-      return text.replace(/\s+/g, " ").trim();
+      // Extract title
+      const title = $("title").text().trim();
+      if (title) {
+        blocks.push(`[H1] ${title}`);
+      }
+
+      // Process content-bearing elements in DOM order
+      const contentSelectors = "h1, h2, h3, h4, h5, h6, p, li, td, th, blockquote, pre, figcaption, dt, dd";
+      $(contentSelectors).each((_: number, el: any) => {
+        const tagName = el.tagName?.toUpperCase() || "";
+        const text = $(el).text().trim();
+
+        if (!text || text.length < 2) return;
+
+        // Skip if this is a nested element already captured by parent
+        if ($(el).parents(contentSelectors).length > 0 && !["LI", "TD", "TH", "DT", "DD"].includes(tagName)) {
+          return;
+        }
+
+        blocks.push(`[${tagName}] ${text}`);
+      });
+
+      const result = blocks.join("\n");
+
+      // Fallback to body text if structured extraction yields nothing
+      if (!result.trim()) {
+        return $("body").text().replace(/\s+/g, " ").trim();
+      }
+
+      return result;
     } catch (error) {
       if (error instanceof TypeError && error.message.includes("Invalid URL")) {
         throw new ValidationError(`Invalid URL format: ${url}`);

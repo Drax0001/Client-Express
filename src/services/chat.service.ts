@@ -16,6 +16,7 @@ import {
 } from "../lib/errors";
 import { AppConfig, getConfig } from "../lib/config";
 import { getUserApiKeys } from "../lib/user-api-key";
+import { QueryRewriter } from "../lib/query-rewriter";
 
 /**
  * Chat query request interface
@@ -143,13 +144,32 @@ export class ChatService {
       throw error;
     }
 
-    // 6.2: Generate embedding for the user message
+    // Rewrite query with conversation context for better retrieval
+    let searchMessage = message;
+    if (conversationHistory && conversationHistory.length > 0) {
+      try {
+        const queryRewriter = new QueryRewriter(llmService);
+        searchMessage = await queryRewriter.rewriteQuery(
+          message,
+          conversationHistory.map((msg: any) => ({
+            role: msg.role as "user" | "assistant",
+            content: msg.content,
+          })),
+        );
+        console.log(`ChatService: query rewritten from "${message.substring(0, 50)}..." to "${searchMessage.substring(0, 50)}..."`);
+      } catch (error) {
+        console.warn("ChatService: query rewriting failed, using original message", error);
+        searchMessage = message;
+      }
+    }
+
+    // 6.2: Generate embedding for the (rewritten) user message
     let queryEmbedding: number[];
     try {
       const embedStart = Date.now();
       // Timeout embedding if it takes too long
       queryEmbedding = await this.withTimeout(
-        embeddingService.generateEmbedding(message),
+        embeddingService.generateEmbedding(searchMessage),
         10000,
         "embedding",
       );
@@ -164,7 +184,7 @@ export class ChatService {
     try {
       const searchStart = Date.now();
       searchResults = await this.withTimeout(
-        this.vectorStore.similaritySearch(projectId, queryEmbedding, 5),
+        this.vectorStore.similaritySearch(projectId, queryEmbedding, 15),
         8000,
         "similaritySearch",
       );
@@ -210,9 +230,16 @@ export class ChatService {
     const context = this.assembleContext(searchResults);
 
     // 10.1, 10.2, 10.3: Construct prompts
-    const systemPrompt = `You are a helpful assistant that answers questions based ONLY on the provided context.
-If the answer is not explicitly present in the context, respond exactly: "I don't know"
-Do not make assumptions or provide information not contained in the context.`;
+    const systemPrompt = `You are a knowledgeable assistant answering questions based ONLY on the provided context documents.
+
+RULES:
+1. Answer ONLY using information from the provided context
+2. When you reference information, ALWAYS cite the source using [Source: filename/url] format shown in the context
+3. If information spans multiple sources, synthesize them and cite each
+4. If the answer is partially in the context, share what you can and note what's missing
+5. If the answer is NOT in the context at all, say: "I don't have enough information in the provided documents to answer this question."
+6. For follow-up questions, use the conversation history to maintain context
+7. Be detailed and thorough — users uploaded these documents for comprehensive answers`;
 
     // Build conversation context from history
     let conversationContext = "";
@@ -222,12 +249,12 @@ Do not make assumptions or provide information not contained in the context.`;
         "\n\n";
     }
 
-    const userPrompt = `Context:
+    const userPrompt = `Context (each block is tagged with its source document):
 ${context}
 
 ${conversationContext}Current question: ${message}
 
-Answer the question based only on the context provided above.`;
+Answer the question based on the context provided above. Cite your sources.`;
 
     // 10.4: Invoke LLM (temperature already constrained in LLMService)
     let llmResponse: string;
@@ -290,10 +317,10 @@ Answer the question based only on the context provided above.`;
    * @private
    */
   private assembleContext(
-    searchResults: Array<{ text: string; score: number }>,
+    searchResults: Array<{ text: string; score: number; metadata?: Record<string, any> }>,
   ): string {
     // Simple token estimation: ~4 characters per token
-    const maxContextTokens = 3000; // Conservative limit to leave room for prompts
+    const maxContextTokens = 6000; // Increased to capture more relevant context
     const maxContextChars = maxContextTokens * 4;
 
     let context = "";
@@ -304,7 +331,15 @@ Answer the question based only on the context provided above.`;
       const chunkText = result.text.trim();
       if (!chunkText) continue;
 
-      const newContext = context ? `${context}\n\n${chunkText}` : chunkText;
+      // Build source label from metadata for attribution
+      const meta = result.metadata || {};
+      const source = meta.filename || meta.sourceUrl || "Unknown";
+      const section = meta.sectionTitle || meta.section || "";
+      const page = meta.pageNumber ? `Page ${meta.pageNumber}` : "";
+      const label = [source, section, page].filter(Boolean).join(" > ");
+      const tagged = `[Source: ${label}]\n${chunkText}`;
+
+      const newContext = context ? `${context}\n\n---\n\n${tagged}` : tagged;
 
       // 9.2: Check if adding this chunk would exceed limits
       if (newContext.length > maxContextChars) {

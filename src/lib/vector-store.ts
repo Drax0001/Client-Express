@@ -348,4 +348,46 @@ export class VectorStore {
       return 0;
     }
   }
+
+  /**
+   * Keyword-based search using ChromaDB's document contains filter.
+   * Used by hybrid search to find chunks that contain specific terms.
+   *
+   * @param projectId - The project identifier
+   * @param keyword - The keyword to search for
+   * @param topK - Maximum number of results
+   * @returns Promise resolving to matching search results
+   */
+  async queryByKeyword(
+    projectId: string,
+    keyword: string,
+    topK: number = 10,
+  ): Promise<Array<{ id: string; score: number; text: string; metadata: Record<string, any> }>> {
+    try {
+      const client = await this.getClient();
+      const collection = await client.getCollection({
+        name: this.collectionName(projectId),
+      });
+
+      const results = await collection.get({
+        whereDocument: { $contains: keyword.toLowerCase() },
+        limit: topK,
+        include: ["documents", "metadatas"] as any,
+      });
+
+      if (!results.ids || results.ids.length === 0) {
+        return [];
+      }
+
+      return results.ids.map((id: string, index: number) => ({
+        id,
+        score: 0.5, // Flat score for keyword matches — RRF handles ranking
+        text: (results.documents?.[index] as string) || "",
+        metadata: (results.metadatas?.[index] as Record<string, any>) || {},
+      }));
+    } catch (error: any) {
+      console.warn(`VectorStore: keyword search failed for "${keyword}":`, error?.message);
+      return [];
+    }
+  }
 }

@@ -30,11 +30,11 @@ export interface TrainingConfig {
 export interface TrainingProgress {
   status: "queued" | "processing" | "completed" | "failed" | "cancelled";
   currentStep:
-    | "uploading"
-    | "extracting"
-    | "chunking"
-    | "embedding"
-    | "storing";
+  | "uploading"
+  | "extracting"
+  | "chunking"
+  | "embedding"
+  | "storing";
   progress: number; // 0-100
   currentFile?: string;
   errors: string[];
@@ -379,7 +379,7 @@ export class TrainingService {
         progress: 30,
       });
 
-      // Prepare chunks for embedding
+      // Prepare chunks for embedding with rich metadata
       const allChunks = processedDocuments.flatMap((doc) =>
         doc.chunks.map((chunk: any, index: number) => ({
           id: `${doc.id}_${index}`,
@@ -388,6 +388,14 @@ export class TrainingService {
             documentId: doc.id,
             filename: doc.filename,
             chunkIndex: index,
+            totalChunks: doc.chunks.length,
+            section: chunk.metadata?.section || null,
+            sectionTitle: chunk.metadata?.section || null,
+            pageNumber: chunk.metadata?.pageNumber || null,
+            sourceType: doc.type,
+            sourceUrl: doc.type === "url" ? doc.filename : null,
+            charCount: chunk.metadata?.charCount || chunk.text.length,
+            wordCount: chunk.metadata?.wordCount || chunk.text.split(/\s+/).filter(Boolean).length,
           },
         })),
       );

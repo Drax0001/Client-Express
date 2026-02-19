@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-const publicPaths = new Set(["/", "/login", "/signup", "/api/auth"]);
+const publicPaths = new Set(["/", "/api/auth"]);
 
 const publicFile = /\.(.*)$/;
 
@@ -28,33 +28,38 @@ export async function proxy(request: NextRequest) {
     secret: authSecret,
   });
 
-  // if (!token) {
-  //   if (pathname.startsWith("/api")) {
-  //     return NextResponse.json(
-  //       { error: "Unauthorized", details: "Authentication required" },
-  //       { status: 401 }
-  //     );
-  //   }
-  //   // const landingUrl = request.nextUrl.clone();
-  //   // landingUrl.pathname = "/";
-  //   // return NextResponse.redirect(landingUrl);
-  // }
+  if (!token) {
+    if (pathname.startsWith("/api")) {
+      return NextResponse.json(
+        { error: "Unauthorized", details: "Authentication required" },
+        { status: 401 },
+      );
+    }
 
-  // if ((pathname === "/login" || pathname === "/signup") && token) {
-  //   const redirectUrl = request.nextUrl.clone();
-  //   redirectUrl.pathname = token.name ? "/projects" : "/onboarding";
-  //   return NextResponse.redirect(redirectUrl);
-  // }
+    if (pathname === "/login" || pathname === "/signup") {
+      return NextResponse.next();
+    }
 
-  // if (
-  //   !token.name &&
-  //   !pathname.startsWith("/onboarding") &&
-  //   !pathname.startsWith("/api")
-  // ) {
-  //   const onboardingUrl = request.nextUrl.clone();
-  //   onboardingUrl.pathname = "/onboarding";
-  //   return NextResponse.redirect(onboardingUrl);
-  // }
+    const landingUrl = request.nextUrl.clone();
+    landingUrl.pathname = "/";
+    return NextResponse.redirect(landingUrl);
+  }
+
+  if (pathname === "/login" || pathname === "/signup") {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = token.name ? "/projects" : "/onboarding";
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  if (
+    !token.name &&
+    !pathname.startsWith("/onboarding") &&
+    !pathname.startsWith("/api")
+  ) {
+    const onboardingUrl = request.nextUrl.clone();
+    onboardingUrl.pathname = "/onboarding";
+    return NextResponse.redirect(onboardingUrl);
+  }
 
   return NextResponse.next();
 }
