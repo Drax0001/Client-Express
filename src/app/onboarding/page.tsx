@@ -8,10 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-type ApiKeyItem = {
-  kind: "llm" | "embedding";
-  lastFour: string;
-};
 
 type TechnicalSettings = {
   relevanceThreshold: number;
@@ -36,13 +32,8 @@ export default function OnboardingPage() {
   };
   const [technical, setTechnical] =
     useState<TechnicalSettings>(defaultTechnical);
-  const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([]);
-  const [llmKey, setLlmKey] = useState("");
-  const [embeddingKey, setEmbeddingKey] = useState("");
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
-  const llmSaved = apiKeys.find((key) => key.kind === "llm");
-  const embeddingSaved = apiKeys.find((key) => key.kind === "embedding");
 
   useEffect(() => {
     if (session?.user?.name) {
@@ -51,20 +42,14 @@ export default function OnboardingPage() {
   }, [session?.user?.name]);
 
   useEffect(() => {
-    if (
-      status === "authenticated" &&
-      session?.user?.name &&
-      llmSaved &&
-      embeddingSaved
-    ) {
+    if (status === "authenticated" && session?.user?.name) {
       router.replace("/projects");
     }
-  }, [status, session, router, llmSaved, embeddingSaved]);
+  }, [status, session, router]);
 
   useEffect(() => {
     if (status !== "authenticated") return;
     loadTechnical();
-    loadApiKeys();
   }, [status]);
 
   const loadTechnical = async () => {
@@ -74,32 +59,10 @@ export default function OnboardingPage() {
     setTechnical(data);
   };
 
-  const loadApiKeys = async () => {
-    const response = await fetch("/api/api-keys");
-    if (!response.ok) return;
-    const data = await response.json();
-    setApiKeys(data?.keys ?? []);
-  };
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!name.trim()) return;
-    if (!llmSaved && !llmKey.trim()) {
-      toast({
-        title: "Missing API key",
-        description: "LLM API key is required.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!embeddingSaved && !embeddingKey.trim()) {
-      toast({
-        title: "Missing API key",
-        description: "Embedding API key is required.",
-        variant: "destructive",
-      });
-      return;
-    }
     setSaving(true);
     const profileResponse = await fetch("/api/profile", {
       method: "PATCH",
@@ -131,40 +94,7 @@ export default function OnboardingPage() {
       });
       return;
     }
-    if (!llmSaved) {
-      const llmResponse = await fetch("/api/api-keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "llm", value: llmKey.trim() }),
-      });
-      if (!llmResponse.ok) {
-        setSaving(false);
-        const body = await llmResponse.json().catch(() => ({}));
-        toast({
-          title: "API key update failed",
-          description: body?.details || "Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-    if (!embeddingSaved) {
-      const embeddingResponse = await fetch("/api/api-keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "embedding", value: embeddingKey.trim() }),
-      });
-      if (!embeddingResponse.ok) {
-        setSaving(false);
-        const body = await embeddingResponse.json().catch(() => ({}));
-        toast({
-          title: "API key update failed",
-          description: body?.details || "Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
+
     setSaving(false);
     await update();
     router.replace("/projects");
@@ -295,43 +225,6 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="text-sm font-semibold">API keys</div>
-              <div className="space-y-2">
-                <div className="text-sm font-medium">LLM API key</div>
-                {llmSaved && (
-                  <div className="text-xs text-muted-foreground">
-                    Saved key ending in {llmSaved.lastFour}
-                  </div>
-                )}
-                {!llmSaved && (
-                  <Input
-                    type="password"
-                    placeholder="Paste your LLM API key"
-                    value={llmKey}
-                    onChange={(event) => setLlmKey(event.target.value)}
-                    required
-                  />
-                )}
-              </div>
-              <div className="space-y-2">
-                <div className="text-sm font-medium">Embedding API key</div>
-                {embeddingSaved && (
-                  <div className="text-xs text-muted-foreground">
-                    Saved key ending in {embeddingSaved.lastFour}
-                  </div>
-                )}
-                {!embeddingSaved && (
-                  <Input
-                    type="password"
-                    placeholder="Paste your embedding API key"
-                    value={embeddingKey}
-                    onChange={(event) => setEmbeddingKey(event.target.value)}
-                    required
-                  />
-                )}
-              </div>
-            </div>
 
             <Button type="submit" disabled={saving}>
               {saving ? "Saving..." : "Continue"}

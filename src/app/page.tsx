@@ -5,8 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { AppIcon } from "@/components/ui/app-icon";
 import Image from "next/image";
 import { Icon } from "@/components/ui/icon";
+import { useSession } from "next-auth/react";
 
 export default function Home() {
+  const { data: session, status } = useSession();
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -16,12 +19,20 @@ export default function Home() {
             <span className="font-bold text-xl">ClientExpress</span>
           </div>
           <div className="flex items-center gap-3">
-            <Button asChild variant="ghost">
-              <a href="/login">Sign in</a>
-            </Button>
-            <Button asChild>
-              <a href="/signup">Create account</a>
-            </Button>
+            {status === "authenticated" ? (
+              <Button asChild>
+                <a href="/projects">Dashboard</a>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="ghost">
+                  <a href="/login">Sign in</a>
+                </Button>
+                <Button asChild>
+                  <a href="/signup">Create account</a>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -44,7 +55,7 @@ export default function Home() {
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button asChild size="lg">
-              <a href="/projects">Open the app</a>
+              <a href={status === "authenticated" ? "/projects" : "/login"}>Open the app</a>
             </Button>
             <Button asChild size="lg" variant="outline">
               <a href="#how-it-works">How it works</a>
@@ -124,22 +135,112 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </section>
 
-          <div className="mt-16 text-center">
-            <h3 className="text-2xl font-semibold">Ready to try it?</h3>
-            <p className="text-muted-foreground mt-2 max-w-xl mx-auto">
-              Create a project, ingest a document, and chat with your knowledge base.
-            </p>
-            <div className="mt-6 flex items-center justify-center gap-3">
-              <Button asChild size="lg">
-                <a href="/projects">Get started</a>
+        {/* PRICING SECTION */}
+        <section id="pricing" className="max-w-6xl mx-auto mt-24">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight mb-4">Simple, transparent pricing</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">Get started for free, then scale up as your knowledge needs grow. Billed in FCFA for the local market.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Starter Plan */}
+            <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-sm flex flex-col relative overflow-hidden">
+              <h3 className="text-xl font-semibold mb-2">Starter</h3>
+              <p className="text-sm text-muted-foreground mb-6">Perfect for individuals testing the waters.</p>
+              <div className="mb-6">
+                <span className="text-4xl font-extrabold">Free</span>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                <li className="flex items-center gap-3 text-sm">
+                  <AppIcon name="Check" className="w-5 h-5 text-primary" /> 1 Project
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <AppIcon name="Check" className="w-5 h-5 text-primary" /> 3 Sources (Max 2MB each)
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <AppIcon name="Check" className="w-5 h-5 text-primary" /> 50 Messages / month
+                </li>
+              </ul>
+              <Button asChild variant="outline" className="w-full">
+                <a href={status === "authenticated" ? "/projects" : "/signup"}>Get Started</a>
               </Button>
-              <Button asChild size="lg" variant="outline">
-                <a href="/signup">Create an account</a>
+            </div>
+
+            {/* Pro Plan */}
+            <div className="bg-card border-2 border-primary rounded-2xl p-8 shadow-xl flex flex-col relative overflow-hidden scale-105 z-10">
+              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">Most Popular</div>
+              <h3 className="text-xl font-semibold mb-2">Pro</h3>
+              <p className="text-sm text-muted-foreground mb-6">For students, freelancers, and small teams.</p>
+              <div className="mb-6 flex items-baseline gap-1">
+                <span className="text-4xl font-extrabold">5,000</span>
+                <span className="text-muted-foreground">FCFA / mo</span>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                <li className="flex items-center gap-3 text-sm">
+                  <AppIcon name="Check" className="w-5 h-5 text-primary" /> 5 Projects
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <AppIcon name="Check" className="w-5 h-5 text-primary" /> 50 Sources (Max 10MB each)
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <AppIcon name="Check" className="w-5 h-5 text-primary" /> 1000 Messages / month
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <AppIcon name="Check" className="w-5 h-5 text-primary" /> Priority support
+                </li>
+              </ul>
+              <Button asChild className="w-full">
+                <a href="/checkout?plan=PRO">Upgrade to Pro</a>
+              </Button>
+            </div>
+
+            {/* Business Plan */}
+            <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-sm flex flex-col relative overflow-hidden">
+              <h3 className="text-xl font-semibold mb-2">Business</h3>
+              <p className="text-sm text-muted-foreground mb-6">For growing SMEs and organizations.</p>
+              <div className="mb-6 flex items-baseline gap-1">
+                <span className="text-4xl font-extrabold">15,000</span>
+                <span className="text-muted-foreground">FCFA / mo</span>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                <li className="flex items-center gap-3 text-sm">
+                  <AppIcon name="Check" className="w-5 h-5 text-primary" /> Unlimited Projects
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <AppIcon name="Check" className="w-5 h-5 text-primary" /> 500 Sources (Max 50MB each)
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <AppIcon name="Check" className="w-5 h-5 text-primary" /> Unlimited Messages
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <AppIcon name="Check" className="w-5 h-5 text-primary" /> API Access (Coming soon)
+                </li>
+              </ul>
+              <Button asChild variant="outline" className="w-full">
+                <a href="/checkout?plan=BUSINESS">Upgrade to Business</a>
               </Button>
             </div>
           </div>
         </section>
+
+        <div className="mt-24 text-center">
+          <h3 className="text-3xl font-bold tracking-tight">Ready to try it?</h3>
+          <p className="text-muted-foreground mt-4 max-w-xl mx-auto text-lg">
+            Create a project, ingest a document, and chat with your customized knowledge base today.
+          </p>
+          <div className="mt-8 flex items-center justify-center gap-4">
+            <Button asChild size="lg" className="h-12 px-8 text-base">
+              <a href={status === "authenticated" ? "/projects" : "/signup"}>Get started</a>
+            </Button>
+            {status !== "authenticated" && (
+              <Button asChild size="lg" variant="outline" className="h-12 px-8 text-base">
+                <a href="/signup">Create an account</a>
+              </Button>
+            )}
+          </div>
+        </div>
       </main>
     </div>
   );

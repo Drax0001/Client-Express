@@ -1,6 +1,5 @@
 "use client";
 
-import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 
 interface MainLayoutProps {
@@ -9,14 +8,13 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   return (
-    <div className="h-dvh bg-background flex flex-col overflow-hidden">
-      <Header />
-      <div className="flex-1 flex min-h-0 overflow-hidden">
-        <Sidebar />
-        <main className="flex-1 min-h-0 w-full overflow-y-auto px-4 py-6 md:px-8 md:py-8">
-          <div className="w-full max-w-6xl mr-auto">{children}</div>
-        </main>
-      </div>
+    <div className="h-dvh bg-background flex overflow-hidden">
+      <Sidebar />
+      <main className="flex-1 min-w-0 w-full overflow-y-auto pb-16 md:pb-0">
+        <div className="w-full max-w-[1280px] mx-auto p-4 md:p-8 min-h-full flex flex-col">
+          {children}
+        </div>
+      </main>
     </div>
   );
 }

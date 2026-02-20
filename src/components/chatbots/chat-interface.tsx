@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   id: string;
@@ -147,11 +148,15 @@ export function ChatInterface({
               "rounded-lg px-4 py-3 shadow-sm",
               isUser
                 ? "bg-primary text-primary-foreground ml-auto"
-                : "bg-muted",
+                : "bg-muted prose prose-sm dark:prose-invert max-w-none text-foreground prose-p:leading-relaxed prose-pre:p-0",
             )}
           >
-            <div className="whitespace-pre-wrap text-sm leading-relaxed">
-              {message.content}
+            <div className="text-sm leading-relaxed whitespace-pre-wrap">
+              {isUser ? (
+                message.content
+              ) : (
+                <ReactMarkdown>{message.content}</ReactMarkdown>
+              )}
             </div>
 
             {/* Message metadata */}

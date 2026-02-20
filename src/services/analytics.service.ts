@@ -3,7 +3,7 @@
  * Requirements: 10.1-10.8
  */
 
-import { prisma } from "@/lib/prisma"
+import { prisma } from "../../lib/prisma"
 
 export interface TrainingMetrics {
   totalSessions: number
@@ -52,10 +52,10 @@ export class AnalyticsService {
     const averageDurationMs =
       withDuration.length > 0
         ? withDuration.reduce(
-            (sum, s) =>
-              sum + (new Date(s.completedAt!).getTime() - new Date(s.createdAt).getTime()),
-            0
-          ) / withDuration.length
+          (sum, s) =>
+            sum + (new Date(s.completedAt!).getTime() - new Date(s.createdAt).getTime()),
+          0
+        ) / withDuration.length
         : 0
 
     const byDayMap = new Map<string, number>()

@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { signOut } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
+import { AppIcon } from "@/components/ui/app-icon";
+import Link from "next/link";
 
 type Profile = {
   id: string;
@@ -14,35 +18,17 @@ type Profile = {
   email: string | null;
 };
 
-type ApiKeyItem = {
-  kind: "llm" | "embedding";
-  lastFour: string;
-  createdAt: string;
-  updatedAt: string;
-};
+// Technical defaults removed per user request
 
-type TechnicalSettings = {
-  relevanceThreshold: number;
-  chunkSize: number;
-  chunkOverlap: number;
-  modelName: string;
-  temperature: number;
-  maxTokens: number;
-};
-
-export default function SettingsPage() {
+function SettingsInner() {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const defaultTab = searchParams.get("tab") || "general";
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileName, setProfileName] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
-
-  const [technical, setTechnical] = useState<TechnicalSettings | null>(null);
-  const [savingTechnical, setSavingTechnical] = useState(false);
-
-  const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([]);
-  const [llmKey, setLlmKey] = useState("");
-  const [embeddingKey, setEmbeddingKey] = useState("");
-  const [savingKeys, setSavingKeys] = useState(false);
+  const [usageData, setUsageData] = useState<any>(null);
 
   const loadProfile = async () => {
     const response = await fetch("/api/profile");
@@ -52,24 +38,19 @@ export default function SettingsPage() {
     setProfileName(data?.name ?? "");
   };
 
-  const loadTechnical = async () => {
-    const response = await fetch("/api/technical-settings");
-    if (!response.ok) return;
-    const data = await response.json();
-    setTechnical(data);
-  };
 
-  const loadApiKeys = async () => {
-    const response = await fetch("/api/api-keys");
+
+  const loadUsage = async () => {
+    const response = await fetch("/api/usage");
     if (!response.ok) return;
     const data = await response.json();
-    setApiKeys(data?.keys ?? []);
+    setUsageData(data);
   };
 
   useEffect(() => {
     loadProfile();
-    loadTechnical();
-    loadApiKeys();
+    loadUsage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const saveProfile = async () => {
@@ -93,285 +74,173 @@ export default function SettingsPage() {
     });
   };
 
-  const saveTechnical = async () => {
-    if (!technical) return;
-    setSavingTechnical(true);
-    const response = await fetch("/api/technical-settings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(technical),
-    });
-    setSavingTechnical(false);
-    if (response.ok) {
-      toast({ title: "Technical settings updated" });
-      await loadTechnical();
-      return;
-    }
-    const body = await response.json().catch(() => ({}));
-    toast({
-      title: "Update failed",
-      description: body?.details || "Please try again.",
-      variant: "destructive",
-    });
-  };
 
-  const saveApiKey = async (kind: "llm" | "embedding", value: string) => {
-    if (!value.trim()) return;
-    setSavingKeys(true);
-    const response = await fetch("/api/api-keys", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind, value }),
-    });
-    setSavingKeys(false);
-    if (response.ok) {
-      if (kind === "llm") setLlmKey("");
-      if (kind === "embedding") setEmbeddingKey("");
-      await loadApiKeys();
-      toast({ title: "API key saved" });
-      return;
-    }
-    const body = await response.json().catch(() => ({}));
-    toast({
-      title: "API key update failed",
-      description: body?.details || "Please try again.",
-      variant: "destructive",
-    });
-  };
-
-  const deleteApiKey = async (kind: "llm" | "embedding") => {
-    setSavingKeys(true);
-    const response = await fetch("/api/api-keys", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind }),
-    });
-    setSavingKeys(false);
-    if (response.ok) {
-      await loadApiKeys();
-      toast({ title: "API key removed" });
-      return;
-    }
-    const body = await response.json().catch(() => ({}));
-    toast({
-      title: "API key removal failed",
-      description: body?.details || "Please try again.",
-      variant: "destructive",
-    });
-  };
-
-  const llmSaved = apiKeys.find((key) => key.kind === "llm");
-  const embeddingSaved = apiKeys.find((key) => key.kind === "embedding");
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile settings</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Name</label>
-              <Input
-                value={profileName}
-                onChange={(event) => setProfileName(event.target.value)}
-                placeholder="Your name"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Email</label>
-              <Input value={profile?.email ?? ""} disabled />
-            </div>
-            <div className="flex items-center gap-3">
-              <Button onClick={saveProfile} disabled={savingProfile}>
-                {savingProfile ? "Saving..." : "Save profile"}
-              </Button>
-              <Button variant="outline" onClick={() => signOut({ callbackUrl: "/" })}>
-                Sign out
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Technical settings</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="text-sm font-medium mb-1 block">Model name</label>
-                <Input
-                  value={technical?.modelName ?? ""}
-                  onChange={(event) =>
-                    setTechnical((prev) =>
-                      prev ? { ...prev, modelName: event.target.value } : prev,
-                    )
-                  }
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Max tokens</label>
-                <Input
-                  type="number"
-                  value={technical?.maxTokens ?? 0}
-                  onChange={(event) =>
-                    setTechnical((prev) =>
-                      prev
-                        ? { ...prev, maxTokens: Number(event.target.value) }
-                        : prev,
-                    )
-                  }
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">
-                  Relevance threshold
-                </label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={technical?.relevanceThreshold ?? 0}
-                  onChange={(event) =>
-                    setTechnical((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            relevanceThreshold: Number(event.target.value),
-                          }
-                        : prev,
-                    )
-                  }
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">
-                  Temperature
-                </label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={technical?.temperature ?? 0}
-                  onChange={(event) =>
-                    setTechnical((prev) =>
-                      prev
-                        ? { ...prev, temperature: Number(event.target.value) }
-                        : prev,
-                    )
-                  }
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Chunk size</label>
-                <Input
-                  type="number"
-                  value={technical?.chunkSize ?? 0}
-                  onChange={(event) =>
-                    setTechnical((prev) =>
-                      prev ? { ...prev, chunkSize: Number(event.target.value) } : prev,
-                    )
-                  }
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">
-                  Chunk overlap
-                </label>
-                <Input
-                  type="number"
-                  value={technical?.chunkOverlap ?? 0}
-                  onChange={(event) =>
-                    setTechnical((prev) =>
-                      prev
-                        ? { ...prev, chunkOverlap: Number(event.target.value) }
-                        : prev,
-                    )
-                  }
-                />
-              </div>
-            </div>
-            <Button onClick={saveTechnical} disabled={savingTechnical || !technical}>
-              {savingTechnical ? "Saving..." : "Save technical settings"}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>API Key settings</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-3">
-              <div className="text-sm font-medium">LLM API key</div>
-              {llmSaved && (
-                <div className="text-xs text-muted-foreground">
-                  Saved key ending in {llmSaved.lastFour}
-                </div>
-              )}
-              <div className="flex flex-col gap-2 md:flex-row md:items-center">
-                <Input
-                  type="password"
-                  placeholder="Paste your LLM API key"
-                  value={llmKey}
-                  onChange={(event) => setLlmKey(event.target.value)}
-                />
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={() => saveApiKey("llm", llmKey)}
-                    disabled={savingKeys}
-                  >
-                    Save
-                  </Button>
-                  {llmSaved && (
-                    <Button
-                      variant="outline"
-                      onClick={() => deleteApiKey("llm")}
-                      disabled={savingKeys}
-                    >
-                      Remove
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="text-sm font-medium">Embedding API key</div>
-              {embeddingSaved && (
-                <div className="text-xs text-muted-foreground">
-                  Saved key ending in {embeddingSaved.lastFour}
-                </div>
-              )}
-              <div className="flex flex-col gap-2 md:flex-row md:items-center">
-                <Input
-                  type="password"
-                  placeholder="Paste your embedding API key"
-                  value={embeddingKey}
-                  onChange={(event) => setEmbeddingKey(event.target.value)}
-                />
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={() => saveApiKey("embedding", embeddingKey)}
-                    disabled={savingKeys}
-                  >
-                    Save
-                  </Button>
-                  {embeddingSaved && (
-                    <Button
-                      variant="outline"
-                      onClick={() => deleteApiKey("embedding")}
-                      disabled={savingKeys}
-                    >
-                      Remove
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="max-w-4xl max-md:mt-4 mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+          Account Settings
+        </h1>
+        <p className="text-muted-foreground mt-2 text-[15px]">
+          Manage your profile, technical preferences, and billing.
+        </p>
       </div>
+
+      <Tabs defaultValue={defaultTab} className="w-full">
+        <TabsList className="mb-8 bg-muted/50 border border-border/50 p-1 w-full sm:w-auto overflow-x-auto flex sm:inline-flex justify-start">
+          <TabsTrigger value="general" className="rounded-md flex-1 sm:flex-none">
+            General
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="rounded-md flex-1 sm:flex-none">
+            Billing & Usage
+          </TabsTrigger>
+        </TabsList>
+
+        {/* GENERAL TAB */}
+        <TabsContent value="general" className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
+          <Card className="border-border/60 bg-card/50 shadow-sm backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-xl">Profile Information</CardTitle>
+              <CardDescription>Update your personal details and how we can reach you.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Name</label>
+                <Input
+                  value={profileName}
+                  onChange={(event) => setProfileName(event.target.value)}
+                  placeholder="Your name"
+                  className="max-w-md bg-background focus-visible:ring-brand"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Email address</label>
+                <Input
+                  value={profile?.email ?? ""}
+                  disabled
+                  className="max-w-md bg-muted/40 text-muted-foreground opacity-80"
+                />
+                <p className="text-xs text-muted-foreground">Email addresses cannot be changed directly.</p>
+              </div>
+              <div className="flex items-center gap-3 pt-2 border-t border-border/40 mt-4">
+                <Button onClick={saveProfile} disabled={savingProfile} className="bg-foreground text-background hover:bg-foreground/90 transition-colors">
+                  {savingProfile ? "Saving..." : "Save profile"}
+                </Button>
+                <Button variant="ghost" onClick={() => signOut({ callbackUrl: "/" })} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                  Sign out
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+        </TabsContent>
+
+        {/* BILLING TAB */}
+        <TabsContent value="billing" className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
+          <Card className="border-border/60 bg-card/50 shadow-sm backdrop-blur-sm overflow-hidden">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl">Plan & Usage</CardTitle>
+              <CardDescription>Track your active limits and upgrade your features.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!usageData ? (
+                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
+                  <p className="text-sm text-muted-foreground">Loading billing details...</p>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {/* Current Plan Banner */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 border border-border/50 rounded-xl bg-gradient-to-br from-muted/30 to-background shadow-inner gap-4 relative overflow-hidden">
+                    {/* Decorative blurred background */}
+                    <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-brand/10 rounded-full blur-3xl pointer-events-none" />
+
+                    <div className="relative z-10 w-full sm:w-auto">
+                      <div className="flex items-center gap-2 mb-1">
+                        <AppIcon name="Zap" className="h-5 w-5 text-brand" />
+                        <h4 className="font-semibold text-lg text-foreground">{usageData.plan} Plan</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Your limits will automatically reset on <span className="text-foreground font-medium">{new Date(usageData.usage.resetDate).toLocaleDateString()}</span>.
+                      </p>
+                    </div>
+                    <div className="flex gap-2 w-full sm:w-auto mt-3 sm:mt-0">
+                      {usageData.plan === "FREE" && (
+                        <Button asChild className="relative z-10 w-full sm:w-auto bg-brand hover:bg-brand-hover text-white shadow-md hover:shadow-lg transition-all">
+                          <Link href="/checkout?plan=PRO">Upgrade to Pro</Link>
+                        </Button>
+                      )}
+                      {usageData.plan !== "BUSINESS" && (
+                        <Button asChild variant={usageData.plan === "FREE" ? "outline" : "default"} className={usageData.plan === "FREE" ? "relative z-10 w-full sm:w-auto bg-background hover:bg-muted text-foreground transition-all" : "relative z-10 w-full sm:w-auto bg-brand hover:bg-brand-hover text-white shadow-md hover:shadow-lg transition-all"}>
+                          <Link href="/checkout?plan=BUSINESS">Upgrade to Business</Link>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Limits Progress Bars */}
+                  <div className="grid gap-8 sm:grid-cols-2">
+                    {/* Messages Progress */}
+                    <div className="space-y-3 p-4 border border-border/40 rounded-xl bg-background/50">
+                      <div className="flex justify-between items-end">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">Monthly Messages</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Used traversing your knowledge</p>
+                        </div>
+                        <span className="text-sm font-semibold bg-surface px-2 py-0.5 rounded-md border border-border/40">
+                          {usageData.usage.messagesThisMonth} <span className="text-muted-foreground font-normal">/</span> {usageData.limits.maxMessagesPerMonth === 999999 ? "∞" : usageData.limits.maxMessagesPerMonth}
+                        </span>
+                      </div>
+                      <div className="h-2.5 w-full bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-brand transition-all duration-700 ease-out"
+                          style={{ width: `${Math.min(100, (usageData.usage.messagesThisMonth / usageData.limits.maxMessagesPerMonth) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Sources Progress */}
+                    <div className="space-y-3 p-4 border border-border/40 rounded-xl bg-background/50">
+                      <div className="flex justify-between items-end">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">Document Sources</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Files & URLs combined</p>
+                        </div>
+                        <span className="text-sm font-semibold bg-surface px-2 py-0.5 rounded-md border border-border/40">
+                          {usageData.usage.sourcesThisMonth} <span className="text-muted-foreground font-normal">/</span> {usageData.limits.maxSourcesTotal}
+                        </span>
+                      </div>
+                      <div className="h-2.5 w-full bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 transition-all duration-700 ease-out"
+                          style={{ width: `${Math.min(100, (usageData.usage.sourcesThisMonth / usageData.limits.maxSourcesTotal) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-center sm:text-left text-xs text-muted-foreground py-2 px-4 bg-muted/30 rounded-lg inline-block">
+                    Maximum allowed upload size per source: <strong className="text-foreground">{usageData.limits.maxSourceSizeBytes / (1024 * 1024)} MB</strong>
+                  </div>
+
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+      </Tabs>
+    </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <MainLayout>
+      <Suspense fallback={<div className="flex items-center justify-center p-12 text-muted-foreground min-h-[400px]">Loading Settings...</div>}>
+        <SettingsInner />
+      </Suspense>
     </MainLayout>
   );
 }

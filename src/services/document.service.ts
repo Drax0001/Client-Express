@@ -16,7 +16,6 @@ import { TextChunker } from "../lib/text-chunker";
 import { getConfig } from "../lib/config";
 import { ChromaClient } from "chromadb";
 import { EmbeddingService } from "../lib/embedding-service";
-import { getUserApiKeys } from "../lib/user-api-key";
 
 /**
  * Document interface matching Prisma schema
@@ -76,16 +75,7 @@ export class DocumentService {
   }
 
   private async getActiveEmbeddingService(): Promise<EmbeddingService> {
-    if (!this.userId) {
-      return this.embeddingService;
-    }
-
-    const keys = await getUserApiKeys(this.userId);
-    if (!keys.embedding) {
-      return this.embeddingService;
-    }
-
-    return new EmbeddingService({ apiKey: keys.embedding });
+    return this.embeddingService;
   }
 
   /**
@@ -548,7 +538,18 @@ export class DocumentService {
           ids: nonEmptyChunks.map((chunk, i) => `${documentId}_${i}`),
           embeddings: embeddings,
           documents: nonEmptyChunks.map((chunk) => chunk.text),
-          metadatas: nonEmptyChunks.map((chunk) => chunk.metadata),
+          metadatas: nonEmptyChunks.map((chunk) => {
+            const safeMetadata: Record<string, string | number | boolean> = {};
+            for (const [k, v] of Object.entries(chunk.metadata)) {
+              if (v === null || v === undefined) continue;
+              if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+                safeMetadata[k] = v;
+              } else {
+                safeMetadata[k] = JSON.stringify(v);
+              }
+            }
+            return safeMetadata;
+          }),
         };
 
         try {

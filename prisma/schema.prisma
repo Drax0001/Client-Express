@@ -10,6 +10,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Plan {
+  FREE
+  PRO
+  BUSINESS
+}
+
 model Project {
   id        String     @id @default(cuid())
   name      String
@@ -20,22 +26,23 @@ model Project {
 }
 
 model User {
-  id               String             @id @default(cuid())
-  name             String?
-  email            String?            @unique
-  emailVerified    DateTime?
-  image            String?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  accounts         Account[]
-  sessions         Session[]
-  apiKeys          UserApiKey[]
-  technicalSetting TechnicalSetting?
-  projects         Project[]
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  accounts      Account[]
+  sessions      Session[]
+  projects      Project[]
+  
+  subscription  Subscription?
+  usageTracker  UsageTracker?
 }
 
 model Account {
-  id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
@@ -47,52 +54,56 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@id([provider, providerAccountId])
 }
 
 model Session {
-  id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model VerificationToken {
   identifier String
-  token      String   @unique
+  token      String
   expires    DateTime
-
-  @@unique([identifier, token])
+ 
+  @@id([identifier, token])
 }
 
-model UserApiKey {
-  id           String   @id @default(cuid())
-  userId       String
-  kind         String
-  encryptedKey String
-  lastFour     String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Subscription {
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  plan                 Plan      @default(FREE)
+  camPaySubscriptionId String?   @unique
+  expiresAt            DateTime?
+  status               String    @default("active") // "active", "past_due", "canceled"
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
-  @@unique([userId, kind])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model TechnicalSetting {
-  id                 String   @id @default(cuid())
-  userId             String   @unique
-  relevanceThreshold Float?
-  chunkSize          Int?
-  chunkOverlap       Int?
-  modelName          String?
-  temperature        Float?
-  maxTokens          Int?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model UsageTracker {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  messagesThisMonth Int     @default(0)
+  sourcesThisMonth  Int     @default(0)
+  resetDate         DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Document {

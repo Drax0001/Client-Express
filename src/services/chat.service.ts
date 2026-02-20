@@ -15,7 +15,6 @@ import {
   ServiceUnavailableError,
 } from "../lib/errors";
 import { AppConfig, getConfig } from "../lib/config";
-import { getUserApiKeys } from "../lib/user-api-key";
 import { QueryRewriter } from "../lib/query-rewriter";
 
 /**
@@ -59,24 +58,28 @@ export class ChatService {
     llmService: LLMService;
     config: AppConfig;
   }> {
-    if (!this.userId) {
-      return {
-        embeddingService: this.embeddingService,
-        llmService: this.llmService,
-        config: this.config,
-      };
-    }
-
-    const keys = await getUserApiKeys(this.userId);
-    const embeddingService = keys.embedding
-      ? new EmbeddingService({ apiKey: keys.embedding })
-      : this.embeddingService;
-    const llmService = keys.llm
-      ? new LLMService({ apiKey: keys.llm })
-      : this.llmService;
-
-    return { embeddingService, llmService, config: this.config };
+    return {
+      embeddingService: this.embeddingService,
+      llmService: this.llmService,
+      config: this.config,
+    };
   }
+
+  // private async getActiveServices(): Promise<{
+  //   embeddingService: EmbeddingService;
+  //   llmService: LLMService;
+  //   config: AppConfig;
+  // private async getServices(): Promise<{
+  //   embeddingService: EmbeddingService;
+  //   llmService: LLMService;
+  //   config: AppConfig;
+  // }> {
+  //   return {
+  //     embeddingService: this.embeddingService,
+  //     llmService: this.llmService,
+  //     config: this.config,
+  //   };
+  // }
 
   /**
    * Processes a user query through the complete RAG pipeline

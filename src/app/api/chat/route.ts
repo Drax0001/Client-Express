@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ChatService } from "@/services/chat.service";
 import { errorHandler } from "@/lib/error-handler";
 import { auth } from "@/lib/auth";
+import { checkAndTrackMessageLimit } from "@/lib/limits";
 
 /**
  * POST /api/chat
@@ -49,6 +50,19 @@ export async function POST(request: NextRequest) {
       );
     }
     const { projectId, message, conversationId, sessionId } = body;
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // ENFORCE PRICING PLAN LIMITS
+    const limitCheck = await checkAndTrackMessageLimit(session.user.id);
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        { error: "Plan Limit Exceeded", details: limitCheck.error },
+        { status: 403 }
+      );
+    }
 
     console.log(`API: Chat - processing message for project ${projectId}`);
 
