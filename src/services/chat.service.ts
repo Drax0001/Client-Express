@@ -27,11 +27,22 @@ export interface ChatRequest {
 }
 
 /**
+ * Individual source returned with a chat response
+ */
+export interface ChatSource {
+  title: string;
+  snippet: string;
+  relevanceScore: number;
+  url?: string;
+}
+
+/**
  * Chat response interface
  */
 export interface ChatResponse {
   answer: string;
   sourceCount: number;
+  sources: ChatSource[];
 }
 
 /**
@@ -159,9 +170,14 @@ export class ChatService {
             content: msg.content,
           })),
         );
-        console.log(`ChatService: query rewritten from "${message.substring(0, 50)}..." to "${searchMessage.substring(0, 50)}..."`);
+        console.log(
+          `ChatService: query rewritten from "${message.substring(0, 50)}..." to "${searchMessage.substring(0, 50)}..."`,
+        );
       } catch (error) {
-        console.warn("ChatService: query rewriting failed, using original message", error);
+        console.warn(
+          "ChatService: query rewriting failed, using original message",
+          error,
+        );
         searchMessage = message;
       }
     }
@@ -200,6 +216,7 @@ export class ChatService {
     }
 
     // 8.1, 8.2: Check relevance threshold
+    const isEmptyCollection = searchResults.length === 0;
     const highestScore = searchResults.length > 0 ? searchResults[0].score : 0;
     const relevanceThreshold = config.processing.relevanceThreshold; // 0.75
 
@@ -207,7 +224,24 @@ export class ChatService {
       results: searchResults.length,
       highestScore,
       relevanceThreshold,
+      isEmptyCollection,
     });
+
+    // Check if project has no documents uploaded
+    if (isEmptyCollection) {
+      console.log(
+        "ChatService: no documents in project; returning helpful message",
+        {
+          projectId,
+        },
+      );
+      return {
+        answer:
+          "I don't have any documents to answer your question. Please upload some documents to this project first, then I can help you answer questions about them.",
+        sourceCount: 0,
+        sources: [],
+      };
+    }
 
     if (highestScore < relevanceThreshold) {
       // 8.4: Don't invoke LLM if threshold not met
@@ -218,6 +252,7 @@ export class ChatService {
       return {
         answer: "I don't know",
         sourceCount: 0,
+        sources: [],
       };
     }
 
@@ -225,9 +260,29 @@ export class ChatService {
     const uniqueDocumentIds = new Set(
       searchResults
         .map((result) => result.metadata?.documentId)
-        .filter((id) => id != null)
+        .filter((id) => id != null),
     );
     const sourceCount = uniqueDocumentIds.size;
+
+    // Build sources array from top relevant results (above threshold)
+    const sources: ChatSource[] = searchResults
+      .filter((r) => r.score >= relevanceThreshold)
+      .slice(0, 5)
+      .map((r) => {
+        const meta = r.metadata || {};
+        const title = meta.filename || meta.sourceUrl || "Document";
+        const rawSnippet = r.text?.trim() || "";
+        const snippet =
+          rawSnippet.length > 250
+            ? rawSnippet.substring(0, 250) + "..."
+            : rawSnippet;
+        return {
+          title,
+          snippet,
+          relevanceScore: r.score,
+          url: meta.sourceUrl as string | undefined,
+        };
+      });
 
     // 8.3: Assemble context if threshold met
     const context = this.assembleContext(searchResults);
@@ -247,8 +302,14 @@ RULES:
     // Build conversation context from history
     let conversationContext = "";
     if (conversationHistory && conversationHistory.length > 0) {
-      conversationContext = "\n\nPrevious conversation:\n" +
-        conversationHistory.map(msg => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`).join("\n") +
+      conversationContext =
+        "\n\nPrevious conversation:\n" +
+        conversationHistory
+          .map(
+            (msg) =>
+              `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`,
+          )
+          .join("\n") +
         "\n\n";
     }
 
@@ -277,10 +338,11 @@ Answer the question based on the context provided above. Cite your sources.`;
       throw new ServiceUnavailableError("Unable to generate response");
     }
 
-    // 11.1, 11.2, 11.3: Return response verbatim with source count
+    // 11.1, 11.2, 11.3: Return response verbatim with source count and sources
     return {
       answer: llmResponse,
       sourceCount,
+      sources,
     };
   }
 
@@ -320,7 +382,11 @@ Answer the question based on the context provided above. Cite your sources.`;
    * @private
    */
   private assembleContext(
-    searchResults: Array<{ text: string; score: number; metadata?: Record<string, any> }>,
+    searchResults: Array<{
+      text: string;
+      score: number;
+      metadata?: Record<string, any>;
+    }>,
   ): string {
     // Simple token estimation: ~4 characters per token
     const maxContextTokens = 6000; // Increased to capture more relevant context

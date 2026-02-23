@@ -132,7 +132,8 @@ export class VectorStore {
       }
 
       throw new VectorStoreError(
-        `Failed to create collection for project ${projectId}: ${error.message || "Unknown error"
+        `Failed to create collection for project ${projectId}: ${
+          error.message || "Unknown error"
         }`,
       );
     }
@@ -191,7 +192,8 @@ export class VectorStore {
       }
 
       throw new VectorStoreError(
-        `Failed to add documents to project ${projectId}: ${error.message || "Unknown error"
+        `Failed to add documents to project ${projectId}: ${
+          error.message || "Unknown error"
         }`,
       );
     }
@@ -221,9 +223,30 @@ export class VectorStore {
     try {
       const results = await withRetryAndCircuitBreaker(async () => {
         const client = await this.getClient();
-        const collection = await client.getCollection({
-          name: this.collectionName(projectId),
-        });
+        let collection;
+        try {
+          collection = await client.getCollection({
+            name: this.collectionName(projectId),
+          });
+        } catch (error: any) {
+          // Handle case where collection doesn't exist (no documents uploaded yet)
+          if (
+            error.message?.includes("not found") ||
+            error.message?.includes("does not exist") ||
+            error.message?.includes("could not be found")
+          ) {
+            console.warn(
+              `Collection for project ${projectId} does not exist. Returning empty results. This is expected for projects with no documents.`,
+            );
+            return {
+              ids: [],
+              documents: [],
+              metadatas: [],
+              distances: [],
+            };
+          }
+          throw error;
+        }
 
         return await collection.query({
           queryEmbeddings: [queryEmbedding],
@@ -265,7 +288,8 @@ export class VectorStore {
       }
 
       throw new VectorStoreError(
-        `Failed to perform similarity search for project ${projectId}: ${error.message || "Unknown error"
+        `Failed to perform similarity search for project ${projectId}: ${
+          error.message || "Unknown error"
         }`,
       );
     }
@@ -306,7 +330,8 @@ export class VectorStore {
       }
 
       throw new VectorStoreError(
-        `Failed to delete collection for project ${projectId}: ${error.message || "Unknown error"
+        `Failed to delete collection for project ${projectId}: ${
+          error.message || "Unknown error"
         }`,
       );
     }
@@ -362,7 +387,14 @@ export class VectorStore {
     projectId: string,
     keyword: string,
     topK: number = 10,
-  ): Promise<Array<{ id: string; score: number; text: string; metadata: Record<string, any> }>> {
+  ): Promise<
+    Array<{
+      id: string;
+      score: number;
+      text: string;
+      metadata: Record<string, any>;
+    }>
+  > {
     try {
       const client = await this.getClient();
       const collection = await client.getCollection({
@@ -386,7 +418,10 @@ export class VectorStore {
         metadata: (results.metadatas?.[index] as Record<string, any>) || {},
       }));
     } catch (error: any) {
-      console.warn(`VectorStore: keyword search failed for "${keyword}":`, error?.message);
+      console.warn(
+        `VectorStore: keyword search failed for "${keyword}":`,
+        error?.message,
+      );
       return [];
     }
   }

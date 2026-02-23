@@ -115,11 +115,22 @@ export interface ChatRequest {
 }
 
 /**
+ * Individual source returned with a chat response
+ */
+export interface ChatSource {
+  title: string;
+  snippet: string;
+  relevanceScore: number;
+  url?: string;
+}
+
+/**
  * Chat response
  */
 export interface ChatResponse {
   answer: string;
   sourceCount: number;
+  sources: ChatSource[];
 }
 
 // ======================================

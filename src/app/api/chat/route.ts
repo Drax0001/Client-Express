@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     if (!limitCheck.allowed) {
       return NextResponse.json(
         { error: "Plan Limit Exceeded", details: limitCheck.error },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
       {
         answer: result.answer,
         sourceCount: result.sourceCount,
+        sources: result.sources,
       },
       { status: 200 },
     );
