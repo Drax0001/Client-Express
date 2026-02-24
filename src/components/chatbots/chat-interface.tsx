@@ -4,10 +4,8 @@ import * as React from "react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,17 +21,18 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
-  sources?: Source[];
   tokensUsed?: number;
   responseTime?: number;
 }
 
-interface Source {
-  id: string;
-  title: string;
-  url?: string;
-  snippet: string;
-  relevanceScore: number;
+export interface ChatBranding {
+  primaryColor?: string;
+  userBubbleColor?: string;
+  botBubbleColor?: string;
+  headerColor?: string;
+  logoUrl?: string;
+  chatbotDisplayName?: string;
+  welcomeMessage?: string;
 }
 
 interface ChatInterfaceProps {
@@ -41,6 +40,7 @@ interface ChatInterfaceProps {
   chatbotName: string;
   messages: Message[];
   isLoading?: boolean;
+  branding?: ChatBranding | null;
   onSendMessage?: (message: string) => void;
   onClearConversation?: () => void;
   onExportConversation?: () => void;
@@ -53,6 +53,7 @@ export function ChatInterface({
   chatbotName,
   messages,
   isLoading = false,
+  branding,
   onSendMessage,
   onClearConversation,
   onExportConversation,
@@ -61,8 +62,12 @@ export function ChatInterface({
 }: ChatInterfaceProps) {
   const [inputMessage, setInputMessage] = React.useState("");
   const [isTyping, setIsTyping] = React.useState(false);
+  const [ratings, setRatings] = React.useState<Record<string, "positive" | "negative">>({});
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  const displayName = branding?.chatbotDisplayName || chatbotName;
+  const welcome = branding?.welcomeMessage || `Ask ${displayName} anything about your documents`;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -80,7 +85,6 @@ export function ChatInterface({
     if (inputMessage.trim() && !isLoading) {
       onSendMessage?.(inputMessage.trim());
       setInputMessage("");
-      // Reset textarea height
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto";
       }
@@ -96,8 +100,6 @@ export function ChatInterface({
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputMessage(e.target.value);
-
-    // Auto-resize textarea
     const textarea = e.target;
     textarea.style.height = "auto";
     textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
@@ -111,6 +113,21 @@ export function ChatInterface({
     }
   };
 
+  const handleRate = (messageId: string, rating: "positive" | "negative") => {
+    const currentRating = ratings[messageId];
+    if (currentRating === rating) {
+      // Toggle off
+      setRatings(prev => {
+        const next = { ...prev };
+        delete next[messageId];
+        return next;
+      });
+    } else {
+      setRatings(prev => ({ ...prev, [messageId]: rating }));
+      onRateMessage?.(messageId, rating);
+    }
+  };
+
   const formatTimestamp = (date: Date) => {
     return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
@@ -119,8 +136,14 @@ export function ChatInterface({
     });
   };
 
+  // Resolve colors
+  const userBubbleBg = branding?.userBubbleColor || undefined;
+  const botBubbleBg = branding?.botBubbleColor || undefined;
+  const headerBg = branding?.headerColor || undefined;
+
   const MessageBubble = ({ message }: { message: Message }) => {
     const isUser = message.role === "user";
+    const msgRating = ratings[message.id];
 
     return (
       <div
@@ -131,6 +154,9 @@ export function ChatInterface({
       >
         {!isUser && (
           <Avatar className="h-8 w-8 mt-1">
+            {branding?.logoUrl ? (
+              <AvatarImage src={branding.logoUrl} alt={displayName} />
+            ) : null}
             <AvatarFallback className="bg-primary/10 text-primary">
               <AppIcon name="Bot" className="h-4 w-4" />
             </AvatarFallback>
@@ -147,9 +173,12 @@ export function ChatInterface({
             className={cn(
               "rounded-lg px-4 py-3 shadow-sm",
               isUser
-                ? "bg-primary text-primary-foreground ml-auto"
-                : "bg-muted prose prose-sm dark:prose-invert max-w-none text-foreground prose-p:leading-relaxed prose-pre:p-0",
+                ? "ml-auto"
+                : "prose prose-sm dark:prose-invert max-w-none text-foreground prose-p:leading-relaxed prose-pre:p-0",
+              !userBubbleBg && isUser && "bg-primary text-primary-foreground",
+              !botBubbleBg && !isUser && "bg-muted",
             )}
+            style={isUser && userBubbleBg ? { backgroundColor: userBubbleBg, color: "#fff" } : !isUser && botBubbleBg ? { backgroundColor: botBubbleBg, color: isLightColor(botBubbleBg) ? "#1e293b" : "#fff" } : undefined}
           >
             <div className="text-sm leading-relaxed whitespace-pre-wrap">
               {isUser ? (
@@ -159,105 +188,63 @@ export function ChatInterface({
               )}
             </div>
 
-            {/* Message metadata */}
+            {/* Metadata */}
             <div
               className={cn(
                 "flex items-center justify-between mt-2 text-xs opacity-70",
                 isUser ? "text-primary-foreground/70" : "text-muted-foreground",
               )}
+              style={isUser && userBubbleBg ? { color: "rgba(255,255,255,0.7)" } : undefined}
             >
               <span>{formatTimestamp(message.timestamp)}</span>
-              {!isUser && message.tokensUsed && (
-                <span>{message.tokensUsed} tokens</span>
-              )}
               {!isUser && message.responseTime && (
                 <span>{message.responseTime}ms</span>
               )}
             </div>
           </div>
 
-          {/* Sources */}
-          {!isUser && message.sources && message.sources.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <AppIcon name="FileText" className="h-3 w-3" />
-                <span>Sources ({message.sources.length})</span>
-              </div>
-              <div className="space-y-1">
-                {message.sources.map((source, index) => (
-                  <Card key={source.id} className="p-3 bg-muted/50">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-medium text-muted-foreground">
-                            {index + 1}.
-                          </span>
-                          {source.url ? (
-                            <a
-                              href={source.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1 truncate"
-                            >
-                              {source.title}
-                              <AppIcon
-                                name="ExternalLink"
-                                className="h-3 w-3 flex-shrink-0"
-                              />
-                            </a>
-                          ) : (
-                            <span className="text-xs font-medium truncate">
-                              {source.title}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {source.snippet}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="text-xs">
-                            {Math.round(source.relevanceScore * 100)}% relevant
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Message actions */}
+          {/* Bot message actions */}
           {!isUser && (
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => copyToClipboard(message.content)}
-                className="h-8 w-8 p-0"
+                className="h-7 w-7 p-0"
               >
                 <AppIcon name="Copy" className="h-3 w-3" />
-                <span className="sr-only">Copy message</span>
               </Button>
 
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onRateMessage?.(message.id, "positive")}
-                className="h-8 w-8 p-0"
+                onClick={() => handleRate(message.id, "positive")}
+                className={cn("h-7 w-7 p-0", msgRating === "positive" && "text-green-500 bg-green-500/10")}
               >
                 <AppIcon name="ThumbsUp" className="h-3 w-3" />
-                <span className="sr-only">Rate positive</span>
               </Button>
 
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onRateMessage?.(message.id, "negative")}
-                className="h-8 w-8 p-0"
+                onClick={() => handleRate(message.id, "negative")}
+                className={cn("h-7 w-7 p-0", msgRating === "negative" && "text-red-500 bg-red-500/10")}
               >
                 <AppIcon name="ThumbsDown" className="h-3 w-3" />
-                <span className="sr-only">Rate negative</span>
+              </Button>
+            </div>
+          )}
+
+          {/* User message actions */}
+          {isUser && (
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => copyToClipboard(message.content)}
+                className="h-7 w-7 p-0"
+              >
+                <AppIcon name="Copy" className="h-3 w-3" />
               </Button>
             </div>
           )}
@@ -277,26 +264,23 @@ export function ChatInterface({
   const TypingIndicator = () => (
     <div className="flex gap-3 justify-start">
       <Avatar className="h-8 w-8 mt-1">
+        {branding?.logoUrl ? (
+          <AvatarImage src={branding.logoUrl} alt={displayName} />
+        ) : null}
         <AvatarFallback className="bg-primary/10 text-primary">
           <AppIcon name="Bot" className="h-4 w-4" />
         </AvatarFallback>
       </Avatar>
 
-      <div className="bg-muted rounded-lg px-4 py-3 shadow-sm">
+      <div className="bg-muted rounded-lg px-4 py-3 shadow-sm" style={botBubbleBg ? { backgroundColor: botBubbleBg } : undefined}>
         <div className="flex items-center gap-1">
           <span className="text-sm text-muted-foreground">
-            {chatbotName} is typing
+            {displayName} is typing
           </span>
           <div className="flex gap-1">
             <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" />
-            <div
-              className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
-              style={{ animationDelay: "0.1s" }}
-            />
-            <div
-              className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
-              style={{ animationDelay: "0.2s" }}
-            />
+            <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
+            <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
           </div>
         </div>
       </div>
@@ -306,17 +290,20 @@ export function ChatInterface({
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex items-center justify-between p-4 border-b" style={headerBg ? { backgroundColor: headerBg, color: isLightColor(headerBg) ? "#1e293b" : "#fff" } : undefined}>
         <div className="flex items-center gap-3">
           <Avatar>
+            {branding?.logoUrl ? (
+              <AvatarImage src={branding.logoUrl} alt={displayName} />
+            ) : null}
             <AvatarFallback className="bg-primary/10 text-primary">
               <AppIcon name="Bot" className="h-5 w-5" />
             </AvatarFallback>
           </Avatar>
           <div>
-            <h3 className="font-semibold">{chatbotName}</h3>
-            <p className="text-sm text-muted-foreground">
-              Ask me anything about your documents
+            <h3 className="font-semibold">{displayName}</h3>
+            <p className="text-sm text-muted-foreground" style={headerBg ? { color: isLightColor(headerBg) ? "#64748b" : "rgba(255,255,255,0.7)" } : undefined}>
+              {welcome}
             </p>
           </div>
         </div>
@@ -325,7 +312,6 @@ export function ChatInterface({
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm">
               <AppIcon name="MoreHorizontal" className="h-4 w-4" />
-              <span className="sr-only">Conversation options</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -348,16 +334,12 @@ export function ChatInterface({
           {messages.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-muted-foreground">
-                <AppIcon
-                  name="MessageSquare"
-                  className="h-12 w-12 mx-auto mb-4 opacity-50"
-                />
+                <AppIcon name="MessageSquare" className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-medium mb-2">
                   Start a conversation
                 </h3>
                 <p className="text-sm">
-                  Ask {chatbotName} anything about your uploaded documents. The
-                  responses are based solely on your content.
+                  {welcome}
                 </p>
               </div>
             </div>
@@ -380,7 +362,7 @@ export function ChatInterface({
             <div className="flex-1 relative">
               <Textarea
                 ref={textareaRef}
-                placeholder={`Ask ${chatbotName} a question...`}
+                placeholder={`Ask ${displayName} a question...`}
                 value={inputMessage}
                 onChange={handleTextareaChange}
                 onKeyDown={handleKeyDown}
@@ -394,6 +376,7 @@ export function ChatInterface({
                   onClick={handleSendMessage}
                   disabled={!inputMessage.trim() || isLoading}
                   className="h-6 w-6 p-0"
+                  style={branding?.primaryColor ? { backgroundColor: branding.primaryColor, borderColor: branding.primaryColor } : undefined}
                 >
                   {isLoading ? (
                     <AppIcon name="Loader2" className="h-3 w-3 animate-spin" />
@@ -413,4 +396,14 @@ export function ChatInterface({
       </div>
     </div>
   );
+}
+
+/** Helper: returns true if a hex color is light (for readable text contrast) */
+function isLightColor(hex: string): boolean {
+  const c = hex.replace("#", "");
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5;
 }

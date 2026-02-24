@@ -42,7 +42,6 @@ export interface ChatSource {
 export interface ChatResponse {
   answer: string;
   sourceCount: number;
-  sources: ChatSource[];
 }
 
 /**
@@ -292,12 +291,12 @@ export class ChatService {
 
 RULES:
 1. Answer ONLY using information from the provided context
-2. When you reference information, ALWAYS cite the source using [Source: filename/url] format shown in the context
-3. If information spans multiple sources, synthesize them and cite each
-4. If the answer is partially in the context, share what you can and note what's missing
-5. If the answer is NOT in the context at all, say: "I don't have enough information in the provided documents to answer this question."
-6. For follow-up questions, use the conversation history to maintain context
-7. Be detailed and thorough — users uploaded these documents for comprehensive answers`;
+2. If information spans multiple sources, synthesize them into a coherent answer
+3. If the answer is partially in the context, share what you can and note what's missing
+4. If the answer is NOT in the context at all, say: "I don't have enough information in the provided documents to answer this question."
+5. For follow-up questions, use the conversation history to maintain context
+6. Be detailed and thorough — users uploaded these documents for comprehensive answers
+7. Do NOT cite or reference source filenames or URLs in your answer`;
 
     // Build conversation context from history
     let conversationContext = "";
@@ -318,7 +317,7 @@ ${context}
 
 ${conversationContext}Current question: ${message}
 
-Answer the question based on the context provided above. Cite your sources.`;
+Answer the question based on the context provided above.`;
 
     // 10.4: Invoke LLM (temperature already constrained in LLMService)
     let llmResponse: string;
@@ -342,7 +341,6 @@ Answer the question based on the context provided above. Cite your sources.`;
     return {
       answer: llmResponse,
       sourceCount,
-      sources,
     };
   }
 

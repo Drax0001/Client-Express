@@ -15,6 +15,13 @@ export interface Project {
   name: string;
   createdAt: string;
   documentCount: number;
+  modules?: Array<{ name: string; description: string }>;
+  branding?: {
+    primaryColor?: string;
+    userBubbleColor?: string;
+    botBubbleColor?: string;
+    logoUrl?: string;
+  };
 }
 
 /**
@@ -47,6 +54,16 @@ export interface GetProjectResponse {
  * Extended GetProjectResponse that includes documents list
  */
 export interface GetProjectWithDocumentsResponse extends GetProjectResponse {
+  modules?: any;
+  branding?: {
+    primaryColor?: string;
+    userBubbleColor?: string;
+    botBubbleColor?: string;
+    headerColor?: string;
+    logoUrl?: string;
+    chatbotDisplayName?: string;
+    welcomeMessage?: string;
+  } | null;
   documents: Document[];
 }
 
@@ -111,6 +128,7 @@ export interface UploadDocumentResponse {
 export interface ChatRequest {
   projectId: string;
   message: string;
+  conversationId?: string;
   conversationHistory?: Array<{ role: "user" | "assistant"; content: string }>;
 }
 
@@ -130,7 +148,6 @@ export interface ChatSource {
 export interface ChatResponse {
   answer: string;
   sourceCount: number;
-  sources: ChatSource[];
 }
 
 // ======================================

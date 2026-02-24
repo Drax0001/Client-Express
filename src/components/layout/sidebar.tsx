@@ -8,17 +8,18 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { useProjects } from "@/lib/api/hooks";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useTranslation } from "@/lib/i18n";
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { data: session } = useSession();
   const { data: projects, isLoading } = useProjects();
   const pathname = usePathname();
+  const { locale, setLocale, t } = useTranslation();
 
   const displayName = session?.user?.name?.trim() || session?.user?.email || "User";
-  const plan = "Free"; // TODO: read from user actual plan
+  const plan = "Free";
 
-  // Collapse sidebar automatically on smaller screens
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1024) {
@@ -27,7 +28,7 @@ export function Sidebar() {
         setCollapsed(false);
       }
     };
-    handleResize(); // trigger on mount
+    handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -57,21 +58,18 @@ export function Sidebar() {
           </button>
         </div>
 
-
-
         {/* Scrollable Nav Area */}
         <div className="flex-1 overflow-y-auto scrollbar-hide py-2 flex flex-col gap-6">
-
           {/* Section: Chatbots */}
           <div className="px-3">
             {!collapsed && (
               <h4 className="px-2 text-[12px] font-medium uppercase tracking-[0.05em] text-muted-foreground mb-2">
-                Chatbots
+                {t("sidebar.projects")}
               </h4>
             )}
             <nav className="space-y-[2px]">
               {isLoading && !collapsed ? (
-                <div className="px-2 py-2 text-sm text-muted-foreground">Loading...</div>
+                <div className="px-2 py-2 text-sm text-muted-foreground">{t("common.loading")}</div>
               ) : (
                 projects?.map((project) => {
                   const isActive = pathname?.startsWith(`/projects/${project.id}`);
@@ -96,7 +94,7 @@ export function Sidebar() {
                 className={`flex items-center gap-2.5 px-2 py-1.5 mt-1 rounded-md text-sm text-muted-foreground hover:text-foreground transition-colors ${collapsed ? "justify-center" : ""}`}
               >
                 <AppIcon name="Plus" className="h-[14px] w-[14px] shrink-0" />
-                {!collapsed && <span>New chatbot</span>}
+                {!collapsed && <span>{t("sidebar.newChatbot")}</span>}
               </Link>
             </nav>
           </div>
@@ -116,14 +114,14 @@ export function Sidebar() {
                 className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm text-secondary-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${collapsed ? "justify-center" : ""}`}
               >
                 <AppIcon name="Settings" className="h-[16px] w-[16px] shrink-0" />
-                {!collapsed && <span>Settings</span>}
+                {!collapsed && <span>{t("settings.title")}</span>}
               </Link>
               <Link
                 href="/settings?tab=billing"
                 className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm text-secondary-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${collapsed ? "justify-center" : ""}`}
               >
                 <AppIcon name="CreditCard" className="h-[16px] w-[16px] shrink-0" />
-                {!collapsed && <span>Billing</span>}
+                {!collapsed && <span>{t("settings.billing")}</span>}
               </Link>
             </nav>
           </div>
@@ -152,18 +150,34 @@ export function Sidebar() {
 
             {!collapsed ? (
               <div className="flex items-center justify-between border-t border-border/50 pt-2 -mx-1 px-1">
-                <ThemeToggle />
+                <div className="flex items-center gap-1">
+                  <ThemeToggle />
+                  <button
+                    onClick={() => setLocale(locale === "en" ? "fr" : "en")}
+                    className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
+                    title={locale === "en" ? "Passer au Français" : "Switch to English"}
+                  >
+                    {locale === "en" ? "🇫🇷 FR" : "🇬🇧 EN"}
+                  </button>
+                </div>
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}
                   className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
                 >
                   <AppIcon name="LogOut" className="h-4 w-4" />
-                  Sign out
+                  {t("common.signOut")}
                 </button>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2 border-t border-border/50 pt-2">
                 <ThemeToggle />
+                <button
+                  onClick={() => setLocale(locale === "en" ? "fr" : "en")}
+                  className="p-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
+                  title={locale === "en" ? "Passer au Français" : "Switch to English"}
+                >
+                  {locale === "en" ? "🇫🇷" : "🇬🇧"}
+                </button>
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}
                   className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
@@ -181,7 +195,7 @@ export function Sidebar() {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t border-border flex items-center justify-around z-50 overflow-hidden px-2 pb-safe">
         <Link href="/projects" className={`flex flex-col items-center justify-center w-16 h-full gap-1 ${pathname === '/projects' || pathname?.startsWith('/projects/') ? "text-brand" : "text-muted-foreground"}`}>
           <AppIcon name="MessageSquare" className="h-5 w-5" />
-          <span className="text-[10px] font-medium">Chatbots</span>
+          <span className="text-[10px] font-medium">{t("sidebar.projects")}</span>
         </Link>
         <Link href="/projects/new" className="flex flex-col items-center justify-center w-16 h-full gap-1 text-muted-foreground">
           <div className="bg-brand text-brand-foreground rounded-full w-8 h-8 flex items-center justify-center shadow-soft">

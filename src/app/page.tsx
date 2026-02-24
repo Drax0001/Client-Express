@@ -10,6 +10,19 @@ import { useSession } from "next-auth/react";
 export default function Home() {
   const { data: session, status } = useSession();
 
+  // Guard: show nothing until auth session is resolved
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 animate-pulse">
+          <div className="w-16 h-16 rounded-2xl bg-muted" />
+          <div className="w-48 h-4 rounded bg-muted" />
+          <div className="w-32 h-3 rounded bg-muted" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -25,9 +38,7 @@ export default function Home() {
             <span className="font-bold text-xl">ClientExpress</span>
           </div>
           <div className="flex items-center gap-3">
-            {status === "loading" ? (
-              <div className="w-28 h-9 bg-muted animate-pulse rounded-md" />
-            ) : status === "authenticated" ? (
+            {status === "authenticated" ? (
               <Button asChild>
                 <a href="/projects">Dashboard</a>
               </Button>
@@ -65,11 +76,9 @@ export default function Home() {
             <Button asChild size="lg">
               <a
                 href={
-                  status === "loading"
-                    ? "#"
-                    : status === "authenticated"
-                      ? "/projects"
-                      : "/login"
+                  status === "authenticated"
+                    ? "/projects"
+                    : "/login"
                 }
               >
                 Open the app

@@ -22,6 +22,16 @@ export interface Project {
  */
 export interface ProjectWithDocuments extends Project {
   documentCount: number;
+  modules?: any;
+  branding?: {
+    primaryColor?: string;
+    userBubbleColor?: string;
+    botBubbleColor?: string;
+    headerColor?: string;
+    logoUrl?: string;
+    chatbotDisplayName?: string;
+    welcomeMessage?: string;
+  } | null;
   documents: {
     id: string;
     projectId: string;
@@ -114,6 +124,8 @@ export class ProjectService {
         name: project.name,
         createdAt: project.createdAt,
         documentCount: project.documents.length,
+        modules: project.modules,
+        branding: project.branding as any,
         documents: project.documents.map((d) => ({
           id: d.id,
           projectId: d.projectId,
@@ -161,10 +173,12 @@ export class ProjectService {
 
       try {
         await this.chromaClient.deleteCollection({ name: collectionName });
+        console.log(`Vector collection ${collectionName} deleted successfully`);
       } catch (chromaError) {
         // If collection doesn't exist, that's okay - it might not have been created yet
         // Only throw if it's a different error
         const errorMessage = (chromaError as Error).message || "";
+        console.error(`ChromaDB delete for ${collectionName}: ${errorMessage}`);
         if (
           !errorMessage.includes("does not exist") &&
           !errorMessage.includes("not found") &&

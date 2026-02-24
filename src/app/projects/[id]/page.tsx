@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,24 +40,27 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-
-// Define the message types locally since ChatInterface uses its own internal types
-interface Source {
-  id: string;
-  title: string;
-  url?: string;
-  snippet: string;
-  relevanceScore: number;
-}
+import { useTranslation } from "@/lib/i18n";
+import { ModuleSelector, type Module } from "@/components/chatbots/module-selector";
+import type { ChatBranding } from "@/components/chatbots/chat-interface";
 
 interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
-  sources?: Source[];
   tokensUsed?: number;
   responseTime?: number;
+}
+
+interface ConversationItem {
+  id: string;
+  title: string;
+  module: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  _count: { messages: number };
 }
 
 export default function ProjectPage() {
@@ -75,24 +78,173 @@ export default function ProjectPage() {
   const [activeTab, setActiveTab] = useState("chat");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const { t } = useTranslation();
 
-  // Mock data for analytics
-  const mockLineData = [
-    { name: "Mon", messages: 12 },
-    { name: "Tue", messages: 19 },
-    { name: "Wed", messages: 15 },
-    { name: "Thu", messages: 22 },
-    { name: "Fri", messages: 30 },
-    { name: "Sat", messages: 25 },
-    { name: "Sun", messages: 18 },
-  ];
+  // Conversations state
+  const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
 
-  const mockBarData = [
-    { name: "Pricing", requests: 45 },
-    { name: "Support", requests: 30 },
-    { name: "Features", requests: 25 },
-    { name: "Integration", requests: 15 },
-  ];
+  // Settings: Branding editor state
+  const [editPrimaryColor, setEditPrimaryColor] = useState("");
+  const [editUserBubble, setEditUserBubble] = useState("");
+  const [editBotBubble, setEditBotBubble] = useState("");
+  const [editHeaderColor, setEditHeaderColor] = useState("");
+  const [editLogoUrl, setEditLogoUrl] = useState("");
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editWelcomeMsg, setEditWelcomeMsg] = useState("");
+  const [brandingSaving, setBrandingSaving] = useState(false);
+
+  // Initialize branding editor when project loads
+  useEffect(() => {
+    if (project?.branding) {
+      const b = project.branding as any;
+      setEditPrimaryColor(b.primaryColor || "#6366f1");
+      setEditUserBubble(b.userBubbleColor || "#6366f1");
+      setEditBotBubble(b.botBubbleColor || "#f1f5f9");
+      setEditHeaderColor(b.headerColor || "#ffffff");
+      setEditLogoUrl(b.logoUrl || "");
+      setEditDisplayName(b.chatbotDisplayName || "");
+      setEditWelcomeMsg(b.welcomeMessage || "");
+    }
+  }, [project?.branding]);
+
+  const handleSaveBranding = async () => {
+    setBrandingSaving(true);
+    try {
+      await fetch(`/api/projects/${projectId}/branding`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          primaryColor: editPrimaryColor,
+          userBubbleColor: editUserBubble,
+          botBubbleColor: editBotBubble,
+          headerColor: editHeaderColor,
+          logoUrl: editLogoUrl || undefined,
+          chatbotDisplayName: editDisplayName || undefined,
+          welcomeMessage: editWelcomeMsg || undefined,
+        }),
+      });
+      toast({ title: t("common.saved") || "Branding saved" });
+      refetch();
+    } catch {
+      toast({ title: "Failed to save branding", variant: "destructive" });
+    } finally {
+      setBrandingSaving(false);
+    }
+  };
+
+  // Analytics state
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [datePreset, setDatePreset] = useState<"week" | "month" | "30days">("week");
+  const [analyticsData, setAnalyticsData] = useState<{ dailyData: any[]; moduleData: any[]; stats: any } | null>(null);
+  const hasAutoCreated = useRef(false);
+
+  // Fetch real analytics data
+  const loadAnalytics = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      if (dateFrom) params.set("from", dateFrom);
+      if (dateTo) params.set("to", dateTo);
+      const res = await fetch(`/api/projects/${projectId}/analytics?${params}`);
+      if (res.ok) setAnalyticsData(await res.json());
+    } catch { }
+  }, [projectId, dateFrom, dateTo]);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
+
+  const lineData = analyticsData?.dailyData || [];
+  const barData = analyticsData?.moduleData || [];
+
+  // Parse modules from project
+  const projectModules: Module[] = Array.isArray(project?.modules) ? (project.modules as Module[]) : [];
+
+  // Load conversations
+  const loadConversations = async () => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/conversations`);
+      if (res.ok) setConversations(await res.json());
+    } catch { }
+  };
+
+  // Load conversations + auto-create on mount
+  useEffect(() => {
+    loadConversations();
+  }, [projectId]);
+
+  // Auto-create conversation when project loads (if no modules to pick from)
+  useEffect(() => {
+    if (hasAutoCreated.current || !project || isLoading) return;
+    if (projectModules.length === 0 && !activeConvId) {
+      hasAutoCreated.current = true;
+      handleNewConversation();
+    }
+  }, [project, isLoading]);
+
+  // Create new conversation
+  const handleNewConversation = async () => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/conversations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: selectedModule?.name || "New Conversation", module: selectedModule?.name }),
+      });
+      if (res.ok) {
+        const conv = await res.json();
+        setActiveConvId(conv.id);
+        setMessages([]);
+        loadConversations();
+      }
+    } catch { }
+  };
+
+  // Auto-title conversation after first message
+  const autoTitleConversation = async (convId: string, firstMessage: string) => {
+    const title = firstMessage.length > 50 ? firstMessage.substring(0, 50) + "..." : firstMessage;
+    try {
+      await fetch(`/api/projects/${projectId}/conversations/${convId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+      loadConversations();
+    } catch { }
+  };
+
+  // Rate a message
+  const handleRateMessage = async (messageId: string, rating: "positive" | "negative") => {
+    if (!activeConvId) return;
+    try {
+      await fetch(`/api/projects/${projectId}/conversations/${activeConvId}/messages/${messageId}/rate`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating }),
+      });
+    } catch { }
+  };
+
+  // Parse branding for ChatInterface
+  const chatBranding: ChatBranding | null = project?.branding ? (project.branding as ChatBranding) : null;
+
+  // Load conversation messages
+  const handleSelectConversation = async (convId: string) => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/conversations/${convId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setActiveConvId(convId);
+        setMessages(data.messages.map((m: any) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          timestamp: new Date(m.createdAt),
+        })));
+      }
+    } catch { }
+  };
 
   // Load chat messages from localStorage
   useEffect(() => {
@@ -204,6 +356,11 @@ export default function ProjectPage() {
     setMessages((prev) => [...prev, userMessage]);
     setIsTyping(true);
 
+    // Auto-title conversation after first user message
+    if (activeConvId && messages.length === 0) {
+      autoTitleConversation(activeConvId, content);
+    }
+
     try {
       const startTime = performance.now();
       const conversationHistory = messages.map((msg) => ({
@@ -214,6 +371,7 @@ export default function ProjectPage() {
       const response = await sendMessageMutation.mutateAsync({
         projectId,
         message: content,
+        conversationId: activeConvId || undefined,
         conversationHistory,
       });
 
@@ -225,13 +383,6 @@ export default function ProjectPage() {
         role: "assistant",
         timestamp: new Date(),
         responseTime: Math.round(endTime - startTime),
-        sources: (response.sources || []).map((s, i) => ({
-          id: `src-${i}`,
-          title: s.title,
-          snippet: s.snippet,
-          relevanceScore: s.relevanceScore,
-          url: s.url,
-        })),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -281,8 +432,14 @@ export default function ProjectPage() {
         {/* Workspace Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 shrink-0">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-brand/10 text-brand flex items-center justify-center shrink-0 border border-brand/20">
-              <AppIcon name="Bot" className="h-6 w-6" />
+            <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0 border overflow-hidden"
+              style={chatBranding?.primaryColor ? { backgroundColor: chatBranding.primaryColor + '1a', borderColor: chatBranding.primaryColor + '33' } : { backgroundColor: 'hsl(var(--brand) / 0.1)', borderColor: 'hsl(var(--brand) / 0.2)' }}
+            >
+              {chatBranding?.logoUrl ? (
+                <img src={chatBranding.logoUrl} alt={project.name} className="h-8 w-8 object-contain" />
+              ) : (
+                <AppIcon name="Bot" className="h-6 w-6" style={chatBranding?.primaryColor ? { color: chatBranding.primaryColor } : undefined} />
+              )}
             </div>
             <div>
               <div className="flex items-center gap-3">
@@ -368,41 +525,89 @@ export default function ProjectPage() {
           </TabsList>
 
           <div className="flex-1 min-h-0 relative mt-6">
-            {/* CHAT TAB */}
             <TabsContent
               value="chat"
-              className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none flex gap-6"
+              className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none flex gap-4"
             >
+              {/* Conversation Sidebar */}
+              <div className="w-56 shrink-0 border border-border/60 rounded-xl bg-card shadow-sm overflow-hidden flex-col hidden lg:flex">
+                <div className="p-3 border-b border-border/60">
+                  <Button
+                    size="sm"
+                    className="w-full bg-brand hover:bg-brand-hover text-white"
+                    onClick={() => {
+                      setSelectedModule(null);
+                      if (projectModules.length === 0) {
+                        handleNewConversation();
+                      }
+                    }}
+                  >
+                    <AppIcon name="Plus" className="h-4 w-4 mr-1" />
+                    {t("conversations.new")}
+                  </Button>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {conversations.length === 0 ? (
+                    <p className="p-3 text-xs text-muted-foreground text-center">{t("conversations.empty")}</p>
+                  ) : (
+                    conversations.map(conv => (
+                      <button
+                        key={conv.id}
+                        onClick={() => handleSelectConversation(conv.id)}
+                        className={`w-full text-left px-3 py-2.5 text-sm border-b border-border/30 hover:bg-muted/50 transition-colors ${activeConvId === conv.id ? "bg-brand/10 text-brand" : "text-foreground"}`}
+                      >
+                        <p className="font-medium truncate text-xs">{conv.title}</p>
+                        <p className="text-[10px] text-muted-foreground">{conv._count.messages} msgs · {conv.status === "ended" ? "Ended" : "Active"}</p>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Chat Area */}
               <div className="flex-1 border border-border/60 rounded-xl bg-card shadow-sm overflow-hidden flex flex-col min-h-[500px]">
                 {!hasDocuments ? (
                   <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-muted-foreground bg-background/50">
-                    <AppIcon
-                      name="Database"
-                      className="h-12 w-12 mb-4 opacity-30"
-                    />
-                    <h3 className="text-xl font-medium text-foreground mb-2">
-                      No Knowledge Sources
-                    </h3>
-                    <p className="max-w-sm mb-6">
-                      Your chatbot doesn't know anything yet. It needs documents
-                      or web links to accurately answer questions.
-                    </p>
+                    <AppIcon name="Database" className="h-12 w-12 mb-4 opacity-30" />
+                    <h3 className="text-xl font-medium text-foreground mb-2">{t("workspace.noKnowledge")}</h3>
+                    <p className="max-w-sm mb-6">{t("workspace.noKnowledgeDesc")}</p>
                     <Button onClick={() => setActiveTab("sources")}>
                       <AppIcon name="Plus" className="mr-2 h-4 w-4" />
-                      Add Sources
+                      {t("workspace.addSources")}
                     </Button>
                   </div>
+                ) : !activeConvId && projectModules.length > 0 ? (
+                  <ModuleSelector
+                    modules={projectModules}
+                    onSelect={(mod) => {
+                      setSelectedModule(mod);
+                      handleNewConversation();
+                    }}
+                    className="flex-1"
+                  />
                 ) : (
                   <ChatInterface
                     chatbotId={projectId}
                     chatbotName={project.name}
                     messages={messages}
                     isLoading={isTyping}
+                    branding={chatBranding}
                     onSendMessage={handleSendMessage}
                     onClearConversation={handleClearConversation}
+                    onRateMessage={handleRateMessage}
                     className="h-full"
                   />
                 )}
+              </div>
+
+              {/* Open in New Tab */}
+              <div className="absolute top-2 right-2 z-10">
+                <Button variant="ghost" size="sm" asChild className="h-8 text-xs">
+                  <a href={`/chat/${projectId}`} target="_blank" rel="noopener noreferrer">
+                    <AppIcon name="ExternalLink" className="h-3.5 w-3.5 mr-1" />
+                    {t("workspace.openNewTab")}
+                  </a>
+                </Button>
               </div>
             </TabsContent>
 
@@ -613,17 +818,53 @@ export default function ProjectPage() {
               className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none"
             >
               <div className="flex flex-col gap-6">
+                {/* Calendar Filter */}
+                <Card className="border-border/60 shadow-sm">
+                  <CardContent className="p-4 flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                      {(["week", "month", "30days"] as const).map((preset) => (
+                        <Button
+                          key={preset}
+                          variant={datePreset === preset ? "default" : "outline"}
+                          size="sm"
+                          className={datePreset === preset ? "bg-brand hover:bg-brand-hover text-white" : ""}
+                          onClick={() => {
+                            setDatePreset(preset);
+                            setDateFrom("");
+                            setDateTo("");
+                          }}
+                        >
+                          {preset === "week" ? t("analytics.thisWeek") : preset === "month" ? t("analytics.thisMonth") : t("analytics.last30Days")}
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="ml-auto flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground">{t("analytics.from")}</Label>
+                      <input
+                        type="date"
+                        value={dateFrom}
+                        onChange={e => { setDateFrom(e.target.value); setDatePreset("week"); }}
+                        className="h-8 px-2 text-xs border border-border rounded-md bg-background"
+                      />
+                      <Label className="text-xs text-muted-foreground">{t("analytics.to")}</Label>
+                      <input
+                        type="date"
+                        value={dateTo}
+                        onChange={e => { setDateTo(e.target.value); setDatePreset("week"); }}
+                        className="h-8 px-2 text-xs border border-border rounded-md bg-background"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <Card className="border-border/60 shadow-sm">
                   <CardHeader>
-                    <CardTitle>Conversation Volume</CardTitle>
-                    <CardDescription>
-                      Number of messages processed by this chatbot over the last
-                      7 days.
-                    </CardDescription>
+                    <CardTitle>{t("analytics.conversationVolume")}</CardTitle>
+                    <CardDescription>{t("analytics.conversationVolumeDesc")}</CardDescription>
                   </CardHeader>
                   <CardContent className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={mockLineData}>
+                      <LineChart data={lineData}>
                         <CartesianGrid
                           strokeDasharray="3 3"
                           stroke="hsl(var(--border))"
@@ -665,16 +906,13 @@ export default function ProjectPage() {
 
                 <Card className="border-border/60 shadow-sm">
                   <CardHeader>
-                    <CardTitle>Popular Topics</CardTitle>
-                    <CardDescription>
-                      Most frequently discussed topics based on semantic
-                      clustering.
-                    </CardDescription>
+                    <CardTitle>{t("analytics.popularTopics")}</CardTitle>
+                    <CardDescription>{t("analytics.popularTopicsDesc")}</CardDescription>
                   </CardHeader>
                   <CardContent className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
-                        data={mockBarData}
+                        data={barData}
                         layout="vertical"
                         margin={{ left: 20 }}
                       >
@@ -741,6 +979,66 @@ export default function ProjectPage() {
                 </CardContent>
               </Card>
 
+              {/* Branding Editor */}
+              <Card className="border-border/60 shadow-sm mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AppIcon name="Palette" className="h-5 w-5 text-brand" />
+                    {t("wizard.brandingTitle")}
+                  </CardTitle>
+                  <CardDescription>{t("wizard.brandingDesc")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>{t("wizard.chatbotDisplayName")}</Label>
+                      <Input placeholder={t("wizard.chatbotDisplayNamePlaceholder")} value={editDisplayName} onChange={e => setEditDisplayName(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t("wizard.welcomeMessage")}</Label>
+                      <Input placeholder={t("wizard.welcomeMessagePlaceholder")} value={editWelcomeMsg} onChange={e => setEditWelcomeMsg(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t("wizard.primaryColor")}</Label>
+                      <div className="flex items-center gap-3">
+                        <input type="color" value={editPrimaryColor} onChange={e => setEditPrimaryColor(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                        <Input value={editPrimaryColor} onChange={e => setEditPrimaryColor(e.target.value)} className="font-mono text-sm" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t("wizard.headerColor")}</Label>
+                      <div className="flex items-center gap-3">
+                        <input type="color" value={editHeaderColor} onChange={e => setEditHeaderColor(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                        <Input value={editHeaderColor} onChange={e => setEditHeaderColor(e.target.value)} className="font-mono text-sm" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t("wizard.userBubble")}</Label>
+                      <div className="flex items-center gap-3">
+                        <input type="color" value={editUserBubble} onChange={e => setEditUserBubble(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                        <Input value={editUserBubble} onChange={e => setEditUserBubble(e.target.value)} className="font-mono text-sm" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t("wizard.botBubble")}</Label>
+                      <div className="flex items-center gap-3">
+                        <input type="color" value={editBotBubble} onChange={e => setEditBotBubble(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                        <Input value={editBotBubble} onChange={e => setEditBotBubble(e.target.value)} className="font-mono text-sm" />
+                      </div>
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label>{t("wizard.logoUrl")}</Label>
+                      <Input placeholder="https://example.com/logo.png" value={editLogoUrl} onChange={e => setEditLogoUrl(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="pt-2">
+                    <Button onClick={handleSaveBranding} disabled={brandingSaving} className="bg-brand hover:bg-brand-hover text-white">
+                      {brandingSaving ? t("settings.saving") : t("common.save")}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card className="border-destructive/30 shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-destructive">
@@ -776,7 +1074,7 @@ export default function ProjectPage() {
             </TabsContent>
           </div>
         </Tabs>
-      </div>
-    </MainLayout>
+      </div >
+    </MainLayout >
   );
 }

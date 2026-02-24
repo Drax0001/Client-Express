@@ -12,18 +12,15 @@ import { useCreateProject, useUploadDocument } from "@/lib/api/hooks";
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslation } from "@/lib/i18n";
+import { Label } from "@/components/ui/label";
 
 interface ValidatedFile {
     id: string;
     file: File;
     status: "pending" | "validating" | "ready" | "error";
     validationErrors: string[];
-    metadata: {
-        name: string;
-        size: number;
-        type: string;
-        detectedType?: string;
-    };
+    metadata: { name: string; size: number; type: string; detectedType?: string; };
 }
 
 interface ValidatedUrl {
@@ -31,16 +28,19 @@ interface ValidatedUrl {
     url: string;
     status: "pending" | "validating" | "ready" | "error";
     validationErrors: string[];
-    metadata?: {
-        title?: string;
-        contentType?: string;
-        size?: number;
-        lastModified?: string;
-    };
+    metadata?: { title?: string; contentType?: string; size?: number; lastModified?: string; };
 }
+
+interface ModuleEntry {
+    name: string;
+    description: string;
+}
+
+const TOTAL_STEPS = 5;
 
 export default function NewProjectWizard() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [step, setStep] = useState(1);
     const [projectId, setProjectId] = useState<string | null>(null);
 
@@ -48,15 +48,29 @@ export default function NewProjectWizard() {
     const [projectName, setProjectName] = useState("");
     const createProjectMutation = useCreateProject();
 
-    // Step 2 State
+    // Step 2: Modules
+    const [modules, setModules] = useState<ModuleEntry[]>([]);
+    const [newModName, setNewModName] = useState("");
+    const [newModDesc, setNewModDesc] = useState("");
+
+    // Step 3: Sources
     const [files, setFiles] = useState<ValidatedFile[]>([]);
     const [urls, setUrls] = useState<ValidatedUrl[]>([]);
     const uploadDocumentMutation = useUploadDocument();
     const [isUploading, setIsUploading] = useState(false);
 
+    // Step 4: Branding
+    const [primaryColor, setPrimaryColor] = useState("#6366f1");
+    const [userBubbleColor, setUserBubbleColor] = useState("#6366f1");
+    const [botBubbleColor, setBotBubbleColor] = useState("#f1f5f9");
+    const [headerColor, setHeaderColor] = useState("#ffffff");
+    const [logoUrl, setLogoUrl] = useState("");
+    const [chatbotDisplayName, setChatbotDisplayName] = useState("");
+    const [welcomeMessage, setWelcomeMessage] = useState("");
+
     const handleCreateProject = async () => {
         if (!projectName.trim()) {
-            toast({ title: "Name required", description: "Please enter a name for your chatbot.", variant: "destructive" });
+            toast({ title: t("wizard.namePlaceholder"), variant: "destructive" });
             return;
         }
         try {
@@ -68,13 +82,25 @@ export default function NewProjectWizard() {
         }
     };
 
+    const handleSaveModules = async () => {
+        if (projectId && modules.length > 0) {
+            try {
+                await fetch(`/api/projects/${projectId}/modules`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ modules }),
+                });
+            } catch { /* optional save failure, user can update later */ }
+        }
+        setStep(3);
+    };
+
     const handleUploadSources = async () => {
         const readyFiles = files.filter(f => f.status === "ready");
         const readyUrls = urls.filter(u => u.status === "ready");
 
         if (readyFiles.length === 0 && readyUrls.length === 0) {
-            // Proceed to step 3 without adding sources
-            setStep(3);
+            setStep(4);
             return;
         }
 
@@ -82,35 +108,56 @@ export default function NewProjectWizard() {
         let successCount = 0;
 
         try {
-            // Upload files
             for (const f of readyFiles) {
-                await uploadDocumentMutation.mutateAsync({
-                    projectId: projectId!,
-                    file: f.file
-                });
+                await uploadDocumentMutation.mutateAsync({ projectId: projectId!, file: f.file });
                 successCount++;
             }
-
-            // Upload URLs
             for (const u of readyUrls) {
-                await uploadDocumentMutation.mutateAsync({
-                    projectId: projectId!,
-                    url: u.url
-                });
+                await uploadDocumentMutation.mutateAsync({ projectId: projectId!, url: u.url });
                 successCount++;
             }
-
-            toast({
-                title: "Upload complete",
-                description: `Successfully processed ${successCount} sources.`
-            });
-            setStep(3);
+            toast({ title: "Upload complete", description: `Successfully processed ${successCount} sources.` });
+            setStep(4);
         } catch (error) {
             toast({ title: "Upload incomplete", description: "Some sources failed to upload.", variant: "destructive" });
         } finally {
             setIsUploading(false);
         }
     };
+
+    const handleSaveBranding = async () => {
+        if (projectId) {
+            try {
+                await fetch(`/api/projects/${projectId}/branding`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        primaryColor,
+                        userBubbleColor,
+                        botBubbleColor,
+                        headerColor,
+                        logoUrl: logoUrl || undefined,
+                        chatbotDisplayName: chatbotDisplayName || undefined,
+                        welcomeMessage: welcomeMessage || undefined,
+                    }),
+                });
+            } catch { /* optional */ }
+        }
+        setStep(5);
+    };
+
+    const addModule = () => {
+        if (!newModName.trim()) return;
+        setModules(prev => [...prev, { name: newModName.trim(), description: newModDesc.trim() }]);
+        setNewModName("");
+        setNewModDesc("");
+    };
+
+    const removeModule = (idx: number) => {
+        setModules(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    const stepLabels = [t("wizard.stepName"), t("wizard.stepModules"), t("wizard.stepSources"), t("wizard.stepBranding"), t("wizard.stepLaunch")];
 
     return (
         <MainLayout>
@@ -119,69 +166,47 @@ export default function NewProjectWizard() {
                 {/* Wizard Header & Progress */}
                 <div className="mb-10 text-center">
                     <h1 className="text-3xl font-semibold tracking-tight text-foreground mb-6">
-                        Create a New Chatbot
+                        {t("wizard.createTitle")}
                     </h1>
-                    <div className="flex items-center justify-center max-w-lg mx-auto relative">
+                    <div className="flex items-center justify-center max-w-xl mx-auto relative">
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-[2px] bg-border/60 -z-10"></div>
-
                         <div className="flex justify-between w-full">
-                            {/* Step 1 Indicator */}
-                            <div className="flex flex-col items-center gap-2 bg-background px-2 relative">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium border-2 transition-colors ${step >= 1 ? "bg-brand border-brand text-white" : "bg-card border-border text-muted-foreground"}`}>
-                                    1
+                            {stepLabels.map((label, i) => (
+                                <div key={i} className="flex flex-col items-center gap-2 bg-background px-1.5 relative">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium border-2 transition-colors ${step >= i + 1 ? "bg-brand border-brand text-white" : "bg-card border-border text-muted-foreground"}`}>
+                                        {i + 1}
+                                    </div>
+                                    <span className={`text-[11px] font-medium ${step >= i + 1 ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
                                 </div>
-                                <span className={`text-xs font-medium ${step >= 1 ? "text-foreground" : "text-muted-foreground"}`}>Name</span>
-                            </div>
-
-                            {/* Step 2 Indicator */}
-                            <div className="flex flex-col items-center gap-2 bg-background px-2 relative">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium border-2 transition-colors ${step >= 2 ? "bg-brand border-brand text-white" : "bg-card border-border text-muted-foreground"}`}>
-                                    2
-                                </div>
-                                <span className={`text-xs font-medium ${step >= 2 ? "text-foreground" : "text-muted-foreground"}`}>Sources</span>
-                            </div>
-
-                            {/* Step 3 Indicator */}
-                            <div className="flex flex-col items-center gap-2 bg-background px-2 relative">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium border-2 transition-colors ${step >= 3 ? "bg-brand border-brand text-white" : "bg-card border-border text-muted-foreground"}`}>
-                                    3
-                                </div>
-                                <span className={`text-xs font-medium ${step >= 3 ? "text-foreground" : "text-muted-foreground"}`}>Launch</span>
-                            </div>
+                            ))}
                         </div>
                     </div>
                 </div>
 
-                {/* Step 1: Name & Purpose */}
+                {/* Step 1: Name */}
                 {step === 1 && (
                     <Card className="border-border/60 shadow-sm bg-card/50 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-300">
                         <CardContent className="p-8 pt-8 flex flex-col items-center text-center">
                             <div className="h-16 w-16 bg-brand/10 text-brand rounded-full flex items-center justify-center mb-6">
                                 <AppIcon name="Bot" className="h-8 w-8" />
                             </div>
-                            <h2 className="text-xl font-semibold mb-2">Name your Assistant</h2>
-                            <p className="text-muted-foreground text-sm mb-8 max-w-sm">
-                                Give your new chatbot a distinct name. You can always change this later.
-                            </p>
-
+                            <h2 className="text-xl font-semibold mb-2">{t("wizard.nameTitle")}</h2>
+                            <p className="text-muted-foreground text-sm mb-8 max-w-sm">{t("wizard.nameDesc")}</p>
                             <div className="w-full max-w-md space-y-4">
-                                <div className="space-y-2 text-left">
-                                    <Input
-                                        placeholder="e.g. Employee Support Bot, Product Docs"
-                                        value={projectName}
-                                        onChange={(e) => setProjectName(e.target.value)}
-                                        onKeyDown={(e) => { if (e.key === "Enter") handleCreateProject(); }}
-                                        className="h-12 bg-background text-base"
-                                        autoFocus
-                                    />
-                                </div>
-
+                                <Input
+                                    placeholder={t("wizard.namePlaceholder")}
+                                    value={projectName}
+                                    onChange={(e) => setProjectName(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === "Enter") handleCreateProject(); }}
+                                    className="h-12 bg-background text-base"
+                                    autoFocus
+                                />
                                 <Button
                                     onClick={handleCreateProject}
                                     disabled={createProjectMutation.isPending || !projectName.trim()}
                                     className="w-full h-12 text-base font-medium bg-foreground text-background hover:bg-foreground/90 transition-all"
                                 >
-                                    {createProjectMutation.isPending ? "Creating..." : "Create & Continue"}
+                                    {createProjectMutation.isPending ? t("wizard.creating") : t("wizard.createContinue")}
                                     {!createProjectMutation.isPending && <AppIcon name="ArrowRight" className="ml-2 h-4 w-4" />}
                                 </Button>
                             </div>
@@ -189,46 +214,78 @@ export default function NewProjectWizard() {
                     </Card>
                 )}
 
-                {/* Step 2: Add Sources */}
+                {/* Step 2: Modules */}
                 {step === 2 && (
                     <Card className="border-border/60 shadow-sm bg-card/50 backdrop-blur-sm animate-in fade-in slide-in-from-right-8 duration-300">
                         <CardContent className="p-6 sm:p-8 pt-8">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
                                 <div>
-                                    <h2 className="text-xl font-semibold mb-1">Add Knowledge Sources</h2>
-                                    <p className="text-muted-foreground text-sm">
-                                        Upload documents or link web pages to train your chatbot.
-                                    </p>
+                                    <h2 className="text-xl font-semibold mb-1">{t("wizard.modulesTitle")}</h2>
+                                    <p className="text-muted-foreground text-sm">{t("wizard.modulesDesc")}</p>
                                 </div>
                                 <Button variant="ghost" className="shrink-0 text-muted-foreground hover:text-foreground" onClick={() => setStep(3)}>
-                                    Skip for now
+                                    {t("common.skip")}
+                                </Button>
+                            </div>
+
+                            <div className="space-y-4">
+                                {modules.map((mod, i) => (
+                                    <div key={i} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border border-border/50">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-medium text-sm">{mod.name}</p>
+                                            {mod.description && <p className="text-xs text-muted-foreground">{mod.description}</p>}
+                                        </div>
+                                        <Button variant="ghost" size="sm" onClick={() => removeModule(i)}>
+                                            <AppIcon name="X" className="h-4 w-4 text-muted-foreground" />
+                                        </Button>
+                                    </div>
+                                ))}
+
+                                <div className="flex gap-2">
+                                    <Input placeholder={t("wizard.moduleName")} value={newModName} onChange={e => setNewModName(e.target.value)} className="flex-1" />
+                                    <Input placeholder={t("wizard.moduleDesc")} value={newModDesc} onChange={e => setNewModDesc(e.target.value)} className="flex-1" />
+                                    <Button variant="outline" onClick={addModule} disabled={!newModName.trim()}>
+                                        <AppIcon name="Plus" className="h-4 w-4" />
+                                    </Button>
+                                </div>
+
+                                <div className="pt-4 flex justify-end">
+                                    <Button onClick={handleSaveModules} className="h-11 px-8 font-medium bg-brand hover:bg-brand-hover text-white">
+                                        {t("common.next")}
+                                        <AppIcon name="ArrowRight" className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Step 3: Sources */}
+                {step === 3 && (
+                    <Card className="border-border/60 shadow-sm bg-card/50 backdrop-blur-sm animate-in fade-in slide-in-from-right-8 duration-300">
+                        <CardContent className="p-6 sm:p-8 pt-8">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+                                <div>
+                                    <h2 className="text-xl font-semibold mb-1">{t("wizard.sourcesTitle")}</h2>
+                                    <p className="text-muted-foreground text-sm">{t("wizard.sourcesDesc")}</p>
+                                </div>
+                                <Button variant="ghost" className="shrink-0 text-muted-foreground hover:text-foreground" onClick={() => setStep(4)}>
+                                    {t("common.skip")}
                                 </Button>
                             </div>
 
                             <div className="space-y-8">
                                 <div className="bg-background/50 rounded-xl p-4 sm:p-6 border border-border/50">
-                                    <FileUploadArea
-                                        files={files}
-                                        onFilesChange={setFiles}
-                                        disabled={isUploading}
-                                    />
+                                    <FileUploadArea files={files} onFilesChange={setFiles} disabled={isUploading} />
                                 </div>
 
                                 <div className="relative">
-                                    <div className="absolute inset-0 flex items-center">
-                                        <span className="w-full border-t border-border/60"></span>
-                                    </div>
-                                    <div className="relative flex justify-center text-xs uppercase">
-                                        <span className="bg-card px-2 text-muted-foreground">and / or</span>
-                                    </div>
+                                    <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/60"></span></div>
+                                    <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">and / or</span></div>
                                 </div>
 
                                 <div className="bg-background/50 rounded-xl p-4 sm:p-6 border border-border/50">
-                                    <UrlUploadInput
-                                        urls={urls}
-                                        onUrlsChange={setUrls}
-                                        disabled={isUploading}
-                                    />
+                                    <UrlUploadInput urls={urls} onUrlsChange={setUrls} disabled={isUploading} />
                                 </div>
 
                                 <div className="pt-4 flex justify-end items-center gap-4">
@@ -238,15 +295,9 @@ export default function NewProjectWizard() {
                                         className="h-11 px-8 font-medium bg-brand hover:bg-brand-hover text-white transition-all shadow-md hover:shadow-lg"
                                     >
                                         {isUploading ? (
-                                            <>
-                                                <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin mr-2" />
-                                                Processing Sources...
-                                            </>
+                                            <><div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin mr-2" />{t("wizard.processing")}</>
                                         ) : (
-                                            <>
-                                                Upload & Train
-                                                <AppIcon name="Sparkles" className="ml-2 h-4 w-4" />
-                                            </>
+                                            <>{t("wizard.uploadTrain")}<AppIcon name="Sparkles" className="ml-2 h-4 w-4" /></>
                                         )}
                                     </Button>
                                 </div>
@@ -255,8 +306,97 @@ export default function NewProjectWizard() {
                     </Card>
                 )}
 
-                {/* Step 3: Test & Launch */}
-                {step === 3 && (
+                {/* Step 4: Branding */}
+                {step === 4 && (
+                    <Card className="border-border/60 shadow-sm bg-card/50 backdrop-blur-sm animate-in fade-in slide-in-from-right-8 duration-300">
+                        <CardContent className="p-6 sm:p-8 pt-8">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+                                <div>
+                                    <h2 className="text-xl font-semibold mb-1">{t("wizard.brandingTitle")}</h2>
+                                    <p className="text-muted-foreground text-sm">{t("wizard.brandingDesc")}</p>
+                                </div>
+                                <Button variant="ghost" className="shrink-0 text-muted-foreground hover:text-foreground" onClick={() => setStep(5)}>
+                                    {t("common.skip")}
+                                </Button>
+                            </div>
+
+                            <div className="grid gap-6 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label>{t("wizard.chatbotDisplayName")}</Label>
+                                    <Input placeholder={t("wizard.chatbotDisplayNamePlaceholder")} value={chatbotDisplayName} onChange={e => setChatbotDisplayName(e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>{t("wizard.welcomeMessage")}</Label>
+                                    <Input placeholder={t("wizard.welcomeMessagePlaceholder")} value={welcomeMessage} onChange={e => setWelcomeMessage(e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>{t("wizard.primaryColor")}</Label>
+                                    <div className="flex items-center gap-3">
+                                        <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                                        <Input value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="font-mono text-sm" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>{t("wizard.headerColor")}</Label>
+                                    <div className="flex items-center gap-3">
+                                        <input type="color" value={headerColor} onChange={e => setHeaderColor(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                                        <Input value={headerColor} onChange={e => setHeaderColor(e.target.value)} className="font-mono text-sm" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>{t("wizard.userBubble")}</Label>
+                                    <div className="flex items-center gap-3">
+                                        <input type="color" value={userBubbleColor} onChange={e => setUserBubbleColor(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                                        <Input value={userBubbleColor} onChange={e => setUserBubbleColor(e.target.value)} className="font-mono text-sm" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>{t("wizard.botBubble")}</Label>
+                                    <div className="flex items-center gap-3">
+                                        <input type="color" value={botBubbleColor} onChange={e => setBotBubbleColor(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                                        <Input value={botBubbleColor} onChange={e => setBotBubbleColor(e.target.value)} className="font-mono text-sm" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2 sm:col-span-2">
+                                    <Label>{t("wizard.logoUrl")}</Label>
+                                    <Input placeholder="https://example.com/logo.png" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} />
+                                </div>
+                            </div>
+
+                            {/* Live preview */}
+                            <div className="mt-8 p-4 border border-border/50 rounded-xl bg-muted/30">
+                                <p className="text-xs text-muted-foreground mb-3 font-medium">{t("wizard.brandingPreview")}</p>
+                                {/* Header preview */}
+                                <div className="rounded-t-lg px-4 py-3 flex items-center gap-2 border border-b-0 border-border/30" style={{ backgroundColor: headerColor }}>
+                                    {logoUrl && <img src={logoUrl} alt="Logo" className="w-6 h-6 rounded object-contain" />}
+                                    <span className="text-sm font-semibold" style={{ color: headerColor !== '#ffffff' && headerColor !== '#fff' ? '#fff' : '#1e293b' }}>{chatbotDisplayName || projectName || 'Chatbot'}</span>
+                                </div>
+                                <div className="space-y-2 p-3 border border-t-0 border-border/30 rounded-b-lg">
+                                    <div className="flex justify-end">
+                                        <div className="rounded-lg px-4 py-2 text-sm text-white" style={{ backgroundColor: userBubbleColor }}>
+                                            Hello!
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-start">
+                                        <div className="rounded-lg px-4 py-2 text-sm" style={{ backgroundColor: botBubbleColor, color: botBubbleColor === '#f1f5f9' ? '#1e293b' : '#fff' }}>
+                                            {welcomeMessage || 'Hi there! How can I help you today?'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-6 flex justify-end">
+                                <Button onClick={handleSaveBranding} className="h-11 px-8 font-medium bg-brand hover:bg-brand-hover text-white">
+                                    {t("common.next")}
+                                    <AppIcon name="ArrowRight" className="ml-2 h-4 w-4" />
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Step 5: Launch */}
+                {step === 5 && (
                     <Card className="border-border/60 shadow-sm bg-card/50 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-500 text-center overflow-hidden">
                         <div className="h-2 bg-success w-full" />
                         <CardContent className="p-8 md:p-12 pt-10 flex flex-col items-center">
@@ -267,30 +407,23 @@ export default function NewProjectWizard() {
                                 </div>
                             </div>
 
-                            <h2 className="text-2xl font-bold mb-3 tracking-tight text-foreground">
-                                Your Chatbot is Ready!
-                            </h2>
-                            <p className="text-muted-foreground mb-10 max-w-md leading-relaxed text-[15px]">
-                                The AI is now trained and ready to answer questions based on the knowledge you provided.
-                            </p>
+                            <h2 className="text-2xl font-bold mb-3 tracking-tight text-foreground">{t("wizard.readyTitle")}</h2>
+                            <p className="text-muted-foreground mb-10 max-w-md leading-relaxed text-[15px]">{t("wizard.readyDesc")}</p>
 
                             <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
                                 <Button asChild variant="outline" className="flex-1 h-12 text-base shadow-sm border-border/60">
-                                    <Link href={`/projects`}>
-                                        Back to Dashboard
-                                    </Link>
+                                    <Link href="/projects">{t("wizard.backDashboard")}</Link>
                                 </Button>
                                 <Button asChild className="flex-1 h-12 text-base font-medium shadow-md bg-brand hover:bg-brand-hover text-white">
-                                    <Link href={`/projects/${projectId}/chat`}>
+                                    <Link href={`/projects/${projectId}`}>
                                         <AppIcon name="MessageSquare" className="mr-2 h-4 w-4" />
-                                        Test Chatbot Now
+                                        {t("wizard.testNow")}
                                     </Link>
                                 </Button>
                             </div>
                         </CardContent>
                     </Card>
                 )}
-
             </div>
         </MainLayout>
     );

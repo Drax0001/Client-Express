@@ -1,0 +1,28 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { prisma } from "../../../../../../lib/prisma";
+
+export async function PATCH(
+    request: NextRequest,
+    { params }: { params: { id: string } }
+) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id: projectId } = await params;
+    const body = await request.json();
+
+    const project = await prisma.project.findUnique({ where: { id: projectId } });
+    if (!project || project.userId !== session.user.id) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const updated = await prisma.project.update({
+        where: { id: projectId },
+        data: { modules: body.modules },
+    });
+
+    return NextResponse.json({ success: true, modules: updated.modules });
+}

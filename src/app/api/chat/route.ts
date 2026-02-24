@@ -8,6 +8,7 @@ import { ChatService } from "@/services/chat.service";
 import { errorHandler } from "@/lib/error-handler";
 import { auth } from "@/lib/auth";
 import { checkAndTrackMessageLimit } from "@/lib/limits";
+import { prisma } from "../../../../lib/prisma";
 
 /**
  * POST /api/chat
@@ -74,13 +75,30 @@ export async function POST(request: NextRequest) {
       conversationHistory: body.conversationHistory,
     });
 
+    // Persist messages to conversation if conversationId is provided
+    if (body.conversationId) {
+      try {
+        await prisma.projectChatMessage.createMany({
+          data: [
+            { conversationId: body.conversationId, role: "user", content: message.trim() },
+            { conversationId: body.conversationId, role: "assistant", content: result.answer },
+          ],
+        });
+        await prisma.projectConversation.update({
+          where: { id: body.conversationId },
+          data: { updatedAt: new Date() },
+        });
+      } catch (e) {
+        console.error("Failed to persist conversation messages:", e);
+      }
+    }
+
     console.log(`API: Chat - response generated for project ${projectId}`);
 
     return NextResponse.json(
       {
         answer: result.answer,
         sourceCount: result.sourceCount,
-        sources: result.sources,
       },
       { status: 200 },
     );

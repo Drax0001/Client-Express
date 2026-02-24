@@ -6,6 +6,7 @@ import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { queryClient } from "@/lib/query-client";
+import { I18nProvider } from "@/lib/i18n";
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -21,9 +22,11 @@ export function Providers({ children }: ProvidersProps) {
     >
       <SessionProvider>
         <QueryClientProvider client={queryClient}>
-          {children}
-          <Toaster />
-          <ReactQueryDevtools initialIsOpen={false} />
+          <I18nProvider>
+            {children}
+            <Toaster />
+            <ReactQueryDevtools initialIsOpen={false} />
+          </I18nProvider>
         </QueryClientProvider>
       </SessionProvider>
     </ThemeProvider>
