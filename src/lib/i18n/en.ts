@@ -18,6 +18,7 @@ const en = {
     "common.signOut": "Sign out",
     "common.getStarted": "Get Started",
     "common.saved": "Saved",
+    "common.save": "Save",
 
     // Sidebar
     "sidebar.dashboard": "Dashboard",
@@ -192,6 +193,19 @@ const en = {
     "chat.clearConversation": "Clear Conversation",
     "chat.enterToSend": "Press Enter to send, Shift+Enter for new line",
     "chat.basedOnDocs": "Responses are based on your uploaded documents only",
+
+    // Settings
+    "settings.generalTitle": "General Settings",
+    "settings.generalDesc": "Update your chatbot's basic information.",
+    "settings.chatbotName": "Chatbot Name",
+    "settings.nameDisabled": "Name modification is disabled for now.",
+    "settings.dangerZone": "Danger Zone",
+    "settings.dangerDesc": "Irreversible and destructive actions.",
+    "settings.saving": "Saving...",
+
+    // Logo
+    "logo.change": "Change Logo",
+    "logo.remove": "Remove Logo",
 } as const;
 
 export type TranslationKey = keyof typeof en;

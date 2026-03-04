@@ -23,7 +23,10 @@ export async function PATCH(
         primaryColor: body.primaryColor,
         userBubbleColor: body.userBubbleColor,
         botBubbleColor: body.botBubbleColor,
+        headerColor: body.headerColor,
         logoUrl: body.logoUrl,
+        chatbotDisplayName: body.chatbotDisplayName,
+        welcomeMessage: body.welcomeMessage,
     };
 
     const updated = await prisma.project.update({

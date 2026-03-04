@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChatInterface } from "@/components/chatbots/chat-interface";
+import { ChatInterface, type ChatBranding } from "@/components/chatbots/chat-interface";
 
 interface Message {
     id: string;
@@ -10,7 +10,13 @@ interface Message {
     timestamp: Date;
 }
 
-export function PublicChat({ projectId, projectName }: { projectId: string; projectName: string }) {
+interface PublicChatProps {
+    projectId: string;
+    projectName: string;
+    branding?: ChatBranding | null;
+}
+
+export function PublicChat({ projectId, projectName, branding }: PublicChatProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -74,6 +80,7 @@ export function PublicChat({ projectId, projectName }: { projectId: string; proj
             chatbotName={projectName}
             messages={messages}
             isLoading={isLoading}
+            branding={branding}
             onSendMessage={handleSendMessage}
             className="h-full border-none rounded-none shadow-none"
         />

@@ -91,6 +91,8 @@ export default function ProjectPage() {
   const [editBotBubble, setEditBotBubble] = useState("");
   const [editHeaderColor, setEditHeaderColor] = useState("");
   const [editLogoUrl, setEditLogoUrl] = useState("");
+  const [editLogoFile, setEditLogoFile] = useState<File | null>(null);
+  const [editLogoPreview, setEditLogoPreview] = useState<string | null>(null);
   const [editDisplayName, setEditDisplayName] = useState("");
   const [editWelcomeMsg, setEditWelcomeMsg] = useState("");
   const [brandingSaving, setBrandingSaving] = useState(false);
@@ -112,6 +114,21 @@ export default function ProjectPage() {
   const handleSaveBranding = async () => {
     setBrandingSaving(true);
     try {
+      // Upload logo file first if present
+      let finalLogoUrl = editLogoUrl || undefined;
+      if (editLogoFile) {
+        const formData = new FormData();
+        formData.append("logo", editLogoFile);
+        const uploadRes = await fetch(`/api/projects/${projectId}/logo/upload`, {
+          method: "POST",
+          body: formData,
+        });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          finalLogoUrl = uploadData.logoUrl;
+        }
+      }
+
       await fetch(`/api/projects/${projectId}/branding`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -120,12 +137,13 @@ export default function ProjectPage() {
           userBubbleColor: editUserBubble,
           botBubbleColor: editBotBubble,
           headerColor: editHeaderColor,
-          logoUrl: editLogoUrl || undefined,
+          logoUrl: finalLogoUrl,
           chatbotDisplayName: editDisplayName || undefined,
           welcomeMessage: editWelcomeMsg || undefined,
         }),
       });
       toast({ title: t("common.saved") || "Branding saved" });
+      setEditLogoFile(null);
       refetch();
     } catch {
       toast({ title: "Failed to save branding", variant: "destructive" });
@@ -963,17 +981,17 @@ export default function ProjectPage() {
             >
               <Card className="border-border/60 shadow-sm mb-6">
                 <CardHeader>
-                  <CardTitle>General Settings</CardTitle>
+                  <CardTitle>{t("settings.generalTitle")}</CardTitle>
                   <CardDescription>
-                    Update your chatbot's basic information.
+                    {t("settings.generalDesc")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Chatbot Name</Label>
+                    <Label>{t("settings.chatbotName")}</Label>
                     <Input defaultValue={project.name} disabled />
                     <p className="text-xs text-muted-foreground">
-                      Name modification is disabled for now.
+                      {t("settings.nameDisabled")}
                     </p>
                   </div>
                 </CardContent>
@@ -1027,8 +1045,33 @@ export default function ProjectPage() {
                       </div>
                     </div>
                     <div className="space-y-2 sm:col-span-2">
-                      <Label>{t("wizard.logoUrl")}</Label>
-                      <Input placeholder="https://example.com/logo.png" value={editLogoUrl} onChange={e => setEditLogoUrl(e.target.value)} />
+                      <Label>{t("wizard.logoUpload")}</Label>
+                      <div className="flex items-center gap-4">
+                        {(editLogoPreview || editLogoUrl) && (
+                          <img src={editLogoPreview || editLogoUrl} alt="Logo" className="w-12 h-12 rounded-lg object-contain border border-border" />
+                        )}
+                        <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted transition-colors text-sm font-medium">
+                          <AppIcon name="Upload" className="h-4 w-4" />
+                          {editLogoFile ? editLogoFile.name : (editLogoUrl ? t("logo.change") : t("wizard.logoUpload"))}
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setEditLogoFile(file);
+                                setEditLogoPreview(URL.createObjectURL(file));
+                              }
+                            }}
+                          />
+                        </label>
+                        {(editLogoFile || editLogoUrl) && (
+                          <Button variant="ghost" size="sm" onClick={() => { setEditLogoFile(null); setEditLogoPreview(null); setEditLogoUrl(""); }}>
+                            <AppIcon name="X" className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="pt-2">
@@ -1042,10 +1085,10 @@ export default function ProjectPage() {
               <Card className="border-destructive/30 shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-destructive">
-                    Danger Zone
+                    {t("settings.dangerZone")}
                   </CardTitle>
                   <CardDescription>
-                    Irreversible and destructive actions.
+                    {t("settings.dangerDesc")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

@@ -64,7 +64,8 @@ export default function NewProjectWizard() {
     const [userBubbleColor, setUserBubbleColor] = useState("#6366f1");
     const [botBubbleColor, setBotBubbleColor] = useState("#f1f5f9");
     const [headerColor, setHeaderColor] = useState("#ffffff");
-    const [logoUrl, setLogoUrl] = useState("");
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [chatbotDisplayName, setChatbotDisplayName] = useState("");
     const [welcomeMessage, setWelcomeMessage] = useState("");
 
@@ -128,6 +129,21 @@ export default function NewProjectWizard() {
     const handleSaveBranding = async () => {
         if (projectId) {
             try {
+                // Upload logo file first if present
+                let uploadedLogoUrl: string | undefined;
+                if (logoFile) {
+                    const formData = new FormData();
+                    formData.append("logo", logoFile);
+                    const uploadRes = await fetch(`/api/projects/${projectId}/logo/upload`, {
+                        method: "POST",
+                        body: formData,
+                    });
+                    if (uploadRes.ok) {
+                        const uploadData = await uploadRes.json();
+                        uploadedLogoUrl = uploadData.logoUrl;
+                    }
+                }
+
                 await fetch(`/api/projects/${projectId}/branding`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
@@ -136,7 +152,7 @@ export default function NewProjectWizard() {
                         userBubbleColor,
                         botBubbleColor,
                         headerColor,
-                        logoUrl: logoUrl || undefined,
+                        logoUrl: uploadedLogoUrl || undefined,
                         chatbotDisplayName: chatbotDisplayName || undefined,
                         welcomeMessage: welcomeMessage || undefined,
                     }),
@@ -358,8 +374,33 @@ export default function NewProjectWizard() {
                                     </div>
                                 </div>
                                 <div className="space-y-2 sm:col-span-2">
-                                    <Label>{t("wizard.logoUrl")}</Label>
-                                    <Input placeholder="https://example.com/logo.png" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} />
+                                    <Label>{t("wizard.logoUpload")}</Label>
+                                    <div className="flex items-center gap-4">
+                                        {logoPreview && (
+                                            <img src={logoPreview} alt="Logo preview" className="w-12 h-12 rounded-lg object-contain border border-border" />
+                                        )}
+                                        <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted transition-colors text-sm font-medium">
+                                            <AppIcon name="Upload" className="h-4 w-4" />
+                                            {logoFile ? logoFile.name : t("wizard.logoUpload")}
+                                            <input
+                                                type="file"
+                                                accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif"
+                                                className="hidden"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        setLogoFile(file);
+                                                        setLogoPreview(URL.createObjectURL(file));
+                                                    }
+                                                }}
+                                            />
+                                        </label>
+                                        {logoFile && (
+                                            <Button variant="ghost" size="sm" onClick={() => { setLogoFile(null); setLogoPreview(null); }}>
+                                                <AppIcon name="X" className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
@@ -368,7 +409,7 @@ export default function NewProjectWizard() {
                                 <p className="text-xs text-muted-foreground mb-3 font-medium">{t("wizard.brandingPreview")}</p>
                                 {/* Header preview */}
                                 <div className="rounded-t-lg px-4 py-3 flex items-center gap-2 border border-b-0 border-border/30" style={{ backgroundColor: headerColor }}>
-                                    {logoUrl && <img src={logoUrl} alt="Logo" className="w-6 h-6 rounded object-contain" />}
+                                    {logoPreview && <img src={logoPreview} alt="Logo" className="w-6 h-6 rounded object-contain" />}
                                     <span className="text-sm font-semibold" style={{ color: headerColor !== '#ffffff' && headerColor !== '#fff' ? '#fff' : '#1e293b' }}>{chatbotDisplayName || projectName || 'Chatbot'}</span>
                                 </div>
                                 <div className="space-y-2 p-3 border border-t-0 border-border/30 rounded-b-lg">

@@ -20,6 +20,7 @@ const fr: Record<TranslationKey, string> = {
     "common.signOut": "Se déconnecter",
     "common.getStarted": "Commencer",
     "common.saved": "Enregistré",
+    "common.save": "Enregistrer",
 
     // Sidebar
     "sidebar.dashboard": "Tableau de bord",
@@ -194,6 +195,19 @@ const fr: Record<TranslationKey, string> = {
     "chat.clearConversation": "Effacer la conversation",
     "chat.enterToSend": "Appuyez sur Entrée pour envoyer, Maj+Entrée pour un saut de ligne",
     "chat.basedOnDocs": "Les réponses sont basées uniquement sur vos documents téléchargés",
+
+    // Settings
+    "settings.generalTitle": "Paramètres généraux",
+    "settings.generalDesc": "Mettez à jour les informations de base de votre chatbot.",
+    "settings.chatbotName": "Nom du chatbot",
+    "settings.nameDisabled": "La modification du nom est désactivée pour le moment.",
+    "settings.dangerZone": "Zone dangereuse",
+    "settings.dangerDesc": "Actions irréversibles et destructives.",
+    "settings.saving": "Enregistrement...",
+
+    // Logo
+    "logo.change": "Changer le logo",
+    "logo.remove": "Supprimer le logo",
 };
 
 export default fr;
