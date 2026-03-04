@@ -10,7 +10,7 @@ import { checkAndTrackMessageLimit } from "@/lib/limits";
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // 1. Await params before using them to fix Next.js 15+ async params warning
@@ -34,14 +34,14 @@ export async function POST(
     // 2. Load the project to determine the owner
     const project = await prisma.project.findUnique({
       where: { id: projectId },
-      select: { userId: true, documentCount: true },
+      select: { userId: true, _count: { select: { documents: true } } },
     });
 
     if (!project || !project.userId) {
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
 
-    if (project.documentCount === 0) {
+    if (project._count.documents === 0) {
       return NextResponse.json(
         { error: "This chatbot is not yet trained with any documents." },
         { status: 400 },
@@ -69,7 +69,6 @@ export async function POST(
       {
         answer: result.answer,
         sourceCount: result.sourceCount,
-        sources: result.sources,
       },
       { status: 200 },
     );

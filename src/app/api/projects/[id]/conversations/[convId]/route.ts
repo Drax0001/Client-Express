@@ -7,7 +7,7 @@ import { prisma } from "../../../../../../../lib/prisma";
  */
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string; convId: string } }
+    { params }: { params: Promise<{ id: string; convId: string }> }
 ) {
     const session = await auth();
     if (!session?.user?.id) {
@@ -35,7 +35,7 @@ export async function GET(
  */
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string; convId: string } }
+    { params }: { params: Promise<{ id: string; convId: string }> }
 ) {
     const session = await auth();
     if (!session?.user?.id) {
@@ -69,7 +69,7 @@ export async function PATCH(
  */
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string; convId: string } }
+    { params }: { params: Promise<{ id: string; convId: string }> }
 ) {
     const session = await auth();
     if (!session?.user?.id) {

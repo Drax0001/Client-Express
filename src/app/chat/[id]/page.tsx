@@ -7,7 +7,7 @@ import { Providers } from "@/components/providers";
 export default async function PublicChatPage({
     params,
 }: {
-    params: { id: string };
+    params: Promise<{ id: string }>;
 }) {
     const { id: projectId } = await params;
 

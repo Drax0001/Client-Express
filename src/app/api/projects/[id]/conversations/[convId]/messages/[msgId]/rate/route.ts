@@ -8,7 +8,7 @@ import { prisma } from "../../../../../../../../../../lib/prisma";
  */
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string; convId: string; msgId: string } }
+    { params }: { params: Promise<{ id: string; convId: string; msgId: string }> }
 ) {
     const session = await auth();
     if (!session?.user?.id) {

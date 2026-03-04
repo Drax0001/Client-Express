@@ -71,7 +71,7 @@ export default function ChatPage() {
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       content,
-      isUser: true,
+      role: "user",
       timestamp: new Date(),
     };
 
@@ -81,7 +81,7 @@ export default function ChatPage() {
     try {
       // Convert messages to conversation history format
       const conversationHistory = messages.map(msg => ({
-        role: msg.isUser ? "user" as const : "assistant" as const,
+        role: msg.role === "user" ? "user" as const : "assistant" as const,
         content: msg.content,
       }));
 
@@ -95,9 +95,8 @@ export default function ChatPage() {
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
         content: response.answer,
-        isUser: false,
+        role: "assistant",
         timestamp: new Date(),
-        sourceCount: response.sourceCount,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -108,7 +107,7 @@ export default function ChatPage() {
         content:
           error.error?.message ||
           "Sorry, I encountered an error while processing your question. Please try again.",
-        isUser: false,
+        role: "assistant",
         timestamp: new Date(),
       };
 

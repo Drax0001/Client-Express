@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
- 
+
 function disabledResponse() {
   return NextResponse.json(
     {
@@ -28,9 +28,6 @@ export async function POST(request: NextRequest) {
  * GET /api/upload/:sessionId - Get upload session details
  * Useful for checking session status before training
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ sessionId: string }> }
-) {
+export async function GET(request: NextRequest) {
   return disabledResponse();
 }

@@ -134,37 +134,29 @@ export function UrlUploadInput({
       }
 
       // Update URL with validation results
-      const updatedUrls = urls.map((u) =>
+      const updatedUrls: ValidatedUrl[] = urls.map((u) =>
         u.id === validatingUrl.id
           ? {
-              ...u,
-              status: errors.length === 0 ? "ready" : "error",
-              validationErrors: errors,
-              metadata,
-            }
+            ...u,
+            status: (errors.length === 0 ? "ready" : "error") as "ready" | "error",
+            validationErrors: errors,
+            metadata,
+          }
           : u,
       );
 
-      onUrlsChange([
-        ...updatedUrls,
-        {
-          ...validatingUrl,
-          status: errors.length === 0 ? "ready" : "error",
-          validationErrors: errors,
-          metadata,
-        },
-      ]);
+      onUrlsChange(updatedUrls);
     } catch (fetchError) {
       // Update with error status
       const updatedUrls = urls.map((u) =>
         u.id === validatingUrl.id
           ? {
-              ...u,
-              status: "error",
-              validationErrors: [
-                "Failed to validate URL - may be inaccessible",
-              ],
-            }
+            ...u,
+            status: "error",
+            validationErrors: [
+              "Failed to validate URL - may be inaccessible",
+            ],
+          }
           : u,
       );
 

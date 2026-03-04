@@ -196,7 +196,7 @@ export function TrainingConfig({
               disabled={disabled}
               className={cn(
                 !config.name.trim() &&
-                  "border-destructive focus-visible:ring-destructive",
+                "border-destructive focus-visible:ring-destructive",
               )}
             />
           </div>
@@ -349,7 +349,7 @@ export function TrainingConfig({
       {/* Validation Errors */}
       {errors.length > 0 && (
         <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
+          <AppIcon name="AlertTriangle" className="h-4 w-4" />
           <AlertDescription>
             <ul className="list-disc list-inside space-y-1">
               {errors.map((error, index) => (

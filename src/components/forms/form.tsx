@@ -42,6 +42,6 @@ export function useFormWithValidation<T extends FieldValues>(
 ) {
   return useForm<T>({
     ...options,
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema as any) as any,
   });
 }

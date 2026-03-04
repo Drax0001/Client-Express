@@ -43,7 +43,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
         />
         {error && (
           <p className="text-sm text-destructive" role="alert">
-            {error.message}
+            {String(error.message)}
           </p>
         )}
       </div>

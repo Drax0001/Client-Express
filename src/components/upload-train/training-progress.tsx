@@ -13,12 +13,12 @@ export interface TrainingProgress {
   trainingId: string;
   status: "queued" | "processing" | "completed" | "failed" | "cancelled";
   currentStep:
-    | "uploading"
-    | "extracting"
-    | "chunking"
-    | "embedding"
-    | "storing"
-    | string;
+  | "uploading"
+  | "extracting"
+  | "chunking"
+  | "embedding"
+  | "storing"
+  | string;
   progress: number; // 0-100
   currentFile?: string;
   errors: string[];
@@ -276,7 +276,7 @@ export function TrainingProgress({
                       className={cn(
                         "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2",
                         isCompleted &&
-                          "bg-green-500 border-green-500 text-white",
+                        "bg-green-500 border-green-500 text-white",
                         isCurrent && "border-blue-500 text-blue-500",
                         isPending && "border-gray-300 text-gray-400",
                       )}
@@ -321,7 +321,7 @@ export function TrainingProgress({
                 <Badge variant="secondary">
                   {Math.round(
                     ((completedSteps + progress.progress / 100) / totalSteps) *
-                      100,
+                    100,
                   )}
                   % complete
                 </Badge>
@@ -334,7 +334,7 @@ export function TrainingProgress({
       {/* Errors */}
       {progress.errors.length > 0 && (
         <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
+          <AppIcon name="AlertCircle" className="h-4 w-4" />
           <AlertDescription>
             <div className="space-y-2">
               <p className="font-medium">
@@ -357,7 +357,7 @@ export function TrainingProgress({
         <Card className="border-green-200 bg-green-50">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <CheckCircle className="h-8 w-8 text-green-500" />
+              <AppIcon name="CheckCircle" className="h-8 w-8 text-green-500" />
               <div>
                 <h3 className="font-semibold text-green-800">
                   Training Complete!
