@@ -140,8 +140,8 @@ export function Sidebar() {
                   <div className="flex items-center text-xs text-muted-foreground gap-1">
                     <span className="truncate">{plan} plan</span>
                     <span>·</span>
-                    <Link href="/checkout" className="text-brand hover:underline font-medium flex items-center">
-                      <AppIcon name="ArrowUp" className="h-3 w-3 inline" />
+                    <Link href="/settings?tab=billing" className="text-brand hover:underline font-medium flex items-center">
+                      Upgrade
                     </Link>
                   </div>
                 </div>

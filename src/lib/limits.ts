@@ -30,6 +30,29 @@ export const PLAN_LIMITS = {
  * Initializes or fetches a user's subscription and monthly usage tracker.
  */
 export async function getUserPlanAndUsage(userId: string) {
+    // Verify the user actually exists in the database first
+    const userExists = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true },
+    });
+
+    if (!userExists) {
+        // User ID from JWT doesn't match any DB record — return safe defaults
+        return {
+            plan: "FREE" as const,
+            limits: PLAN_LIMITS.FREE,
+            usage: {
+                id: "",
+                userId,
+                messagesThisMonth: 0,
+                sourcesThisMonth: 0,
+                resetDate: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        };
+    }
+
     // Parallel fetch for speed
     const [sub, usage] = await Promise.all([
         prisma.subscription.findUnique({ where: { userId } }),

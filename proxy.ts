@@ -8,7 +8,12 @@ const publicPaths = new Set([
     "/login",
     "/signup",
     "/api/auth",
+    "/api/widget",       // Widget API — public
     "/api/payments/webhook", // CamPay webhook needs to be public
+    "/api/openapi",      // OpenAPI spec
+    "/widget",           // Public chatbot widget
+    "/chat",             // Public chatbot full-page
+    "/reference",        // API reference docs
 ]);
 
 // Allow static files and next internals

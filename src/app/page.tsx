@@ -6,6 +6,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import Image from "next/image";
 import { Icon } from "@/components/ui/icon";
 import { useSession } from "next-auth/react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -38,6 +39,7 @@ export default function Home() {
             <span className="font-bold text-xl">ClientExpress</span>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             {status === "authenticated" ? (
               <Button asChild>
                 <a href="/projects">Dashboard</a>

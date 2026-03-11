@@ -11,7 +11,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     <div className="h-dvh bg-background flex overflow-hidden">
       <Sidebar />
       <main className="flex-1 min-w-0 w-full overflow-y-auto pb-16 md:pb-0">
-        <div className="w-full max-w-[1280px] mx-auto p-4 md:p-8 min-h-full flex flex-col">
+        <div className="w-full h-full mx-auto p-4 md:p-8 flex flex-col">
           {children}
         </div>
       </main>

@@ -44,6 +44,7 @@ export class LLMService {
   private config: AppConfig;
   private circuitBreaker: CircuitBreaker;
   private isLocalProvider: boolean = false;
+  private activeModelId: string | null = null;
 
   constructor(override?: Partial<LLMConfig>) {
     const config = getConfig();
@@ -52,14 +53,22 @@ export class LLMService {
   }
 
   /**
-   * Initializes the LLM model based on configuration
+   * Initializes the LLM model based on configuration.
+   * Re-initializes if the requested modelId differs from the active one.
    * @private
    */
-  private initializeModel(): ChatGoogleGenerativeAI | null {
+  private initializeModel(
+    modelId?: string,
+    temperatureOverride?: number,
+    maxTokensOverride?: number,
+  ): ChatGoogleGenerativeAI | null {
     const { llm } = this.config;
 
     if (llm.provider === "gemini") {
-      if (this.model) {
+      const requestedModel = modelId || llm.modelName;
+
+      // Re-use existing model if same modelId
+      if (this.model && this.activeModelId === requestedModel) {
         return this.model;
       }
 
@@ -67,15 +76,19 @@ export class LLMService {
         throw new LLMError("Google API key is required for Gemini provider");
       }
 
-      // Ensure temperature is <= 0.3 as per requirement 10.4
-      const temperature = Math.min(llm.temperature, 0.3);
+      // Allow configurable temperature up to 0.8
+      const temperature = Math.min(
+        temperatureOverride ?? llm.temperature,
+        0.8,
+      );
 
       this.model = new ChatGoogleGenerativeAI({
         apiKey: llm.apiKey,
-        model: llm.modelName,
+        model: requestedModel,
         temperature,
-        maxOutputTokens: llm.maxTokens,
+        maxOutputTokens: maxTokensOverride ?? llm.maxTokens,
       });
+      this.activeModelId = requestedModel;
       this.isLocalProvider = false;
       return this.model;
     } else if (llm.provider === "local") {
@@ -137,8 +150,7 @@ export class LLMService {
         throw error;
       }
       throw new LLMError(
-        `Failed to call local LLM: ${
-          error instanceof Error ? error.message : "Unknown error"
+        `Failed to call local LLM: ${error instanceof Error ? error.message : "Unknown error"
         }`,
       );
     }
@@ -147,18 +159,11 @@ export class LLMService {
   /**
    * Generates a response from the LLM based on system and user prompts
    *
-   * This method invokes the LLM with strict instructions to only answer based on
-   * provided context, preventing hallucinations. The LLM output is returned verbatim
-   * without any post-processing to maintain factual integrity.
-   *
-   * Requirements:
-   * - 10.4: Temperature is enforced to be <= 0.3
-   * - 11.1: LLM output is returned verbatim without modification
-   * - 15.1: Supports configuration from environment variables
-   * - 15.2: Supports both Gemini and local LLM endpoints
+   * Supports dynamic model selection via optional params.
    *
    * @param systemPrompt - Instructions for the LLM on how to behave
    * @param userPrompt - The user's question with assembled context
+   * @param options - Optional: modelId, temperature, maxTokens for per-project config
    * @returns The LLM's response as a string
    * @throws LLMError if the LLM invocation fails
    * @throws QuotaExceededError if API quota is exceeded
@@ -167,11 +172,16 @@ export class LLMService {
   async generateResponse(
     systemPrompt: string,
     userPrompt: string,
+    options?: { modelId?: string; temperature?: number; maxTokens?: number },
   ): Promise<string> {
     try {
       const response = await withRetryAndCircuitBreaker(async () => {
-        // Initialize model (or check provider type)
-        this.initializeModel();
+        // Initialize model with optional overrides
+        this.initializeModel(
+          options?.modelId,
+          options?.temperature,
+          options?.maxTokens,
+        );
 
         if (this.isLocalProvider) {
           // Use local LLM endpoint
@@ -186,7 +196,6 @@ export class LLMService {
 
           const result = await model.invoke(messages);
 
-          // Return the LLM output verbatim (Requirement 11.1)
           return typeof result.content === "string"
             ? result.content
             : String(result.content);

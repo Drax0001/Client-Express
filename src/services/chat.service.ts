@@ -16,6 +16,7 @@ import {
 } from "../lib/errors";
 import { AppConfig, getConfig } from "../lib/config";
 import { QueryRewriter } from "../lib/query-rewriter";
+import { prisma } from "../../lib/prisma";
 
 /**
  * Chat query request interface
@@ -42,6 +43,7 @@ export interface ChatSource {
 export interface ChatResponse {
   answer: string;
   sourceCount: number;
+  sources?: ChatSource[];
 }
 
 /**
@@ -147,15 +149,38 @@ export class ChatService {
       throw new ValidationError("Message is required");
     }
 
-    // 6.1: Validate that the project exists
+    // 6.1: Validate that the project exists and load bot config
+    let project: any;
     try {
-      await this.projectService.getProject(projectId);
+      project = await prisma.project.findUniqueOrThrow({
+        where: { id: projectId },
+        select: {
+          id: true,
+          name: true,
+          modelId: true,
+          systemPrompt: true,
+          temperature: true,
+          maxTokens: true,
+          persona: true,
+          instructions: true,
+          responseStyle: true,
+          contextMessage: true,
+        },
+      });
     } catch (error) {
-      if (error instanceof NotFoundError) {
-        throw new NotFoundError(`Project '${projectId}' not found`);
-      }
-      throw error;
+      throw new NotFoundError(`Project '${projectId}' not found`);
     }
+
+    // Extract bot config
+    const botConfig = {
+      modelId: project.modelId || "gemini-2.5-flash",
+      temperature: project.temperature ?? 0.4,
+      maxTokens: project.maxTokens ?? 2048,
+      persona: project.persona || null,
+      instructions: project.instructions || null,
+      responseStyle: (project.responseStyle || "balanced") as "concise" | "balanced" | "detailed",
+      customSystemPrompt: project.systemPrompt || null,
+    };
 
     // Rewrite query with conversation context for better retrieval
     let searchMessage = message;
@@ -180,6 +205,11 @@ export class ChatService {
         searchMessage = message;
       }
     }
+
+    // Enrich user message with context message if configured
+    const enrichedMessage = project.contextMessage
+      ? `${message}\n\n[Context: ${project.contextMessage}]`
+      : message;
 
     // 6.2: Generate embedding for the (rewritten) user message
     let queryEmbedding: number[];
@@ -242,18 +272,10 @@ export class ChatService {
       };
     }
 
-    if (highestScore < relevanceThreshold) {
-      // 8.4: Don't invoke LLM if threshold not met
-      console.log("ChatService: below relevance threshold; returning IDK", {
-        highestScore,
-        relevanceThreshold,
-      });
-      return {
-        answer: "I don't know",
-        sourceCount: 0,
-        sources: [],
-      };
-    }
+    // Two-tier relevance: confident (>= threshold) vs low-confidence (>= 0.25)
+    const lowConfidenceThreshold = 0.25;
+    const isConfident = highestScore >= relevanceThreshold;
+    const hasPartialMatch = highestScore >= lowConfidenceThreshold;
 
     // Count unique documents from search results
     const uniqueDocumentIds = new Set(
@@ -263,9 +285,9 @@ export class ChatService {
     );
     const sourceCount = uniqueDocumentIds.size;
 
-    // Build sources array from top relevant results (above threshold)
+    // Build sources array from top results
     const sources: ChatSource[] = searchResults
-      .filter((r) => r.score >= relevanceThreshold)
+      .filter((r) => r.score >= lowConfidenceThreshold)
       .slice(0, 5)
       .map((r) => {
         const meta = r.metadata || {};
@@ -283,20 +305,72 @@ export class ChatService {
         };
       });
 
-    // 8.3: Assemble context if threshold met
-    const context = this.assembleContext(searchResults);
+    // Assemble context from search results
+    const context = hasPartialMatch ? this.assembleContext(searchResults) : "";
 
-    // 10.1, 10.2, 10.3: Construct prompts
-    const systemPrompt = `You are a knowledgeable assistant answering questions based ONLY on the provided context documents.
+    // Response style instruction
+    const styleInstruction = {
+      concise: "Keep your responses concise and to the point. Use short paragraphs and bullet points.",
+      balanced: "Provide thorough but well-organized responses. Use formatting like headers, bullet points, and numbered lists when helpful.",
+      detailed: "Provide comprehensive, in-depth responses. Cover all angles, include examples, and be thorough in your explanations.",
+    }[botConfig.responseStyle];
+
+    // Build persona section
+    const personaSection = botConfig.persona
+      ? `\nYour persona: ${botConfig.persona}`
+      : "";
+
+    // Build custom instructions section
+    const instructionsSection = botConfig.instructions
+      ? `\n\nADDITIONAL INSTRUCTIONS FROM THE PROJECT OWNER:\n${botConfig.instructions}`
+      : "";
+
+    // Build the system prompt based on confidence level
+    let systemPrompt: string;
+
+    if (botConfig.customSystemPrompt) {
+      // User provided a full custom system prompt override
+      systemPrompt = botConfig.customSystemPrompt
+        + `\n\nIMPORTANT: ALWAYS respond in the SAME LANGUAGE as the user's question.`
+        + personaSection
+        + instructionsSection;
+    } else if (isConfident) {
+      // Full-confidence prompt
+      systemPrompt = `You are a knowledgeable, warm, and professional assistant. You answer questions based on the provided context documents.${personaSection}
+
+CORE RULES:
+1. Answer using information from the provided context. Synthesize information across multiple sources when relevant.
+2. If the answer is partially in the context, share what you know and note what additional information might be needed.
+3. ALWAYS respond in the SAME LANGUAGE as the user's question. If the user asks in French, respond in French. If in English, respond in English. The context documents may be in a different language — translate and present the information in the user's language.
+4. ${styleInstruction}
+5. At the end of your response, suggest 1-2 related follow-up questions the user might want to ask, formatted as: "**You might also want to ask:** ..."
+6. Do NOT cite or reference source filenames or URLs directly in your answer.
+7. If you can provide additional useful context or related information from the documents, do so proactively.
+8. Use a professional but conversational tone — be the expert the user is consulting.${instructionsSection}`;
+    } else if (hasPartialMatch) {
+      // Low-confidence prompt — still helpful
+      systemPrompt = `You are a helpful, warm, and professional assistant. The user asked a question and the available context has only partial relevance. Your job is to still be as helpful as possible.${personaSection}
 
 RULES:
-1. Answer ONLY using information from the provided context
-2. If information spans multiple sources, synthesize them into a coherent answer
-3. If the answer is partially in the context, share what you can and note what's missing
-4. If the answer is NOT in the context at all, say: "I don't have enough information in the provided documents to answer this question."
-5. For follow-up questions, use the conversation history to maintain context
-6. Be detailed and thorough — users uploaded these documents for comprehensive answers
-7. Do NOT cite or reference source filenames or URLs in your answer`;
+1. Review the provided context carefully. Even if it's not a perfect match, extract and share ANY useful information that relates to the user's question.
+2. ALWAYS respond in the SAME LANGUAGE as the user's question.
+3. Be transparent: if the information is limited, say so politely, but still share what you found.
+4. Suggest 2-3 specific, related questions the user could ask that might yield better results from the available documents.
+5. ${styleInstruction}
+6. Encourage the user to rephrase or ask more specific questions.
+7. NEVER just say "I don't know" — always provide value, guidance, and suggestions.${instructionsSection}`;
+    } else {
+      // No relevant context at all — still be helpful
+      systemPrompt = `You are a helpful, warm, and professional assistant. The user asked a question but no relevant information was found in the available documents.${personaSection}
+
+RULES:
+1. ALWAYS respond in the SAME LANGUAGE as the user's question.
+2. Politely explain that the specific information wasn't found in the uploaded documents.
+3. Suggest 2-3 alternative questions the user could try that might relate to the document content.
+4. Encourage the user to upload additional documents if the topic isn't covered.
+5. Be genuinely helpful — offer guidance on how to get the most out of the assistant.
+6. NEVER give a flat "I don't know" — always provide actionable suggestions.${instructionsSection}`;
+    }
 
     // Build conversation context from history
     let conversationContext = "";
@@ -312,35 +386,45 @@ RULES:
         "\n\n";
     }
 
-    const userPrompt = `Context (each block is tagged with its source document):
+    let userPrompt: string;
+    if (hasPartialMatch) {
+      userPrompt = `Context (each block is tagged with its source document):
 ${context}
 
-${conversationContext}Current question: ${message}
+${conversationContext}Current question: ${enrichedMessage}
 
-Answer the question based on the context provided above.`;
+Respond in the same language as the question above. Provide a thorough, well-structured answer with follow-up suggestions.`;
+    } else {
+      userPrompt = `${conversationContext}The user asked: ${enrichedMessage}
 
-    // 10.4: Invoke LLM (temperature already constrained in LLMService)
+No relevant context was found in the uploaded documents. Respond in the same language as the question. Be helpful and suggest what the user could try instead.`;
+    }
+
+    // Invoke LLM with project-specific model config
     let llmResponse: string;
     try {
       const llmStart = Date.now();
-      // Allow a longer timeout for LLM
       llmResponse = await this.withTimeout(
-        llmService.generateResponse(systemPrompt, userPrompt),
+        llmService.generateResponse(systemPrompt, userPrompt, {
+          modelId: botConfig.modelId,
+          temperature: botConfig.temperature,
+          maxTokens: botConfig.maxTokens,
+        }),
         60000,
         "llm",
       );
       console.log(
-        `ChatService: LLM generation took ${Date.now() - llmStart}ms`,
+        `ChatService: LLM generation took ${Date.now() - llmStart}ms (model: ${botConfig.modelId})`,
       );
     } catch (error) {
       console.error("ChatService: LLM error:", error);
       throw new ServiceUnavailableError("Unable to generate response");
     }
 
-    // 11.1, 11.2, 11.3: Return response verbatim with source count and sources
+    // Return response with source count and sources
     return {
       answer: llmResponse,
-      sourceCount,
+      sourceCount: isConfident ? sourceCount : 0,
     };
   }
 

@@ -26,6 +26,16 @@ model Project {
   branding  Json?
   documents Document[]
   projectConversations ProjectConversation[]
+
+  // Bot customization
+  modelId        String   @default("gemini-2.5-flash")
+  systemPrompt   String?  @db.Text
+  temperature    Float    @default(0.4)
+  maxTokens      Int      @default(2048)
+  persona        String?
+  instructions   String?  @db.Text
+  responseStyle  String   @default("balanced")
+  contextMessage String?  @db.Text
 }
 
 model User {

@@ -8,10 +8,22 @@ import { Button } from "@/components/ui/button";
 export function ThemeToggle() {
   const [theme, setTheme] = React.useState<"light" | "dark">("light");
 
+  // Read persisted theme on mount
+  React.useEffect(() => {
+    const stored = localStorage.getItem("theme") as "light" | "dark" | null;
+    if (stored) {
+      setTheme(stored);
+    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      setTheme("dark");
+    }
+  }, []);
+
+  // Apply theme class + persist
   React.useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
     root.classList.add(theme);
+    localStorage.setItem("theme", theme);
   }, [theme]);
 
   return (
@@ -33,3 +45,4 @@ export function ThemeToggle() {
     </Button>
   );
 }
+

@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "@/lib/i18n";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ValidatedFile {
     id: string;
@@ -31,9 +32,9 @@ interface ValidatedUrl {
     metadata?: { title?: string; contentType?: string; size?: number; lastModified?: string; };
 }
 
-interface ModuleEntry {
-    name: string;
-    description: string;
+interface SuggestedMessage {
+    label: string;
+    prompt: string;
 }
 
 const TOTAL_STEPS = 5;
@@ -48,10 +49,11 @@ export default function NewProjectWizard() {
     const [projectName, setProjectName] = useState("");
     const createProjectMutation = useCreateProject();
 
-    // Step 2: Modules
-    const [modules, setModules] = useState<ModuleEntry[]>([]);
-    const [newModName, setNewModName] = useState("");
-    const [newModDesc, setNewModDesc] = useState("");
+    // Step 2: Bot Configuration (Context Message + Suggested Messages)
+    const [contextMessage, setContextMessage] = useState("");
+    const [suggestedMessages, setSuggestedMessages] = useState<SuggestedMessage[]>([]);
+    const [newSugLabel, setNewSugLabel] = useState("");
+    const [newSugPrompt, setNewSugPrompt] = useState("");
 
     // Step 3: Sources
     const [files, setFiles] = useState<ValidatedFile[]>([]);
@@ -63,6 +65,8 @@ export default function NewProjectWizard() {
     const [primaryColor, setPrimaryColor] = useState("#6366f1");
     const [userBubbleColor, setUserBubbleColor] = useState("#6366f1");
     const [botBubbleColor, setBotBubbleColor] = useState("#f1f5f9");
+    const [userTextColor, setUserTextColor] = useState("#ffffff");
+    const [botTextColor, setBotTextColor] = useState("#1e293b");
     const [headerColor, setHeaderColor] = useState("#ffffff");
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -83,13 +87,16 @@ export default function NewProjectWizard() {
         }
     };
 
-    const handleSaveModules = async () => {
-        if (projectId && modules.length > 0) {
+    const handleSaveBotConfig = async () => {
+        if (projectId) {
             try {
-                await fetch(`/api/projects/${projectId}/modules`, {
+                await fetch(`/api/projects/${projectId}/bot-config`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ modules }),
+                    body: JSON.stringify({
+                        contextMessage: contextMessage.trim() || null,
+                        modules: suggestedMessages,
+                    }),
                 });
             } catch { /* optional save failure, user can update later */ }
         }
@@ -151,6 +158,8 @@ export default function NewProjectWizard() {
                         primaryColor,
                         userBubbleColor,
                         botBubbleColor,
+                        userTextColor,
+                        botTextColor,
                         headerColor,
                         logoUrl: uploadedLogoUrl || undefined,
                         chatbotDisplayName: chatbotDisplayName || undefined,
@@ -162,18 +171,18 @@ export default function NewProjectWizard() {
         setStep(5);
     };
 
-    const addModule = () => {
-        if (!newModName.trim()) return;
-        setModules(prev => [...prev, { name: newModName.trim(), description: newModDesc.trim() }]);
-        setNewModName("");
-        setNewModDesc("");
+    const addSuggestion = () => {
+        if (!newSugLabel.trim() || !newSugPrompt.trim()) return;
+        setSuggestedMessages(prev => [...prev, { label: newSugLabel.trim(), prompt: newSugPrompt.trim() }]);
+        setNewSugLabel("");
+        setNewSugPrompt("");
     };
 
-    const removeModule = (idx: number) => {
-        setModules(prev => prev.filter((_, i) => i !== idx));
+    const removeSuggestion = (idx: number) => {
+        setSuggestedMessages(prev => prev.filter((_, i) => i !== idx));
     };
 
-    const stepLabels = [t("wizard.stepName"), t("wizard.stepModules"), t("wizard.stepSources"), t("wizard.stepBranding"), t("wizard.stepLaunch")];
+    const stepLabels = [t("wizard.stepName"), "Configure", t("wizard.stepSources"), t("wizard.stepBranding"), t("wizard.stepLaunch")];
 
     return (
         <MainLayout>
@@ -230,43 +239,89 @@ export default function NewProjectWizard() {
                     </Card>
                 )}
 
-                {/* Step 2: Modules */}
+                {/* Step 2: Bot Configuration */}
                 {step === 2 && (
                     <Card className="border-border/60 shadow-sm bg-card/50 backdrop-blur-sm animate-in fade-in slide-in-from-right-8 duration-300">
                         <CardContent className="p-6 sm:p-8 pt-8">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
                                 <div>
-                                    <h2 className="text-xl font-semibold mb-1">{t("wizard.modulesTitle")}</h2>
-                                    <p className="text-muted-foreground text-sm">{t("wizard.modulesDesc")}</p>
+                                    <h2 className="text-xl font-semibold mb-1">Configure Your Bot</h2>
+                                    <p className="text-muted-foreground text-sm">Set a context message and suggested quick actions for your users</p>
                                 </div>
                                 <Button variant="ghost" className="shrink-0 text-muted-foreground hover:text-foreground" onClick={() => setStep(3)}>
                                     {t("common.skip")}
                                 </Button>
                             </div>
 
-                            <div className="space-y-4">
-                                {modules.map((mod, i) => (
-                                    <div key={i} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border border-border/50">
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-medium text-sm">{mod.name}</p>
-                                            {mod.description && <p className="text-xs text-muted-foreground">{mod.description}</p>}
-                                        </div>
-                                        <Button variant="ghost" size="sm" onClick={() => removeModule(i)}>
-                                            <AppIcon name="X" className="h-4 w-4 text-muted-foreground" />
-                                        </Button>
-                                    </div>
-                                ))}
+                            <div className="space-y-6">
+                                {/* Context Message */}
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium flex items-center gap-2">
+                                        <AppIcon name="MessageCircle" className="h-4 w-4 text-brand" />
+                                        Context Message
+                                    </Label>
+                                    <Textarea
+                                        placeholder='e.g. "This chatbot serves customers of Acme Corp, a SaaS platform for project management. Users may ask about pricing, features, and troubleshooting."'
+                                        value={contextMessage}
+                                        onChange={(e) => setContextMessage(e.target.value)}
+                                        rows={3}
+                                        className="resize-y"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        This context is automatically appended to every user query, making even vague questions more useful.
+                                    </p>
+                                </div>
 
-                                <div className="flex gap-2">
-                                    <Input placeholder={t("wizard.moduleName")} value={newModName} onChange={e => setNewModName(e.target.value)} className="flex-1" />
-                                    <Input placeholder={t("wizard.moduleDesc")} value={newModDesc} onChange={e => setNewModDesc(e.target.value)} className="flex-1" />
-                                    <Button variant="outline" onClick={addModule} disabled={!newModName.trim()}>
-                                        <AppIcon name="Plus" className="h-4 w-4" />
+                                {/* Divider */}
+                                <div className="relative">
+                                    <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/60"></span></div>
+                                    <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">suggested messages</span></div>
+                                </div>
+
+                                {/* Suggested Messages List */}
+                                {suggestedMessages.length > 0 && (
+                                    <div className="space-y-2">
+                                        {suggestedMessages.map((sm, i) => (
+                                            <div key={i} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border border-border/50">
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-medium text-sm">{sm.label}</p>
+                                                    <p className="text-xs text-muted-foreground truncate">{sm.prompt}</p>
+                                                </div>
+                                                <Button variant="ghost" size="sm" onClick={() => removeSuggestion(i)} className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
+                                                    <AppIcon name="X" className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Add Suggestion */}
+                                <div className="flex flex-col gap-2 p-3 rounded-lg border border-dashed border-border/60">
+                                    <Input
+                                        placeholder="Button label (e.g. 'How do I get started?')"
+                                        value={newSugLabel}
+                                        onChange={e => setNewSugLabel(e.target.value)}
+                                        className="h-9 text-sm"
+                                    />
+                                    <Input
+                                        placeholder="Full prompt (e.g. 'Walk me through the onboarding process step by step')"
+                                        value={newSugPrompt}
+                                        onChange={e => setNewSugPrompt(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === "Enter") addSuggestion(); }}
+                                        className="h-9 text-sm"
+                                    />
+                                    <Button variant="outline" size="sm" onClick={addSuggestion} disabled={!newSugLabel.trim() || !newSugPrompt.trim()} className="self-start">
+                                        <AppIcon name="Plus" className="h-3.5 w-3.5 mr-1" />
+                                        Add Suggestion
                                     </Button>
                                 </div>
 
+                                <p className="text-xs text-muted-foreground">
+                                    These appear as clickable buttons after the welcome message and after each bot reply, helping users navigate.
+                                </p>
+
                                 <div className="pt-4 flex justify-end">
-                                    <Button onClick={handleSaveModules} className="h-11 px-8 font-medium bg-brand hover:bg-brand-hover text-white">
+                                    <Button onClick={handleSaveBotConfig} className="h-11 px-8 font-medium bg-brand hover:bg-brand-hover text-white">
                                         {t("common.next")}
                                         <AppIcon name="ArrowRight" className="ml-2 h-4 w-4" />
                                     </Button>
@@ -373,6 +428,20 @@ export default function NewProjectWizard() {
                                         <Input value={botBubbleColor} onChange={e => setBotBubbleColor(e.target.value)} className="font-mono text-sm" />
                                     </div>
                                 </div>
+                                <div className="space-y-2">
+                                    <Label>User Text Color</Label>
+                                    <div className="flex items-center gap-3">
+                                        <input type="color" value={userTextColor} onChange={e => setUserTextColor(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                                        <Input value={userTextColor} onChange={e => setUserTextColor(e.target.value)} className="font-mono text-sm" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Bot Text Color</Label>
+                                    <div className="flex items-center gap-3">
+                                        <input type="color" value={botTextColor} onChange={e => setBotTextColor(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                                        <Input value={botTextColor} onChange={e => setBotTextColor(e.target.value)} className="font-mono text-sm" />
+                                    </div>
+                                </div>
                                 <div className="space-y-2 sm:col-span-2">
                                     <Label>{t("wizard.logoUpload")}</Label>
                                     <div className="flex items-center gap-4">
@@ -414,15 +483,25 @@ export default function NewProjectWizard() {
                                 </div>
                                 <div className="space-y-2 p-3 border border-t-0 border-border/30 rounded-b-lg">
                                     <div className="flex justify-end">
-                                        <div className="rounded-lg px-4 py-2 text-sm text-white" style={{ backgroundColor: userBubbleColor }}>
+                                        <div className="rounded-2xl rounded-br-md px-4 py-2 text-sm" style={{ backgroundColor: userBubbleColor, color: userTextColor }}>
                                             Hello!
                                         </div>
                                     </div>
                                     <div className="flex justify-start">
-                                        <div className="rounded-lg px-4 py-2 text-sm" style={{ backgroundColor: botBubbleColor, color: botBubbleColor === '#f1f5f9' ? '#1e293b' : '#fff' }}>
+                                        <div className="rounded-2xl rounded-bl-md px-4 py-2 text-sm" style={{ backgroundColor: botBubbleColor, color: botTextColor }}>
                                             {welcomeMessage || 'Hi there! How can I help you today?'}
                                         </div>
                                     </div>
+                                    {suggestedMessages.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 mt-1">
+                                            {suggestedMessages.slice(0, 3).map((sm, i) => (
+                                                <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-full border border-border/60 bg-background text-foreground">
+                                                    <AppIcon name="Sparkles" className="h-2.5 w-2.5" />
+                                                    {sm.label}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

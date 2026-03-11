@@ -95,7 +95,12 @@ export default function ProjectPage() {
   const [editLogoPreview, setEditLogoPreview] = useState<string | null>(null);
   const [editDisplayName, setEditDisplayName] = useState("");
   const [editWelcomeMsg, setEditWelcomeMsg] = useState("");
+  const [editUserTextColor, setEditUserTextColor] = useState("");
+  const [editBotTextColor, setEditBotTextColor] = useState("");
   const [brandingSaving, setBrandingSaving] = useState(false);
+
+  // AbortController for stop generation
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Initialize branding editor when project loads
   useEffect(() => {
@@ -108,6 +113,8 @@ export default function ProjectPage() {
       setEditLogoUrl(b.logoUrl || "");
       setEditDisplayName(b.chatbotDisplayName || "");
       setEditWelcomeMsg(b.welcomeMessage || "");
+      setEditUserTextColor(b.userTextColor || "#ffffff");
+      setEditBotTextColor(b.botTextColor || "#1e293b");
     }
   }, [project?.branding]);
 
@@ -137,6 +144,8 @@ export default function ProjectPage() {
           userBubbleColor: editUserBubble,
           botBubbleColor: editBotBubble,
           headerColor: editHeaderColor,
+          userTextColor: editUserTextColor,
+          botTextColor: editBotTextColor,
           logoUrl: finalLogoUrl,
           chatbotDisplayName: editDisplayName || undefined,
           welcomeMessage: editWelcomeMsg || undefined,
@@ -502,7 +511,7 @@ export default function ProjectPage() {
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
-          className="flex-1 flex flex-col min-h-0"
+          className="flex-1 flex flex-col min-h-0 w-full overflow-hidden"
         >
           <TabsList className="shrink-0 w-full justify-start bg-transparent border-b border-border rounded-none h-12 p-0 space-x-6 overflow-x-auto hide-scrollbar">
             <TabsTrigger
@@ -542,7 +551,7 @@ export default function ProjectPage() {
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 min-h-0 relative mt-6">
+          <div className="flex-1 min-h-0 relative mt-6 w-full overflow-hidden">
             <TabsContent
               value="chat"
               className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none flex gap-4"
@@ -1042,6 +1051,20 @@ export default function ProjectPage() {
                       <div className="flex items-center gap-3">
                         <input type="color" value={editBotBubble} onChange={e => setEditBotBubble(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
                         <Input value={editBotBubble} onChange={e => setEditBotBubble(e.target.value)} className="font-mono text-sm" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>User Text Color</Label>
+                      <div className="flex items-center gap-3">
+                        <input type="color" value={editUserTextColor} onChange={e => setEditUserTextColor(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                        <Input value={editUserTextColor} onChange={e => setEditUserTextColor(e.target.value)} className="font-mono text-sm" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Bot Text Color</Label>
+                      <div className="flex items-center gap-3">
+                        <input type="color" value={editBotTextColor} onChange={e => setEditBotTextColor(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                        <Input value={editBotTextColor} onChange={e => setEditBotTextColor(e.target.value)} className="font-mono text-sm" />
                       </div>
                     </div>
                     <div className="space-y-2 sm:col-span-2">
