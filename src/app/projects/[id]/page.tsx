@@ -531,7 +531,7 @@ export default function ProjectPage() {
           onValueChange={setActiveTab}
           className="flex-1 flex flex-col min-h-0 w-full overflow-hidden"
         >
-          <TabsList className="shrink-0 w-full justify-start bg-transparent border-b border-border rounded-none h-12 p-0 space-x-6 overflow-x-auto hide-scrollbar">
+          <TabsList className="shrink-0 w-full justify-start bg-transparent border-b border-border rounded-none h-12 p-0 gap-6 overflow-x-auto hide-scrollbar flex-nowrap">
             <TabsTrigger
               value="chat"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 h-full gap-2"
@@ -672,11 +672,35 @@ export default function ProjectPage() {
             >
               <Card className="border-border/60 shadow-sm">
                 <CardHeader className="bg-muted/30 border-b border-border/60">
-                  <CardTitle className="text-lg">Add New Sources</CardTitle>
-                  <CardDescription>
-                    Upload files or import URLs to expand the chatbot's
-                    knowledge.
-                  </CardDescription>
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div>
+                      <CardTitle className="text-lg">Add New Sources</CardTitle>
+                      <CardDescription>
+                        Upload files or import URLs to expand the chatbot's knowledge.
+                      </CardDescription>
+                    </div>
+                    {/* Plan limits badge */}
+                    <div className="shrink-0 bg-background border border-border/60 rounded-xl px-4 py-2 text-sm space-y-1.5 min-w-[180px]">
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-muted-foreground text-xs">Sources used</span>
+                        <span className="font-semibold text-xs">
+                          {project.documents?.length || 0}
+                          <span className="text-muted-foreground font-normal"> / {(session as any)?.user?.plan === "PRO" ? 50 : (session as any)?.user?.plan === "BUSINESS" ? 500 : 3}</span>
+                        </span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="bg-brand h-1.5 rounded-full transition-all"
+                          style={{
+                            width: `${Math.min(100, ((project.documents?.length || 0) / ((session as any)?.user?.plan === "PRO" ? 50 : (session as any)?.user?.plan === "BUSINESS" ? 500 : 3)) * 100)}%`
+                          }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        Max file size: {(session as any)?.user?.plan === "PRO" ? "10MB" : (session as any)?.user?.plan === "BUSINESS" ? "50MB" : "2MB"} per source
+                      </p>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-6">
                   <UploadInterface
@@ -701,30 +725,23 @@ export default function ProjectPage() {
                     {project.documents?.length || 0} Total
                   </Badge>
                 </CardHeader>
-                <CardContent className="p-0">
-                  {project.documents?.length === 0 ? (
-                    <div className="py-12 text-center text-muted-foreground">
-                      <p>No documents uploaded yet.</p>
-                    </div>
-                  ) : (
-                    <div className="p-4 sm:p-6">
-                      <DocumentList
-                        documents={project.documents || []}
-                        loading={false}
-                        onRetry={async (documentId) => {
-                          await retryDocument.mutateAsync(documentId);
-                          refetch();
-                        }}
-                        onDelete={async (documentId) => {
-                          await deleteDocument.mutateAsync(documentId);
-                          refetch();
-                        }}
-                      />
-                    </div>
-                  )}
+                <CardContent className="p-4 sm:p-6">
+                  <DocumentList
+                    documents={project.documents || []}
+                    loading={false}
+                    onRetry={async (documentId) => {
+                      await retryDocument.mutateAsync(documentId);
+                      refetch();
+                    }}
+                    onDelete={async (documentId) => {
+                      await deleteDocument.mutateAsync(documentId);
+                      refetch();
+                    }}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
+
 
             {/* EMBED TAB */}
             <TabsContent
