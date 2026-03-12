@@ -1,248 +1,249 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
-import { MainLayout } from "@/components/layout/main-layout";
-import { ChatPanel, Message } from "@/components/chat/chat-panel";
-import { useProject, useSendChatMessage } from "@/lib/api/hooks";
+import { ChatInterface, type SuggestedMessage } from "@/components/chatbots/chat-interface";
+import { useProject } from "@/lib/api/hooks";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+  tokensUsed?: number;
+  responseTime?: number;
+}
 
 export default function ChatPage() {
   const params = useParams();
+  const router = useRouter();
   const projectId = params.id as string;
   const { toast } = useToast();
 
-  const {
-    data: project,
-    isLoading: projectLoading,
-    error: projectError,
-  } = useProject(projectId);
-  const sendMessageMutation = useSendChatMessage();
+  const { data: project, isLoading: projectLoading, error: projectError } = useProject(projectId);
 
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const hasAutoCreated = useRef(false);
 
-  // Load messages from localStorage on mount and when projectId changes
-  useEffect(() => {
-    const storedMessages = localStorage.getItem(`chat-messages-${projectId}`);
-    if (storedMessages) {
-      try {
-        const parsedMessages = JSON.parse(storedMessages);
-        // Ensure timestamps are Date objects
-        const messagesWithDates = parsedMessages.map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp),
-        }));
-        setMessages(messagesWithDates);
-      } catch (error) {
-        console.error(
-          "Failed to load chat messages from localStorage:",
-          error,
-        );
+  const parsedSuggestedMessages: SuggestedMessage[] = Array.isArray(project?.modules)
+    ? (project.modules as SuggestedMessage[])
+    : [];
+
+  const chatBranding = project?.branding
+    ? {
+        ...(project.branding as object),
+        chatbotDisplayName:
+          (project.branding as any).chatbotDisplayName || project.name,
+        welcomeMessage: (project.branding as any).welcomeMessage,
       }
+    : { chatbotDisplayName: project?.name };
+
+  // Create a new conversation
+  const handleNewConversation = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/conversations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "New Conversation" }),
+      });
+      if (res.ok) {
+        const conv = await res.json();
+        setActiveConvId(conv.id);
+        setMessages([]);
+      }
+    } catch {
+      // silently fail
     }
   }, [projectId]);
 
-  // Save messages to localStorage whenever messages change
+  // Auto-create conversation on load
   useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem(`chat-messages-${projectId}`, JSON.stringify(messages));
-    }
-  }, [messages, projectId]);
-
-  // Check if project has documents
-  const hasDocuments = project && project.documentCount > 0;
+    if (hasAutoCreated.current || !project || projectLoading) return;
+    hasAutoCreated.current = true;
+    handleNewConversation();
+  }, [project, projectLoading, handleNewConversation]);
 
   const handleSendMessage = async (content: string) => {
-    if (!hasDocuments) {
-      toast({
-        title: "No documents available",
-        description:
-          "Please upload some documents to your project before starting a chat.",
-        variant: "destructive",
-      });
+    if (!content.trim() || isTyping) return;
+
+    const convId = activeConvId;
+    if (!convId) {
+      toast({ title: "No active conversation", variant: "destructive" });
       return;
     }
 
-    // Add user message
-    const userMessage: Message = {
+    const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
       content,
       role: "user",
       timestamp: new Date(),
     };
-
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
-      // Convert messages to conversation history format
-      const conversationHistory = messages.map(msg => ({
-        role: msg.role === "user" ? "user" as const : "assistant" as const,
-        content: msg.content,
+      const conversationHistory = messages.map(m => ({
+        role: m.role === "user" ? "user" as const : "assistant" as const,
+        content: m.content,
       }));
 
-      const response = await sendMessageMutation.mutateAsync({
-        projectId,
-        message: content,
-        conversationHistory,
+      const res = await fetch(`/api/projects/${projectId}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({ message: content, conversationId: convId, conversationHistory }),
       });
 
-      // Add assistant message
-      const assistantMessage: Message = {
-        id: `assistant-${Date.now()}`,
-        content: response.answer,
+      if (!res.ok) throw new Error("Failed to get response");
+      const data = await res.json();
+
+      // Save user message
+      await fetch(`/api/projects/${projectId}/conversations/${convId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "user", content }),
+      }).catch(() => {});
+
+      const botMsg: ChatMessage = {
+        id: `bot-${Date.now()}`,
+        content: data.answer || data.response || "I'm unable to help with that right now.",
         role: "assistant",
         timestamp: new Date(),
+        responseTime: data.responseTime,
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error: any) {
-      // Add error message
-      const errorMessage: Message = {
-        id: `error-${Date.now()}`,
-        content:
-          error.error?.message ||
-          "Sorry, I encountered an error while processing your question. Please try again.",
-        role: "assistant",
-        timestamp: new Date(),
-      };
+      setMessages(prev => [...prev, botMsg]);
 
-      setMessages((prev) => [...prev, errorMessage]);
+      // Save bot message
+      await fetch(`/api/projects/${projectId}/conversations/${convId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "assistant", content: botMsg.content }),
+      }).catch(() => {});
 
-      toast({
-        title: "Chat failed",
-        description:
-          "There was an error processing your message. Please try again.",
-        variant: "destructive",
-      });
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `err-${Date.now()}`,
+          content: "Sorry, something went wrong. Please try again.",
+          role: "assistant",
+          timestamp: new Date(),
+        },
+      ]);
     } finally {
       setIsTyping(false);
     }
   };
 
+  const handleClearConversation = () => {
+    setMessages([]);
+    hasAutoCreated.current = false;
+    handleNewConversation();
+  };
+
   if (projectLoading) {
     return (
-      <MainLayout>
-        <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </MainLayout>
+      <div className="flex h-dvh items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
     );
   }
 
   if (projectError || !project) {
     return (
-      <MainLayout>
-        <div className="text-center py-12">
-          <div className="text-red-500 mb-2">Project not found</div>
-          <p className="text-muted-foreground mb-4">
-            The project you're looking for doesn't exist or you don't have
-            access to it.
-          </p>
-          <Button asChild>
-            <Link href="/projects">
-              <AppIcon name="ArrowLeft" className="mr-2 h-4 w-4" />
-              Back to Projects
-            </Link>
-          </Button>
-        </div>
-      </MainLayout>
+      <div className="flex h-dvh flex-col items-center justify-center gap-4 bg-background">
+        <p className="text-muted-foreground">Project not found.</p>
+        <Button asChild variant="outline">
+          <Link href="/projects">
+            <AppIcon name="ArrowLeft" className="mr-2 h-4 w-4" />
+            Back to Projects
+          </Link>
+        </Button>
+      </div>
     );
   }
 
   return (
-    <MainLayout>
-      <div className="flex flex-col min-h-0">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild>
+    <div className="flex flex-col h-dvh bg-background">
+      {/* Slim top bar */}
+      <header className="flex items-center gap-2 px-3 py-2 border-b border-border/60 shrink-0 bg-card/80 backdrop-blur-sm">
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
+          <Link href={`/projects/${projectId}`}>
+            <AppIcon name="ArrowLeft" className="h-4 w-4" />
+          </Link>
+        </Button>
+        <span className="text-sm font-medium truncate text-foreground">{project.name}</span>
+        <div className="ml-auto flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleNewConversation}
+            title="New conversation"
+          >
+            <AppIcon name="Plus" className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs hidden sm:flex"
+            asChild
+          >
+            <Link href={`/projects/${projectId}`}>
+              <AppIcon name="Settings" className="h-3.5 w-3.5 mr-1" />
+              Settings
+            </Link>
+          </Button>
+        </div>
+      </header>
+
+      {/* Chat area */}
+      <div className="flex-1 min-h-0">
+        {project.documentCount === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-8">
+            <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
+              <AppIcon name="Database" className="h-7 w-7 text-muted-foreground" />
+            </div>
+            <h2 className="text-lg font-semibold">No knowledge sources yet</h2>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Add documents to this project so the bot can answer questions about them.
+            </p>
+            <Button asChild>
               <Link href={`/projects/${projectId}`}>
-                <AppIcon name="ArrowLeft" className="mr-2 h-4 w-4" />
-                Back to Project
+                <AppIcon name="Plus" className="mr-2 h-4 w-4" />
+                Add Documents
               </Link>
             </Button>
-
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary rounded-lg shadow-soft">
-                <AppIcon
-                  name="MessageSquare"
-                  className="h-5 w-5 text-primary-foreground"
-                />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">
-                  {project.name}
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  {project.documentCount} document
-                  {project.documentCount !== 1 ? "s" : ""} • Chat
-                </p>
-              </div>
-            </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            {!hasDocuments && (
-              <Button asChild variant="outline">
-                <Link href={`/projects/${projectId}`}>Upload Documents</Link>
-              </Button>
-            )}
-
-            {messages.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setMessages([]);
-                  localStorage.removeItem(`chat-messages-${projectId}`);
-                  toast({
-                    title: "Chat cleared",
-                    description: "All messages have been removed from this chat.",
-                  });
-                }}
-              >
-                <AppIcon name="Trash2" className="mr-2 h-4 w-4" />
-                Clear Chat
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <div className="flex-1 min-h-0 mt-6">
-          {hasDocuments ? (
-            <ChatPanel
-              messages={messages}
-              onSendMessage={handleSendMessage}
-              isTyping={isTyping}
-              disabled={sendMessageMutation.isPending}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center max-w-md mx-auto p-8">
-                <AppIcon
-                  name="MessageSquare"
-                  className="h-16 w-16 text-muted-foreground mx-auto mb-4"
-                />
-                <h2 className="text-xl font-semibold mb-2">
-                  No documents available
-                </h2>
-                <p className="text-muted-foreground mb-6">
-                  You need to upload some documents to your project before you can
-                  start chatting. The AI will answer questions based on your
-                  uploaded content.
-                </p>
-                <Button asChild>
-                  <Link href={`/projects/${projectId}`}>Upload Documents</Link>
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+        ) : (
+          <ChatInterface
+            chatbotId={projectId}
+            chatbotName={project.name}
+            messages={messages}
+            isLoading={isTyping}
+            branding={chatBranding as any}
+            suggestedMessages={parsedSuggestedMessages}
+            modelName={(project as any)?.modelId}
+            onSendMessage={handleSendMessage}
+            onClearConversation={handleClearConversation}
+            onStopGeneration={() => abortControllerRef.current?.abort()}
+            className="h-full"
+          />
+        )}
       </div>
-    </MainLayout>
+    </div>
   );
 }

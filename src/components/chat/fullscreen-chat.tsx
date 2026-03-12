@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { ChatInterface, type ChatBranding } from "@/components/chatbots/chat-interface";
-import { ModuleSelector, type Module } from "@/components/chatbots/module-selector";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { ChatInterface, type ChatBranding, type SuggestedMessage } from "@/components/chatbots/chat-interface";
 import { Button } from "@/components/ui/button";
 import { AppIcon } from "@/components/ui/app-icon";
 import { useSession } from "next-auth/react";
@@ -18,7 +17,6 @@ interface Message {
 interface ConversationItem {
     id: string;
     title: string;
-    module: string | null;
     status: string;
     createdAt: string;
     _count: { messages: number };
@@ -27,53 +25,44 @@ interface ConversationItem {
 interface FullscreenChatProps {
     projectId: string;
     projectName: string;
-    modules?: Module[] | null;
+    modules?: SuggestedMessage[] | null;
     branding?: ChatBranding | null;
+    modelId?: string;
 }
 
-export function FullscreenChat({ projectId, projectName, modules, branding }: FullscreenChatProps) {
+export function FullscreenChat({ projectId, projectName, modules, branding, modelId }: FullscreenChatProps) {
     const { data: session } = useSession();
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [conversations, setConversations] = useState<ConversationItem[]>([]);
     const [activeConvId, setActiveConvId] = useState<string | null>(null);
-    const [selectedModule, setSelectedModule] = useState<Module | null>(null);
-    const [showSidebar, setShowSidebar] = useState(true);
+    const [showSidebar, setShowSidebar] = useState(false);
     const hasAutoCreated = useRef(false);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
-    const projectModules: Module[] = Array.isArray(modules) ? modules : [];
+    const suggestedMessages: SuggestedMessage[] = Array.isArray(modules) ? modules : [];
     const displayName = branding?.chatbotDisplayName || projectName;
 
     // Load conversations
-    const loadConversations = async () => {
+    const loadConversations = useCallback(async () => {
+        if (!session?.user) return;
         try {
             const res = await fetch(`/api/projects/${projectId}/conversations`);
             if (res.ok) setConversations(await res.json());
         } catch { }
-    };
+    }, [projectId, session?.user]);
 
     useEffect(() => {
-        if (session?.user) loadConversations();
-    }, [projectId, session]);
+        loadConversations();
+    }, [loadConversations]);
 
     // Auto-create conversation
-    useEffect(() => {
-        if (hasAutoCreated.current || !session?.user) return;
-        if (projectModules.length === 0 && !activeConvId) {
-            hasAutoCreated.current = true;
-            handleNewConversation();
-        }
-    }, [session]);
-
-    const handleNewConversation = async () => {
+    const handleNewConversation = useCallback(async () => {
         try {
             const res = await fetch(`/api/projects/${projectId}/conversations`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    title: selectedModule?.name || "New Conversation",
-                    module: selectedModule?.name,
-                }),
+                body: JSON.stringify({ title: "New Conversation" }),
             });
             if (res.ok) {
                 const conv = await res.json();
@@ -82,7 +71,13 @@ export function FullscreenChat({ projectId, projectName, modules, branding }: Fu
                 loadConversations();
             }
         } catch { }
-    };
+    }, [projectId, loadConversations]);
+
+    useEffect(() => {
+        if (hasAutoCreated.current || !session?.user) return;
+        hasAutoCreated.current = true;
+        handleNewConversation();
+    }, [session, handleNewConversation]);
 
     const handleSelectConversation = async (convId: string) => {
         try {
@@ -96,19 +91,8 @@ export function FullscreenChat({ projectId, projectName, modules, branding }: Fu
                     content: m.content,
                     timestamp: new Date(m.createdAt),
                 })));
+                setShowSidebar(false);
             }
-        } catch { }
-    };
-
-    const autoTitleConversation = async (convId: string, firstMessage: string) => {
-        const title = firstMessage.length > 50 ? firstMessage.substring(0, 50) + "..." : firstMessage;
-        try {
-            await fetch(`/api/projects/${projectId}/conversations/${convId}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title }),
-            });
-            loadConversations();
         } catch { }
     };
 
@@ -130,21 +114,25 @@ export function FullscreenChat({ projectId, projectName, modules, branding }: Fu
             role: "user",
             timestamp: new Date(),
         };
-
         setMessages((prev) => [...prev, userMessage]);
         setIsLoading(true);
 
         // Auto-title after first message
         if (activeConvId && messages.length === 0) {
-            autoTitleConversation(activeConvId, content);
+            const title = content.length > 50 ? content.substring(0, 50) + "..." : content;
+            fetch(`/api/projects/${projectId}/conversations/${activeConvId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title }),
+            }).then(() => loadConversations()).catch(() => { });
         }
+
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
 
         try {
             const startTime = performance.now();
-            // Use widget endpoint for public, or chat endpoint if authenticated
-            const endpoint = session?.user
-                ? "/api/chat"
-                : `/api/widget/${projectId}/chat`;
+            const endpoint = session?.user ? "/api/chat" : `/api/widget/${projectId}/chat`;
             const body = session?.user
                 ? {
                     projectId,
@@ -160,6 +148,7 @@ export function FullscreenChat({ projectId, projectName, modules, branding }: Fu
             const resp = await fetch(endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                signal: controller.signal,
                 body: JSON.stringify(body),
             });
 
@@ -178,6 +167,7 @@ export function FullscreenChat({ projectId, projectName, modules, branding }: Fu
                 },
             ]);
         } catch (error: any) {
+            if (error.name === "AbortError") return;
             setMessages((prev) => [
                 ...prev,
                 {
@@ -196,24 +186,26 @@ export function FullscreenChat({ projectId, projectName, modules, branding }: Fu
         <div className="w-full h-screen bg-background overflow-hidden flex">
             {/* Sidebar - only for authenticated users */}
             {session?.user && showSidebar && (
-                <div className="w-60 shrink-0 border-r border-border/60 bg-card flex flex-col">
+                <div className="w-60 shrink-0 border-r border-border/60 bg-card flex flex-col absolute inset-y-0 left-0 z-20 shadow-lg">
                     <div className="p-3 border-b border-border/60 flex items-center gap-2">
                         {branding?.logoUrl && (
                             <img src={branding.logoUrl} alt={displayName} className="w-7 h-7 rounded object-contain" />
                         )}
-                        <span className="font-semibold text-sm truncate">{displayName}</span>
+                        <span className="font-semibold text-sm truncate flex-1">{displayName}</span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setShowSidebar(false)}>
+                            <AppIcon name="X" className="h-3.5 w-3.5" />
+                        </Button>
                     </div>
                     <div className="p-3 border-b border-border/60">
                         <Button
                             size="sm"
                             className="w-full bg-brand hover:bg-brand-hover text-white"
                             onClick={() => {
-                                setSelectedModule(null);
                                 setActiveConvId(null);
                                 setMessages([]);
-                                if (projectModules.length === 0) {
-                                    handleNewConversation();
-                                }
+                                hasAutoCreated.current = false;
+                                handleNewConversation();
+                                setShowSidebar(false);
                             }}
                         >
                             <AppIcon name="Plus" className="h-4 w-4 mr-1" />
@@ -239,43 +231,36 @@ export function FullscreenChat({ projectId, projectName, modules, branding }: Fu
                 </div>
             )}
 
-            {/* Main chat area */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Toggle sidebar button */}
-                {session?.user && (
-                    <div className="absolute top-2 left-2 z-10">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowSidebar(!showSidebar)}
-                            className="h-8 w-8 p-0"
-                        >
-                            <AppIcon name={showSidebar ? "PanelLeftClose" : "PanelLeft"} className="h-4 w-4" />
-                        </Button>
-                    </div>
-                )}
+            {/* Main chat - takes full width, sidebar is overlaid */}
+            <div className="flex-1 flex flex-col overflow-hidden relative">
+                <ChatInterface
+                    chatbotId={projectId}
+                    chatbotName={projectName}
+                    messages={messages}
+                    isLoading={isLoading}
+                    branding={branding}
+                    suggestedMessages={suggestedMessages}
+                    modelName={modelId}
+                    onSendMessage={handleSendMessage}
+                    onRateMessage={handleRateMessage}
+                    onClearConversation={() => {
+                        setMessages([]);
+                        hasAutoCreated.current = false;
+                        handleNewConversation();
+                    }}
+                    onStopGeneration={() => abortControllerRef.current?.abort()}
+                    className="h-full border-none rounded-none shadow-none"
+                />
 
-                {/* Module selector or Chat */}
-                {!activeConvId && projectModules.length > 0 ? (
-                    <ModuleSelector
-                        modules={projectModules}
-                        onSelect={(mod) => {
-                            setSelectedModule(mod);
-                            handleNewConversation();
-                        }}
-                        className="flex-1"
-                    />
-                ) : (
-                    <ChatInterface
-                        chatbotId={projectId}
-                        chatbotName={projectName}
-                        messages={messages}
-                        isLoading={isLoading}
-                        branding={branding}
-                        onSendMessage={handleSendMessage}
-                        onRateMessage={handleRateMessage}
-                        className="h-full border-none rounded-none shadow-none"
-                    />
+                {/* Floating sidebar toggle — only for authenticated users */}
+                {session?.user && (
+                    <button
+                        onClick={() => setShowSidebar(!showSidebar)}
+                        className="absolute top-3 left-3 z-10 h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                        title="Toggle conversations"
+                    >
+                        <AppIcon name="PanelLeft" className="h-4 w-4" />
+                    </button>
                 )}
             </div>
         </div>

@@ -41,8 +41,8 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "@/lib/i18n";
-import { ModuleSelector, type Module } from "@/components/chatbots/module-selector";
-import type { ChatBranding } from "@/components/chatbots/chat-interface";
+import { BotSettingsPanel } from "@/components/chatbots/bot-settings-panel";
+import type { ChatBranding, SuggestedMessage } from "@/components/chatbots/chat-interface";
 
 interface ChatMessage {
   id: string;
@@ -83,7 +83,6 @@ export default function ProjectPage() {
   // Conversations state
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
-  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
 
   // Settings: Branding editor state
   const [editPrimaryColor, setEditPrimaryColor] = useState("");
@@ -185,9 +184,10 @@ export default function ProjectPage() {
 
   const lineData = analyticsData?.dailyData || [];
   const barData = analyticsData?.moduleData || [];
+  const stats = analyticsData?.stats || { totalMessages: 0, totalConversations: 0, avgMessagesPerConv: 0 };
 
-  // Parse modules from project
-  const projectModules: Module[] = Array.isArray(project?.modules) ? (project.modules as Module[]) : [];
+  // Parse suggested messages from project
+  const parsedSuggestedMessages: SuggestedMessage[] = Array.isArray(project?.modules) ? (project.modules as SuggestedMessage[]) : [];
 
   // Load conversations
   const loadConversations = async () => {
@@ -202,10 +202,10 @@ export default function ProjectPage() {
     loadConversations();
   }, [projectId]);
 
-  // Auto-create conversation when project loads (if no modules to pick from)
+  // Auto-create conversation when project loads
   useEffect(() => {
     if (hasAutoCreated.current || !project || isLoading) return;
-    if (projectModules.length === 0 && !activeConvId) {
+    if (!activeConvId) {
       hasAutoCreated.current = true;
       handleNewConversation();
     }
@@ -217,7 +217,7 @@ export default function ProjectPage() {
       const res = await fetch(`/api/projects/${projectId}/conversations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: selectedModule?.name || "New Conversation", module: selectedModule?.name }),
+        body: JSON.stringify({ title: "New Conversation" }),
       });
       if (res.ok) {
         const conv = await res.json();
@@ -543,6 +543,13 @@ export default function ProjectPage() {
               Analytics
             </TabsTrigger>
             <TabsTrigger
+              value="botconfig"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 h-full gap-2"
+            >
+              <AppIcon name="Cpu" className="h-4 w-4" />
+              Bot Config
+            </TabsTrigger>
+            <TabsTrigger
               value="settings"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 h-full gap-2"
             >
@@ -551,7 +558,7 @@ export default function ProjectPage() {
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 min-h-0 relative mt-6 w-full overflow-hidden">
+          <div className="flex-1 min-h-0 relative mt-6 w-full">
             <TabsContent
               value="chat"
               className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none flex gap-4"
@@ -563,10 +570,7 @@ export default function ProjectPage() {
                     size="sm"
                     className="w-full bg-brand hover:bg-brand-hover text-white"
                     onClick={() => {
-                      setSelectedModule(null);
-                      if (projectModules.length === 0) {
-                        handleNewConversation();
-                      }
+                      handleNewConversation();
                     }}
                   >
                     <AppIcon name="Plus" className="h-4 w-4 mr-1" />
@@ -603,15 +607,6 @@ export default function ProjectPage() {
                       {t("workspace.addSources")}
                     </Button>
                   </div>
-                ) : !activeConvId && projectModules.length > 0 ? (
-                  <ModuleSelector
-                    modules={projectModules}
-                    onSelect={(mod) => {
-                      setSelectedModule(mod);
-                      handleNewConversation();
-                    }}
-                    className="flex-1"
-                  />
                 ) : (
                   <ChatInterface
                     chatbotId={projectId}
@@ -619,9 +614,12 @@ export default function ProjectPage() {
                     messages={messages}
                     isLoading={isTyping}
                     branding={chatBranding}
+                    suggestedMessages={parsedSuggestedMessages}
+                    modelName={(project as any)?.modelId}
                     onSendMessage={handleSendMessage}
                     onClearConversation={handleClearConversation}
                     onRateMessage={handleRateMessage}
+                    onStopGeneration={() => abortControllerRef.current?.abort()}
                     className="h-full"
                   />
                 )}
@@ -842,7 +840,7 @@ export default function ProjectPage() {
             {/* ANALYTICS TAB */}
             <TabsContent
               value="analytics"
-              className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none"
+              className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none overflow-y-auto pb-8"
             >
               <div className="flex flex-col gap-6">
                 {/* Calendar Filter */}
@@ -883,6 +881,36 @@ export default function ProjectPage() {
                     </div>
                   </CardContent>
                 </Card>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Card className="border-border/60 shadow-sm">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between space-y-0 pb-2">
+                        <p className="text-sm font-medium">Total Messages</p>
+                        <AppIcon name="MessageSquare" className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="text-2xl font-bold">{stats.totalMessages}</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-border/60 shadow-sm">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between space-y-0 pb-2">
+                        <p className="text-sm font-medium">Conversations</p>
+                        <AppIcon name="MessageCircle" className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="text-2xl font-bold">{stats.totalConversations}</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-border/60 shadow-sm">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between space-y-0 pb-2">
+                        <p className="text-sm font-medium">Avg Messages / Conv</p>
+                        <AppIcon name="Activity" className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="text-2xl font-bold">{stats.avgMessagesPerConv}</div>
+                    </CardContent>
+                  </Card>
+                </div>
 
                 <Card className="border-border/60 shadow-sm">
                   <CardHeader>
@@ -983,10 +1011,18 @@ export default function ProjectPage() {
               </div>
             </TabsContent>
 
+            {/* BOT CONFIG TAB */}
+            <TabsContent
+              value="botconfig"
+              className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none max-w-5xl overflow-y-auto pb-8"
+            >
+              {project && <BotSettingsPanel projectId={projectId} />}
+            </TabsContent>
+
             {/* SETTINGS TAB */}
             <TabsContent
               value="settings"
-              className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none max-w-2xl"
+              className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none max-w-2xl overflow-y-auto pb-8"
             >
               <Card className="border-border/60 shadow-sm mb-6">
                 <CardHeader>

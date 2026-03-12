@@ -17,6 +17,7 @@ export default async function PublicChatPage({
             name: true,
             modules: true,
             branding: true,
+            modelId: true,
         },
     });
 
@@ -29,6 +30,7 @@ export default async function PublicChatPage({
                 projectName={project.name}
                 modules={project.modules as any}
                 branding={project.branding as any}
+                modelId={project.modelId ?? undefined}
             />
         </Providers>
     );
