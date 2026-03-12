@@ -162,7 +162,7 @@ export function loadConfig(): AppConfig {
     process.env.RELEVANCE_THRESHOLD || "0.4"
   );
   const llmTemperature = parseFloat(process.env.LLM_TEMPERATURE || "0.3");
-  const llmMaxTokens = parseInt(process.env.LLM_MAX_TOKENS || "1024", 10);
+  const llmMaxTokens = parseInt(process.env.LLM_MAX_TOKENS || "8192", 10);
   const embeddingDimensions = parseInt(
     process.env.EMBEDDING_DIMENSIONS || "768",
     10
