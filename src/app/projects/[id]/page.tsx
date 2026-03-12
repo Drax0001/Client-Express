@@ -228,6 +228,24 @@ export default function ProjectPage() {
     } catch { }
   };
 
+  // Delete a conversation
+  const handleDeleteConversation = async (convId: string) => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/conversations/${convId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        if (activeConvId === convId) {
+          setActiveConvId(null);
+          setMessages([]);
+          hasAutoCreated.current = false;
+          handleNewConversation();
+        }
+        loadConversations();
+      }
+    } catch { }
+  };
+
   // Auto-title conversation after first message
   const autoTitleConversation = async (convId: string, firstMessage: string) => {
     const title = firstMessage.length > 50 ? firstMessage.substring(0, 50) + "..." : firstMessage;
@@ -582,14 +600,25 @@ export default function ProjectPage() {
                     <p className="p-3 text-xs text-muted-foreground text-center">{t("conversations.empty")}</p>
                   ) : (
                     conversations.map(conv => (
-                      <button
+                      <div
                         key={conv.id}
-                        onClick={() => handleSelectConversation(conv.id)}
-                        className={`w-full text-left px-3 py-2.5 text-sm border-b border-border/30 hover:bg-muted/50 transition-colors ${activeConvId === conv.id ? "bg-brand/10 text-brand" : "text-foreground"}`}
+                        className={`group relative flex items-center border-b border-border/30 hover:bg-muted/50 transition-colors ${activeConvId === conv.id ? "bg-brand/10" : ""}`}
                       >
-                        <p className="font-medium truncate text-xs">{conv.title}</p>
-                        <p className="text-[10px] text-muted-foreground">{conv._count.messages} msgs · {conv.status === "ended" ? "Ended" : "Active"}</p>
-                      </button>
+                        <button
+                          onClick={() => handleSelectConversation(conv.id)}
+                          className={`flex-1 text-left px-3 py-2.5 min-w-0 ${activeConvId === conv.id ? "text-brand" : "text-foreground"}`}
+                        >
+                          <p className="font-medium truncate text-xs">{conv.title}</p>
+                          <p className="text-[10px] text-muted-foreground">{conv._count.messages} msgs · {conv.status === "ended" ? "Ended" : "Active"}</p>
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteConversation(conv.id); }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mr-2 p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground"
+                          title="Delete conversation"
+                        >
+                          <AppIcon name="Trash2" className="h-3 w-3" />
+                        </button>
+                      </div>
                     ))
                   )}
                 </div>

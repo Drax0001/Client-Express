@@ -49,26 +49,6 @@ export const MODEL_REGISTRY: ModelDefinition[] = [
         released: "Jan 2025",
         preview: true,
     },
-    {
-        id: "gemini-3.1-flash-lite-preview",
-        name: "Gemini 3.1 Flash Lite",
-        description: "Ultra-fast — best for simple Q&A",
-        tier: "FREE",
-        maxTokens: 65536,
-        contextWindow: "1M",
-        released: "Jan 2025",
-        preview: true,
-    },
-    {
-        id: "gemini-3.1-pro-preview",
-        name: "Gemini 3.1 Pro",
-        description: "Most powerful — advanced reasoning and analysis",
-        tier: "FREE",
-        maxTokens: 65536,
-        contextWindow: "1M",
-        released: "Jan 2025",
-        preview: true,
-    },
 ];
 
 export const DEFAULT_MODEL_ID = "gemini-2.5-flash";

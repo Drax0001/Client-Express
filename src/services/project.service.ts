@@ -47,18 +47,21 @@ export interface ProjectWithDocuments extends Project {
  * Service class for project management operations
  */
 export class ProjectService {
-  private chromaClient: ChromaClient;
+  private _chromaClient: ChromaClient | null = null;
 
-  constructor() {
-    // Initialize ChromaDB client for vector store operations
-    const chromaHost = process.env.CHROMA_HOST || "localhost";
-    const chromaPort = process.env.CHROMA_PORT || "8000";
-    this.chromaClient = new ChromaClient({
-      host: chromaHost,
-      port: chromaPort,
-      ssl: false,
-    } as any);
+  private get chromaClient(): ChromaClient {
+    if (!this._chromaClient) {
+      const chromaHost = process.env.CHROMA_HOST || "localhost";
+      const chromaPort = process.env.CHROMA_PORT || "8000";
+      this._chromaClient = new ChromaClient({
+        host: chromaHost,
+        port: chromaPort,
+        ssl: false,
+      } as any);
+    }
+    return this._chromaClient;
   }
+
 
   /**
    * Creates a new project with a unique identifier
