@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { AppIcon } from "@/components/ui/app-icon";
@@ -70,6 +71,7 @@ export default function ProjectPage() {
   const { toast } = useToast();
 
   const { data: project, isLoading, error, refetch } = useProject(projectId);
+  const { data: session } = useSession();
   const deleteDocument = useDeleteDocument();
   const retryDocument = useRetryDocument();
   const deleteProjectMutation = useDeleteProject();
@@ -685,19 +687,19 @@ export default function ProjectPage() {
                         <span className="text-muted-foreground text-xs">Sources used</span>
                         <span className="font-semibold text-xs">
                           {project.documents?.length || 0}
-                          <span className="text-muted-foreground font-normal"> / {(session as any)?.user?.plan === "PRO" ? 50 : (session as any)?.user?.plan === "BUSINESS" ? 500 : 3}</span>
+                          <span className="text-muted-foreground font-normal"> / {session?.user && (session.user as any).plan === "PRO" ? 50 : (session?.user as any)?.plan === "BUSINESS" ? 500 : 3}</span>
                         </span>
                       </div>
                       <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
                         <div
                           className="bg-brand h-1.5 rounded-full transition-all"
                           style={{
-                            width: `${Math.min(100, ((project.documents?.length || 0) / ((session as any)?.user?.plan === "PRO" ? 50 : (session as any)?.user?.plan === "BUSINESS" ? 500 : 3)) * 100)}%`
+                            width: `${Math.min(100, ((project.documents?.length || 0) / ((session?.user as any)?.plan === "PRO" ? 50 : (session?.user as any)?.plan === "BUSINESS" ? 500 : 3)) * 100)}%`
                           }}
                         />
                       </div>
                       <p className="text-[10px] text-muted-foreground">
-                        Max file size: {(session as any)?.user?.plan === "PRO" ? "10MB" : (session as any)?.user?.plan === "BUSINESS" ? "50MB" : "2MB"} per source
+                        Max file size: {(session?.user as any)?.plan === "PRO" ? "10MB" : (session?.user as any)?.plan === "BUSINESS" ? "50MB" : "2MB"} per source
                       </p>
                     </div>
                   </div>
