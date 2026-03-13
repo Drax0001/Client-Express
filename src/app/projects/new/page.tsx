@@ -287,9 +287,18 @@ export default function NewProjectWizard() {
                                                     <p className="font-medium text-sm">{sm.label}</p>
                                                     <p className="text-xs text-muted-foreground truncate">{sm.prompt}</p>
                                                 </div>
-                                                <Button variant="ghost" size="sm" onClick={() => removeSuggestion(i)} className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
-                                                    <AppIcon name="X" className="h-4 w-4" />
-                                                </Button>
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                    <Button variant="ghost" size="sm" onClick={() => {
+                                                        setNewSugLabel(sm.label);
+                                                        setNewSugPrompt(sm.prompt);
+                                                        removeSuggestion(i);
+                                                    }} className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground">
+                                                        <AppIcon name="Edit" className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="sm" onClick={() => removeSuggestion(i)} className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
+                                                        <AppIcon name="Trash2" className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -320,7 +329,11 @@ export default function NewProjectWizard() {
                                     These appear as clickable buttons after the welcome message and after each bot reply, helping users navigate.
                                 </p>
 
-                                <div className="pt-4 flex justify-end">
+                                <div className="pt-4 flex justify-between items-center w-full">
+                                    <Button variant="ghost" onClick={() => setStep(1)} className="h-11 px-6 font-medium">
+                                        <AppIcon name="ArrowLeft" className="mr-2 h-4 w-4" />
+                                        {t("common.back")}
+                                    </Button>
                                     <Button onClick={handleSaveBotConfig} className="h-11 px-8 font-medium bg-brand hover:bg-brand-hover text-white">
                                         {t("common.next")}
                                         <AppIcon name="ArrowRight" className="ml-2 h-4 w-4" />
@@ -359,7 +372,11 @@ export default function NewProjectWizard() {
                                     <UrlUploadInput urls={urls} onUrlsChange={setUrls} disabled={isUploading} />
                                 </div>
 
-                                <div className="pt-4 flex justify-end items-center gap-4">
+                                <div className="pt-4 flex justify-between items-center w-full">
+                                    <Button variant="ghost" onClick={() => setStep(2)} className="h-11 px-6 font-medium">
+                                        <AppIcon name="ArrowLeft" className="mr-2 h-4 w-4" />
+                                        {t("common.back")}
+                                    </Button>
                                     <Button
                                         onClick={handleUploadSources}
                                         disabled={isUploading || (files.length === 0 && urls.length === 0)}
@@ -505,7 +522,11 @@ export default function NewProjectWizard() {
                                 </div>
                             </div>
 
-                            <div className="pt-6 flex justify-end">
+                            <div className="pt-6 flex justify-between items-center w-full">
+                                <Button variant="ghost" onClick={() => setStep(3)} className="h-11 px-6 font-medium">
+                                    <AppIcon name="ArrowLeft" className="mr-2 h-4 w-4" />
+                                    {t("common.back")}
+                                </Button>
                                 <Button onClick={handleSaveBranding} className="h-11 px-8 font-medium bg-brand hover:bg-brand-hover text-white">
                                     {t("common.next")}
                                     <AppIcon name="ArrowRight" className="ml-2 h-4 w-4" />

@@ -301,14 +301,28 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
                                         <p className="text-sm font-medium truncate">{sm.label}</p>
                                         <p className="text-xs text-muted-foreground truncate">{sm.prompt}</p>
                                     </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => setSuggestedMsgs(prev => prev.filter((_, i) => i !== idx))}
-                                        className="h-7 w-7 p-0 shrink-0 text-muted-foreground hover:text-destructive"
-                                    >
-                                        <AppIcon name="X" className="h-3.5 w-3.5" />
-                                    </Button>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                setNewSugLabel(sm.label);
+                                                setNewSugPrompt(sm.prompt);
+                                                setSuggestedMsgs(prev => prev.filter((_, i) => i !== idx));
+                                            }}
+                                            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                                        >
+                                            <AppIcon name="Edit" className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setSuggestedMsgs(prev => prev.filter((_, i) => i !== idx))}
+                                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                        >
+                                            <AppIcon name="Trash2" className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </div>
                                 </div>
                             ))}
                         </div>

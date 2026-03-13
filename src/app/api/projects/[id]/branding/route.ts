@@ -27,6 +27,7 @@ export async function PATCH(
         logoUrl: body.logoUrl,
         chatbotDisplayName: body.chatbotDisplayName,
         welcomeMessage: body.welcomeMessage,
+        footerLinks: body.footerLinks,
     };
 
     const updated = await prisma.project.update({

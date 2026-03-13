@@ -70,18 +70,26 @@ export async function GET(
             current.setDate(current.getDate() + 1);
         }
 
-        // Module distribution for bar chart
-        const moduleMap: Record<string, number> = {};
-        const convModuleMap = new Map(conversations.map(c => [c.id, c.module || "General"]));
+        // Activity by Time of Day distribution (0-23 hours)
+        const hourlyMap: Record<number, number> = {};
+        for (let i = 0; i < 24; i++) hourlyMap[i] = 0;
+
         for (const msg of messages) {
-            const mod = convModuleMap.get(msg.conversationId) || "General";
-            moduleMap[mod] = (moduleMap[mod] || 0) + 1;
+            const hour = new Date(msg.createdAt).getHours();
+            hourlyMap[hour]++;
         }
 
-        const moduleData = Object.entries(moduleMap)
-            .map(([name, requests]) => ({ name, requests }))
+        const formatHour = (h: number) => {
+            if (h === 0) return "12 AM";
+            if (h === 12) return "12 PM";
+            return h < 12 ? `${h} AM` : `${h - 12} PM`;
+        };
+
+        const hourlyData = Object.entries(hourlyMap)
+            .map(([hourStr, requests]) => ({ name: formatHour(parseInt(hourStr)), requests }))
+            .filter(item => item.requests > 0) // Only show hours with activity
             .sort((a, b) => b.requests - a.requests)
-            .slice(0, 10);
+            .slice(0, 10); // Show top 10 most active hours
 
         // Summary stats
         const totalMessages = messages.length;
@@ -90,7 +98,7 @@ export async function GET(
 
         return NextResponse.json({
             dailyData,
-            moduleData,
+            moduleData: hourlyData, // Exposing hourly format over the old moduleData key for backward compatibility on frontend typings
             stats: {
                 totalMessages,
                 totalConversations,

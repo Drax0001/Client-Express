@@ -43,6 +43,7 @@ export interface ChatBranding {
   logoUrl?: string;
   chatbotDisplayName?: string;
   welcomeMessage?: string;
+  footerLinks?: { label: string; url: string }[];
 }
 
 interface ChatInterfaceProps {
@@ -147,13 +148,7 @@ export function ChatInterface({
     }
   };
 
-  const formatTimestamp = (date: Date) => {
-    return date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
+  // Time formatter removed per user request
 
   // Resolve colors
   const userBubbleBg = branding?.userBubbleColor || undefined;
@@ -236,24 +231,10 @@ export function ChatInterface({
               {isUser ? (
                 <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</div>
               ) : (
-                <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-pre:rounded-lg prose-pre:bg-black/5 dark:prose-pre:bg-white/5 prose-code:text-xs prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:bg-black/5 dark:prose-code:bg-white/10">
+                <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-pre:rounded-lg prose-pre:bg-black/5 dark:prose-pre:bg-white/5 prose-code:text-xs prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:bg-black/5 dark:prose-code:bg-white/10 space-y-4 marker:text-current prose-headings:font-bold prose-h3:text-lg prose-h4:text-base prose-strong:font-bold prose-strong:text-current">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
                 </div>
               )}
-
-              {/* Metadata */}
-              <div
-                className={cn(
-                  "flex items-center justify-between mt-2 text-[11px] opacity-60",
-                  isUser ? "text-primary-foreground/70" : "text-muted-foreground",
-                )}
-                style={isUser && userBubbleBg ? { color: (userTextClr || "rgba(255,255,255,0.7)") } : undefined}
-              >
-                <span>{formatTimestamp(message.timestamp)}</span>
-                {!isUser && message.responseTime && (
-                  <span>{message.responseTime}ms</span>
-                )}
-              </div>
             </div>
 
             {/* Bot message actions */}
@@ -334,8 +315,6 @@ export function ChatInterface({
           )}
         </div>
 
-        {/* Suggested messages after bot replies */}
-        {!isUser && isLast && !isLoading && <SuggestedPills />}
       </>
     );
   };
@@ -467,8 +446,15 @@ export function ChatInterface({
       </ScrollArea>
 
       {/* Input */}
-      <div className="p-4 border-t">
+      <div className="p-4 border-t relative">
         <div className="max-w-4xl mx-auto">
+          {/* Suggested Messages Above Input */}
+          {messages.length > 0 && !isLoading && (
+            <div className="mb-4">
+              <SuggestedPills />
+            </div>
+          )}
+          
           <div className="flex gap-2 items-end">
             <div className="flex-1 relative">
               <Textarea
@@ -506,10 +492,24 @@ export function ChatInterface({
               </div>
             </div>
           </div>
-
-          <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-2 text-xs text-muted-foreground gap-2">
             <span>Press Enter to send, Shift+Enter for new line</span>
-            <span>Responses are based on your uploaded documents</span>
+            {branding?.footerLinks && branding.footerLinks.length > 0 && (
+              <div className="flex items-center gap-3 flex-wrap">
+                {branding.footerLinks.map((link: any, idx: number) => (
+                  <a
+                    key={idx}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-foreground transition-colors hover:underline"
+                    style={branding?.primaryColor ? { textDecorationColor: branding.primaryColor } : undefined}
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

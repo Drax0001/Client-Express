@@ -98,6 +98,7 @@ export default function ProjectPage() {
   const [editWelcomeMsg, setEditWelcomeMsg] = useState("");
   const [editUserTextColor, setEditUserTextColor] = useState("");
   const [editBotTextColor, setEditBotTextColor] = useState("");
+  const [editFooterLinks, setEditFooterLinks] = useState<{label: string, url: string}[]>([]);
   const [brandingSaving, setBrandingSaving] = useState(false);
 
   // AbortController for stop generation
@@ -116,6 +117,7 @@ export default function ProjectPage() {
       setEditWelcomeMsg(b.welcomeMessage || "");
       setEditUserTextColor(b.userTextColor || "#ffffff");
       setEditBotTextColor(b.botTextColor || "#1e293b");
+      setEditFooterLinks(b.footerLinks || []);
     }
   }, [project?.branding]);
 
@@ -150,6 +152,7 @@ export default function ProjectPage() {
           logoUrl: finalLogoUrl,
           chatbotDisplayName: editDisplayName || undefined,
           welcomeMessage: editWelcomeMsg || undefined,
+          footerLinks: editFooterLinks.length > 0 ? editFooterLinks : undefined,
         }),
       });
       toast({ title: t("common.saved") || "Branding saved" });
@@ -204,30 +207,10 @@ export default function ProjectPage() {
     loadConversations();
   }, [projectId]);
 
-  // Auto-create conversation when project loads
-  useEffect(() => {
-    if (hasAutoCreated.current || !project || isLoading) return;
-    if (!activeConvId) {
-      hasAutoCreated.current = true;
-      handleNewConversation();
-    }
-  }, [project, isLoading]);
-
-  // Create new conversation
-  const handleNewConversation = async () => {
-    try {
-      const res = await fetch(`/api/projects/${projectId}/conversations`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "New Conversation" }),
-      });
-      if (res.ok) {
-        const conv = await res.json();
-        setActiveConvId(conv.id);
-        setMessages([]);
-        loadConversations();
-      }
-    } catch { }
+  // Create new conversation (Local state only, lazy DB creation)
+  const handleNewConversation = () => {
+    setActiveConvId(null);
+    setMessages([]);
   };
 
   // Delete a conversation
@@ -238,9 +221,6 @@ export default function ProjectPage() {
       });
       if (res.ok) {
         if (activeConvId === convId) {
-          setActiveConvId(null);
-          setMessages([]);
-          hasAutoCreated.current = false;
           handleNewConversation();
         }
         loadConversations();
@@ -403,12 +383,27 @@ export default function ProjectPage() {
     setMessages((prev) => [...prev, userMessage]);
     setIsTyping(true);
 
-    // Auto-title conversation after first user message
-    if (activeConvId && messages.length === 0) {
-      autoTitleConversation(activeConvId, content);
-    }
+    let currentConvId = activeConvId;
 
     try {
+      // Lazy create conversation if it doesn't exist yet
+      if (!currentConvId) {
+        const res = await fetch(`/api/projects/${projectId}/conversations`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: content.substring(0, 50) + (content.length > 50 ? "..." : "") }),
+        });
+        if (res.ok) {
+          const conv = await res.json();
+          currentConvId = conv.id;
+          setActiveConvId(conv.id);
+          // Don't auto-title again since we just named it with the first message
+        }
+      } else if (messages.length === 0) {
+        // Auto-title existing conversation after first user message
+        autoTitleConversation(currentConvId, content);
+      }
+
       const startTime = performance.now();
       const conversationHistory = messages.map((msg) => ({
         role: msg.role === "user" ? ("user" as const) : ("assistant" as const),
@@ -418,7 +413,7 @@ export default function ProjectPage() {
       const response = await sendMessageMutation.mutateAsync({
         projectId,
         message: content,
-        conversationId: activeConvId || undefined,
+        conversationId: currentConvId || undefined,
         conversationHistory,
       });
 
@@ -433,6 +428,7 @@ export default function ProjectPage() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      loadConversations(); // Refresh sidebar to show new conversation / message count
     } catch (err: any) {
       setMessages((prev) => [
         ...prev,
@@ -533,7 +529,7 @@ export default function ProjectPage() {
           onValueChange={setActiveTab}
           className="flex-1 flex flex-col min-h-0 w-full overflow-hidden"
         >
-          <TabsList className="shrink-0 w-full justify-start bg-transparent border-b border-border rounded-none h-12 p-0 gap-6 overflow-x-auto hide-scrollbar flex-nowrap">
+          <TabsList className="shrink-0 w-full justify-start bg-transparent border-b border-border rounded-none h-auto min-h-14 py-1 pb-0 gap-6 overflow-visible overflow-x-auto hide-scrollbar flex-nowrap">
             <TabsTrigger
               value="chat"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 h-full gap-2"
@@ -611,7 +607,9 @@ export default function ProjectPage() {
                           className={`flex-1 text-left px-3 py-2.5 min-w-0 ${activeConvId === conv.id ? "text-brand" : "text-foreground"}`}
                         >
                           <p className="font-medium truncate text-xs">{conv.title}</p>
-                          <p className="text-[10px] text-muted-foreground">{conv._count.messages} msgs · {conv.status === "ended" ? "Ended" : "Active"}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {conv._count.messages} msgs · {activeConvId === conv.id ? "Viewing" : new Date(conv.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                          </p>
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); handleDeleteConversation(conv.id); }}
@@ -684,19 +682,10 @@ export default function ProjectPage() {
                     {/* Plan limits badge */}
                     <div className="shrink-0 bg-background border border-border/60 rounded-xl px-4 py-2 text-sm space-y-1.5 min-w-[180px]">
                       <div className="flex items-center justify-between gap-4">
-                        <span className="text-muted-foreground text-xs">Sources used</span>
+                        <span className="text-muted-foreground text-xs">Sources uploaded</span>
                         <span className="font-semibold text-xs">
                           {project.documents?.length || 0}
-                          <span className="text-muted-foreground font-normal"> / {session?.user && (session.user as any).plan === "PRO" ? 50 : (session?.user as any)?.plan === "BUSINESS" ? 500 : 3}</span>
                         </span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="bg-brand h-1.5 rounded-full transition-all"
-                          style={{
-                            width: `${Math.min(100, ((project.documents?.length || 0) / ((session?.user as any)?.plan === "PRO" ? 50 : (session?.user as any)?.plan === "BUSINESS" ? 500 : 3)) * 100)}%`
-                          }}
-                        />
                       </div>
                       <p className="text-[10px] text-muted-foreground">
                         Max file size: {(session?.user as any)?.plan === "PRO" ? "10MB" : (session?.user as any)?.plan === "BUSINESS" ? "50MB" : "2MB"} per source
@@ -1009,8 +998,8 @@ export default function ProjectPage() {
 
                 <Card className="border-border/60 shadow-sm">
                   <CardHeader>
-                    <CardTitle>{t("analytics.popularTopics")}</CardTitle>
-                    <CardDescription>{t("analytics.popularTopicsDesc")}</CardDescription>
+                    <CardTitle>Activity by Time of Day</CardTitle>
+                    <CardDescription>When users interact with your chatbot the most.</CardDescription>
                   </CardHeader>
                   <CardContent className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -1049,6 +1038,7 @@ export default function ProjectPage() {
                         />
                         <Bar
                           dataKey="requests"
+                          name="Messages"
                           fill="hsl(var(--brand))"
                           radius={[0, 4, 4, 0]}
                         />
@@ -1179,6 +1169,73 @@ export default function ProjectPage() {
                           </Button>
                         )}
                       </div>
+                    </div>
+
+                    <div className="space-y-4 sm:col-span-2 pt-4 border-t">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-base">Footer Links</Label>
+                          <p className="text-xs text-muted-foreground">Add up to 4 helpful links below the chat input.</p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditFooterLinks([...editFooterLinks, { label: "", url: "" }])}
+                          disabled={editFooterLinks.length >= 4}
+                        >
+                          <AppIcon name="Plus" className="h-4 w-4 mr-2" />
+                          Add Link
+                        </Button>
+                      </div>
+                      
+                      {editFooterLinks.length > 0 ? (
+                        <div className="space-y-3">
+                          {editFooterLinks.map((link, idx) => (
+                            <div key={idx} className="flex gap-2 items-start">
+                              <div className="flex-1 space-y-2">
+                                <Input
+                                  placeholder="Link Label (e.g. Help Center)"
+                                  value={link.label}
+                                  onChange={(e) => {
+                                    const newLinks = [...editFooterLinks];
+                                    newLinks[idx].label = e.target.value;
+                                    setEditFooterLinks(newLinks);
+                                  }}
+                                />
+                              </div>
+                              <div className="flex-[2] space-y-2">
+                                <Input
+                                  placeholder="URL (e.g. https://support.acme.com)"
+                                  value={link.url}
+                                  onChange={(e) => {
+                                    const newLinks = [...editFooterLinks];
+                                    newLinks[idx].url = e.target.value;
+                                    setEditFooterLinks(newLinks);
+                                  }}
+                                />
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
+                                onClick={() => {
+                                  const newLinks = [...editFooterLinks];
+                                  newLinks.splice(idx, 1);
+                                  setEditFooterLinks(newLinks);
+                                }}
+                              >
+                                <AppIcon name="Trash2" className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground text-center p-4 border rounded-lg bg-muted/50 border-dashed">
+                          No footer links added.
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="pt-2">

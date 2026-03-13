@@ -5,21 +5,21 @@ import { prisma } from "../../lib/prisma";
 export const PLAN_LIMITS = {
     FREE: {
         maxProjects: 1,
-        maxSourcesTotal: 3,         // Docs or URLs per project
+        maxSourcesTotal: 999999,
         maxMessagesPerMonth: 50,
         maxSourceSizeBytes: 2 * 1024 * 1024,  // 2MB limit per upload
         maxSourceChars: 20000,                // Extract cutoff protect
     },
     PRO: {
         maxProjects: 5,
-        maxSourcesTotal: 50,
+        maxSourcesTotal: 999999,
         maxMessagesPerMonth: 1000,
         maxSourceSizeBytes: 10 * 1024 * 1024, // 10MB limit per upload
         maxSourceChars: 100000,
     },
     BUSINESS: {
         maxProjects: 999999, // practically unlimited
-        maxSourcesTotal: 500,
+        maxSourcesTotal: 999999,
         maxMessagesPerMonth: 999999,
         maxSourceSizeBytes: 50 * 1024 * 1024, // 50MB per upload
         maxSourceChars: 500000,

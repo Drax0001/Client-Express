@@ -18,8 +18,6 @@ const en = {
     "common.signOut": "Sign out",
     "common.getStarted": "Get Started",
     "common.saved": "Saved",
-    "common.save": "Save",
-
     // Sidebar
     "sidebar.dashboard": "Dashboard",
     "sidebar.projects": "Projects",
@@ -192,7 +190,7 @@ const en = {
     "chat.exportConversation": "Export Conversation",
     "chat.clearConversation": "Clear Conversation",
     "chat.enterToSend": "Press Enter to send, Shift+Enter for new line",
-    "chat.basedOnDocs": "Responses are based on your uploaded documents only",
+    "chat.basedOnDocs": "",
 
     // Settings
     "settings.generalTitle": "General Settings",
@@ -201,8 +199,6 @@ const en = {
     "settings.nameDisabled": "Name modification is disabled for now.",
     "settings.dangerZone": "Danger Zone",
     "settings.dangerDesc": "Irreversible and destructive actions.",
-    "settings.saving": "Saving...",
-
     // Logo
     "logo.change": "Change Logo",
     "logo.remove": "Remove Logo",
