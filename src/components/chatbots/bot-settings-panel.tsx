@@ -10,6 +10,53 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { useTranslation } from "@/lib/i18n";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+interface SortableSuggestedMsgProps {
+    id: string;
+    sm: SuggestedMsg;
+    onEdit: () => void;
+    onDelete: () => void;
+    onMoveUp: () => void;
+    onMoveDown: () => void;
+    isFirst: boolean;
+    isLast: boolean;
+}
+
+function SortableSuggestedMsg({ id, sm, onEdit, onDelete, onMoveUp, onMoveDown, isFirst, isLast }: SortableSuggestedMsgProps) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+    const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 10 : 1 };
+    
+    return (
+        <div ref={setNodeRef} style={style} className={`flex items-center gap-2 p-3 rounded-lg border bg-muted/20 ${isDragging ? 'border-brand shadow-md shadow-brand/10 opacity-70' : 'border-border/60 hover:border-border transition-colors'}`}>
+            <button type="button" {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground touch-none shrink-0">
+                <AppIcon name="GripVertical" className="h-4 w-4" />
+            </button>
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{sm.label}</p>
+                <p className="text-xs text-muted-foreground truncate">{sm.prompt}</p>
+            </div>
+            <div className="flex items-center gap-1 shrink-0 ml-2">
+                <div className="flex flex-col mr-1 border-r border-border/60 pr-2">
+                    <button type="button" onClick={onMoveUp} disabled={isFirst} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed">
+                        <AppIcon name="ChevronUp" className="h-3 w-3" />
+                    </button>
+                    <button type="button" onClick={onMoveDown} disabled={isLast} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed">
+                        <AppIcon name="ChevronDown" className="h-3 w-3" />
+                    </button>
+                </div>
+                <Button type="button" variant="ghost" size="sm" onClick={onEdit} className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground">
+                    <AppIcon name="Edit" className="h-4 w-4" />
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={onDelete} className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
+                    <AppIcon name="Trash2" className="h-3.5 w-3.5" />
+                </Button>
+            </div>
+        </div>
+    );
+}
 
 interface ModelDefinition {
     id: string;
@@ -65,6 +112,30 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
     const [newSugLabel, setNewSugLabel] = useState("");
     const [newSugPrompt, setNewSugPrompt] = useState("");
     const [showAdvanced, setShowAdvanced] = useState(false);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    );
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (active.id !== over?.id) {
+            setSuggestedMsgs((items) => {
+                const oldIndex = items.findIndex((item) => (item.label + item.prompt) === active.id);
+                const newIndex = items.findIndex((item) => (item.label + item.prompt) === over?.id);
+                return arrayMove(items, oldIndex, newIndex);
+            });
+        }
+    };
+
+    const moveMsg = (index: number, direction: 'up' | 'down') => {
+        setSuggestedMsgs((items) => {
+            const newIndex = direction === 'up' ? index - 1 : index + 1;
+            if (newIndex < 0 || newIndex >= items.length) return items;
+            return arrayMove(items, index, newIndex);
+        });
+    };
 
     const loadConfig = useCallback(async () => {
         try {
@@ -297,40 +368,31 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
                 <CardContent className="space-y-4">
                     {suggestedMsgs.length > 0 && (
                         <div className="space-y-2">
-                            {suggestedMsgs.map((sm, idx) => (
-                                <div key={idx} className="flex items-center gap-2 p-3 rounded-lg border border-border/60 bg-muted/20">
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate">{sm.label}</p>
-                                        <p className="text-xs text-muted-foreground truncate">{sm.prompt}</p>
-                                    </div>
-                                    <div className="flex items-center gap-1 shrink-0">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
+                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                <SortableContext items={suggestedMsgs.map(sm => sm.label + sm.prompt)} strategy={verticalListSortingStrategy}>
+                                    {suggestedMsgs.map((sm, idx) => (
+                                        <SortableSuggestedMsg
+                                            key={sm.label + sm.prompt}
+                                            id={sm.label + sm.prompt}
+                                            sm={sm}
+                                            isFirst={idx === 0}
+                                            isLast={idx === suggestedMsgs.length - 1}
+                                            onMoveUp={() => moveMsg(idx, 'up')}
+                                            onMoveDown={() => moveMsg(idx, 'down')}
+                                            onEdit={() => {
                                                 setNewSugLabel(sm.label);
                                                 setNewSugPrompt(sm.prompt);
                                                 setSuggestedMsgs(prev => prev.filter((_, i) => i !== idx));
                                             }}
-                                            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-                                        >
-                                            <AppIcon name="Edit" className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => setSuggestedMsgs(prev => prev.filter((_, i) => i !== idx))}
-                                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                                        >
-                                            <AppIcon name="Trash2" className="h-3.5 w-3.5" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            ))}
+                                            onDelete={() => setSuggestedMsgs(prev => prev.filter((_, i) => i !== idx))}
+                                        />
+                                    ))}
+                                </SortableContext>
+                            </DndContext>
                         </div>
                     )}
 
-                    <div className="flex flex-col gap-2 p-3 rounded-lg border border-dashed border-border/60">
+                    <div className="flex flex-col gap-2 p-3 rounded-lg border border-dashed border-border/60 bg-muted/5 transition-colors focus-within:border-brand focus-within:bg-brand/5">
                         <Input
                             placeholder={t("bot.btnLabelPlaceholder")}
                             value={newSugLabel}

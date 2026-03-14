@@ -30,7 +30,7 @@ export function ProjectCard({
     <Card
       role="button"
       tabIndex={0}
-      className="group relative overflow-hidden transition-all duration-200 touch-manipulation border border-border/60 shadow-medium bg-card cursor-pointer hover:shadow-strong"
+      className="group relative overflow-hidden transition-all duration-200 touch-manipulation border border-border/60 shadow-medium bg-card cursor-pointer hover:shadow-strong hover:-translate-y-1 hover:border-brand/40"
       onClick={() => router.push(`/projects/${id}`)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {

@@ -212,7 +212,7 @@ export function FileUploadArea({
         className={cn(
           "relative border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200",
           isDragOver && !disabled
-            ? "border-primary bg-primary/5 scale-[1.02]"
+            ? "border-brand bg-brand/5 scale-[1.02] shadow-[0_0_25px_rgba(var(--brand),0.2)]"
             : "border-muted-foreground/25 hover:border-muted-foreground/50",
           disabled && "opacity-50 cursor-not-allowed",
           !disabled && "cursor-pointer hover:bg-muted/20",

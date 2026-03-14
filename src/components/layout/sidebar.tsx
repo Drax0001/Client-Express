@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { AppIcon } from "@/components/ui/app-icon";
-import { useProjects } from "@/lib/api/hooks";
+import { useProjects, useUsage } from "@/lib/api/hooks";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useTranslation } from "@/lib/i18n";
@@ -14,11 +14,13 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { data: session } = useSession();
   const { data: projects, isLoading } = useProjects();
+  const { data: usage } = useUsage();
   const pathname = usePathname();
   const { locale, setLocale, t } = useTranslation();
 
   const displayName = session?.user?.name?.trim() || session?.user?.email || "User";
-  const plan = "Free";
+  const plan = usage?.plan || "Free";
+  const progressPercent = usage?.maxMessagesPerMonth ? Math.min(100, Math.round((usage.messagesThisMonth / usage.maxMessagesPerMonth) * 100)) : 0;
 
   useEffect(() => {
     const handleResize = () => {
@@ -38,7 +40,7 @@ export function Sidebar() {
       {/* Desktop Sidebar */}
       <aside
         className={`hidden md:flex flex-col shrink-0 transition-all duration-200 ${collapsed ? "w-16" : "w-[260px]"
-          } bg-background border-r border-border h-full overflow-hidden`}
+          } bg-brand/5 border-r border-border/50 h-full overflow-hidden`}
       >
         {/* Header / Logo */}
         <div className="flex items-center h-14 px-4 shrink-0">
@@ -130,6 +132,19 @@ export function Sidebar() {
         {/* User Footer */}
         <div className="p-3 border-t border-border shrink-0">
           <div className="flex flex-col gap-3">
+            {/* The Limits Progress Bar */}
+            {!collapsed && usage && (
+                <div className="px-1 py-1">
+                    <div className="flex items-center justify-between text-[11px] mb-1.5 px-0.5">
+                        <span className="font-medium text-muted-foreground uppercase tracking-wide">Messages</span>
+                        <span className="font-medium">{usage.messagesThisMonth} / {usage.maxMessagesPerMonth === Infinity ? '∞' : usage.maxMessagesPerMonth}</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden border border-border/50">
+                        <div className={`h-full ${progressPercent > 95 ? 'bg-destructive' : progressPercent > 80 ? 'bg-orange-500' : 'bg-brand'} transition-all duration-500`} style={{ width: `${progressPercent}%` }} />
+                    </div>
+                </div>
+            )}
+
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center shrink-0">
                 <span className="text-xs font-medium">{displayName.charAt(0).toUpperCase()}</span>

@@ -147,7 +147,7 @@ export default function ProjectsPage() {
               </Button>
             </div>
           ) : !projects || projects.length === 0 ? (
-            <div className="text-center py-20 px-4 border border-border/60 border-dashed rounded-3xl bg-muted/10">
+            <div className="text-center py-20 px-4 border border-border/40 rounded-3xl bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-all">
               <div className="relative mb-8 w-fit mx-auto">
                 <div className="absolute inset-0 bg-brand/10 opacity-80 rounded-full blur-2xl transform scale-150"></div>
                 <div className="relative p-5 bg-card border border-border rounded-3xl shadow-soft">

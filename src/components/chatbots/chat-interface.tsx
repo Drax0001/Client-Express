@@ -230,7 +230,7 @@ export function ChatInterface({
             key={idx}
             onClick={() => handleSendMessage(sm.prompt)}
             disabled={isLoading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-border/60 bg-background hover:bg-muted/60 hover:border-border transition-all text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-border/60 bg-background hover:bg-muted/60 hover:border-border transition-all hover:scale-105 active:scale-95 text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             style={branding?.primaryColor ? { borderColor: branding.primaryColor + "40", color: branding.primaryColor } : undefined}
           >
             <AppIcon name="Sparkles" className="h-3 w-3" />
@@ -394,10 +394,7 @@ export function ChatInterface({
       </Avatar>
 
       <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3 shadow-sm" style={botBubbleBg ? { backgroundColor: botBubbleBg } : undefined}>
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm text-muted-foreground">
-            {displayName} is thinking
-          </span>
+        <div className="flex items-center gap-1.5 h-5">
           <div className="flex gap-1">
             <div className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-bounce" />
             <div className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-bounce" style={{ animationDelay: "0.15s" }} />

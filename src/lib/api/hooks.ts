@@ -43,6 +43,20 @@ export function useProjects() {
 }
 
 /**
+ * Fetch user plan and usage limits
+ */
+export function useUsage() {
+  return useQuery({
+    queryKey: ["usage"] as const,
+    queryFn: async () => {
+      const response = await apiClient.get("/usage");
+      return response.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
  * Fetch a single project by ID
  */
 export function useProject(id: string) {

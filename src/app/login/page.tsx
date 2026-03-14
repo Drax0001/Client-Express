@@ -125,7 +125,7 @@ function LoginContent() {
 export default function LoginPage() {
     const { t } = useTranslation();
     return (
-        <div className="min-h-screen bg-background relative flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <div className="min-h-screen bg-brand/5 relative flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 overflow-hidden">
             {/* Dynamic Background Element */}
             <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] pointer-events-none opacity-50 mix-blend-screen" />
 

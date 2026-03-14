@@ -4,6 +4,18 @@
  */
 
 // ======================================
+// USAGE TYPES
+// ======================================
+
+export interface UsageResponse {
+  plan: string;
+  messagesThisMonth: number;
+  maxMessagesPerMonth: number;
+  sourcesThisMonth: number;
+  maxSourcesPerMonth: number;
+}
+
+// ======================================
 // PROJECT TYPES
 // ======================================
 
