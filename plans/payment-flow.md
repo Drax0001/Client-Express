@@ -1,4 +1,4 @@
-# Technical Payment Flow — ClientExpress / chat-remix
+# Technical Payment Flow — ClientExpress 
 
 ## Overview
 

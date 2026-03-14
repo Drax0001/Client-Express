@@ -60,8 +60,8 @@ This backend system provides a complete RAG pipeline that:
 1. **Clone the repository**
 
    ```bash
-   git clone [https://github.com/Drax0001/Chat-remix](https://github.com/Drax0001/Chat-remix)
-   cd Chat-remix
+   git clone [https://github.com/Drax0001/client-express](https://github.com/Drax0001/client-express)
+   cd client-express
    ```
 
 2. **Install dependencies**

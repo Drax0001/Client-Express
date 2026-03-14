@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
             amount: price,
             currency: "XAF",
             phoneNumber,
-            description: `${plan} Plan Subscription for chat-remix`,
+            description: `${plan} Plan Subscription for ClientExpress`,
             externalReference,
         });
 

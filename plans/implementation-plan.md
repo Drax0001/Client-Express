@@ -1,4 +1,4 @@
-# Implementation Plan — chat-remix Full Audit & Feature Additions
+# Implementation Plan — client-express Full Audit & Feature Additions
 
 ## Overview
 
