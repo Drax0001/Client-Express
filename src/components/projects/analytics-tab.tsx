@@ -93,7 +93,7 @@ export function AnalyticsTab({ projectId }: AnalyticsTabProps) {
         <Card className="border-border/60 shadow-sm hover-lift">
           <CardContent className="p-6">
             <div className="flex items-center justify-between space-y-0 pb-2">
-              <p className="text-sm font-medium">Total Messages</p>
+              <p className="text-sm font-medium">{t("analytics.totalMessages")}</p>
               <AppIcon name="MessageSquare" className="h-4 w-4 text-muted-foreground" />
             </div>
             <div className="text-2xl font-bold">{stats.totalMessages}</div>
@@ -102,7 +102,7 @@ export function AnalyticsTab({ projectId }: AnalyticsTabProps) {
         <Card className="border-border/60 shadow-sm hover-lift" style={{ transitionDelay: "50ms" }}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between space-y-0 pb-2">
-              <p className="text-sm font-medium">Conversations</p>
+              <p className="text-sm font-medium">{t("analytics.totalConversations")}</p>
               <AppIcon name="MessageCircle" className="h-4 w-4 text-muted-foreground" />
             </div>
             <div className="text-2xl font-bold">{stats.totalConversations}</div>
@@ -111,7 +111,7 @@ export function AnalyticsTab({ projectId }: AnalyticsTabProps) {
         <Card className="border-border/60 shadow-sm hover-lift" style={{ transitionDelay: "100ms" }}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between space-y-0 pb-2">
-              <p className="text-sm font-medium">Avg Messages / Conv</p>
+              <p className="text-sm font-medium">{t("analytics.avgMessagesPerConvLong")}</p>
               <AppIcon name="Activity" className="h-4 w-4 text-muted-foreground" />
             </div>
             <div className="text-2xl font-bold">{stats.avgMessagesPerConv}</div>
@@ -168,8 +168,8 @@ export function AnalyticsTab({ projectId }: AnalyticsTabProps) {
 
       <Card className="border-border/60 shadow-sm">
         <CardHeader>
-          <CardTitle>Activity by Time of Day</CardTitle>
-          <CardDescription>When users interact with your chatbot the most.</CardDescription>
+          <CardTitle>{t("analytics.activityByTime")}</CardTitle>
+          <CardDescription>{t("analytics.activityByTimeDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -208,7 +208,7 @@ export function AnalyticsTab({ projectId }: AnalyticsTabProps) {
               />
               <Bar
                 dataKey="requests"
-                name="Messages"
+                name={t("analytics.totalMessages")}
                 fill="hsl(var(--brand))"
                 radius={[0, 4, 4, 0]}
               />
@@ -219,3 +219,4 @@ export function AnalyticsTab({ projectId }: AnalyticsTabProps) {
     </div>
   );
 }
+

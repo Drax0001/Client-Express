@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
+import { useTranslation } from "@/lib/i18n";
 
 interface ModelDefinition {
     id: string;
@@ -44,6 +45,7 @@ interface BotSettingsPanelProps {
 }
 
 export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
+    const { t } = useTranslation();
     const [config, setConfig] = useState<BotConfig | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -56,7 +58,7 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
     const [instructions, setInstructions] = useState("");
     const [systemPrompt, setSystemPrompt] = useState("");
     const [temperature, setTemperature] = useState(0.4);
-    const [maxTokens, setMaxTokens] = useState(2048);
+    const [maxTokens, setMaxTokens] = useState(5000);
     const [responseStyle, setResponseStyle] = useState("balanced");
     const [contextMessage, setContextMessage] = useState("");
     const [suggestedMsgs, setSuggestedMsgs] = useState<SuggestedMsg[]>([]);
@@ -81,11 +83,11 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
             setContextMessage(data.contextMessage || "");
             setSuggestedMsgs(Array.isArray(data.modules) ? data.modules : []);
         } catch (err) {
-            setError("Failed to load bot configuration");
+            setError(t("dashboard.failedLoad") || "Failed to load bot configuration");
         } finally {
             setLoading(false);
         }
-    }, [projectId]);
+    }, [projectId, t]);
 
     useEffect(() => {
         loadConfig();
@@ -119,7 +121,7 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || t("settings.saveFailed") || "Failed to save");
         } finally {
             setSaving(false);
         }
@@ -148,10 +150,10 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
                 <CardHeader className="pb-4">
                     <CardTitle className="text-lg flex items-center gap-2">
                         <AppIcon name="Cpu" className="h-5 w-5 text-brand" />
-                        AI Model
+                        {t("bot.aiModel")}
                     </CardTitle>
                     <CardDescription>
-                        Choose the Gemini model that powers your chatbot
+                        {t("bot.aiModelDesc")}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -196,47 +198,47 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
                 <CardHeader className="pb-4">
                     <CardTitle className="text-lg flex items-center gap-2">
                         <AppIcon name="User" className="h-5 w-5 text-brand" />
-                        Personality & Behavior
+                        {t("bot.personalityTitle")}
                     </CardTitle>
                     <CardDescription>
-                        Shape how your chatbot communicates with users
+                        {t("bot.personalityDesc")}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-5">
                     <div className="space-y-2">
-                        <Label className="text-sm font-medium">Persona</Label>
+                        <Label className="text-sm font-medium">{t("bot.personaLabel")}</Label>
                         <Input
-                            placeholder='e.g. "A friendly tech support agent who explains things simply"'
+                            placeholder={t("bot.personaPlaceholder")}
                             value={persona}
                             onChange={(e) => setPersona(e.target.value)}
                             className="h-10"
                         />
                         <p className="text-xs text-muted-foreground">
-                            Defines the chatbot&apos;s personality and communication style
+                            {t("bot.personaDesc")}
                         </p>
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-sm font-medium">Custom Instructions</Label>
+                        <Label className="text-sm font-medium">{t("bot.instructionsLabel")}</Label>
                         <Textarea
-                            placeholder={`e.g.\n- Always greet users warmly\n- Focus on code examples when relevant\n- Recommend contacting support for billing questions`}
+                            placeholder={t("bot.instructionsPlaceholder")}
                             value={instructions}
                             onChange={(e) => setInstructions(e.target.value)}
                             rows={4}
                             className="resize-y"
                         />
                         <p className="text-xs text-muted-foreground">
-                            Specific rules and behaviors for the chatbot to follow
+                            {t("bot.instructionsDesc")}
                         </p>
                     </div>
 
                     <div className="space-y-3">
-                        <Label className="text-sm font-medium">Response Style</Label>
+                        <Label className="text-sm font-medium">{t("bot.responseStyleLabel")}</Label>
                         <div className="grid grid-cols-3 gap-3">
                             {[
-                                { value: "concise", label: "Concise", icon: "Zap", desc: "Short & direct" },
-                                { value: "balanced", label: "Balanced", icon: "Scale", desc: "Well-rounded" },
-                                { value: "detailed", label: "Detailed", icon: "BookOpen", desc: "Comprehensive" },
+                                { value: "concise", label: t("bot.styleConcise"), icon: "Zap", desc: t("bot.styleConciseDesc") },
+                                { value: "balanced", label: t("bot.styleBalanced"), icon: "Scale", desc: t("bot.styleBalancedDesc") },
+                                { value: "detailed", label: t("bot.styleDetailed"), icon: "BookOpen", desc: t("bot.styleDetailedDesc") },
                             ].map((style) => (
                                 <button
                                     key={style.value}
@@ -261,22 +263,22 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
                 <CardHeader className="pb-4">
                     <CardTitle className="text-lg flex items-center gap-2">
                         <AppIcon name="MessageCircle" className="h-5 w-5 text-brand" />
-                        Context Message
+                        {t("bot.contextMessageTitle")}
                     </CardTitle>
                     <CardDescription>
-                        This context is automatically appended to every user query to improve answer relevance
+                        {t("bot.contextMessageDesc")}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
                     <Textarea
-                        placeholder={`e.g. "This chatbot serves customers of Acme Corp, a SaaS platform for project management. Users may ask about pricing, features, onboarding, and troubleshooting."`}
+                        placeholder={t("bot.contextMessagePlaceholder")}
                         value={contextMessage}
                         onChange={(e) => setContextMessage(e.target.value)}
                         rows={3}
                         className="resize-y"
                     />
                     <p className="text-xs text-muted-foreground">
-                        Even vague user queries will carry value with this context attached.
+                        {t("bot.contextMessageExtra")}
                     </p>
                 </CardContent>
             </Card>
@@ -286,10 +288,10 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
                 <CardHeader className="pb-4">
                     <CardTitle className="text-lg flex items-center gap-2">
                         <AppIcon name="Sparkles" className="h-5 w-5 text-brand" />
-                        Suggested Messages
+                        {t("bot.suggestedMessagesTitle")}
                     </CardTitle>
                     <CardDescription>
-                        Quick-action buttons shown after the welcome message and after each bot reply
+                        {t("bot.suggestedMessagesDesc")}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -330,13 +332,13 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
 
                     <div className="flex flex-col gap-2 p-3 rounded-lg border border-dashed border-border/60">
                         <Input
-                            placeholder="Button label (e.g. 'How do I get started?')"
+                            placeholder={t("bot.btnLabelPlaceholder")}
                             value={newSugLabel}
                             onChange={(e) => setNewSugLabel(e.target.value)}
                             className="h-9 text-sm"
                         />
                         <Input
-                            placeholder="Full prompt sent to bot (e.g. 'Explain the onboarding process step by step')"
+                            placeholder={t("bot.promptPlaceholder")}
                             value={newSugPrompt}
                             onChange={(e) => setNewSugPrompt(e.target.value)}
                             className="h-9 text-sm"
@@ -355,7 +357,7 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
                             className="self-start"
                         >
                             <AppIcon name="Plus" className="h-3.5 w-3.5 mr-1" />
-                            Add Suggestion
+                            {t("bot.addSuggestion")}
                         </Button>
                     </div>
                 </CardContent>
@@ -371,7 +373,7 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
                         <div className="flex items-center gap-2">
                             <CardTitle className="text-lg flex items-center gap-2">
                                 <AppIcon name="SlidersHorizontal" className="h-5 w-5 text-brand" />
-                                Advanced Settings
+                                {t("bot.advancedSettings")}
                             </CardTitle>
                         </div>
                         <AppIcon
@@ -380,14 +382,14 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
                         />
                     </button>
                     <CardDescription>
-                        Fine-tune temperature, token limits, and system prompt
+                        {t("bot.advancedSettingsDesc")}
                     </CardDescription>
                 </CardHeader>
                 {showAdvanced && (
                     <CardContent className="space-y-5 pt-0">
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <Label className="text-sm font-medium">Temperature</Label>
+                                <Label className="text-sm font-medium">{t("bot.temperature")}</Label>
                                 <span className="text-sm font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded">
                                     {temperature.toFixed(2)}
                                 </span>
@@ -401,37 +403,42 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
                                 className="w-full"
                             />
                             <div className="flex justify-between text-[10px] text-muted-foreground">
-                                <span>Precise (0.1)</span>
-                                <span>Creative (0.8)</span>
+                                <span>{t("bot.precise")} (0.1)</span>
+                                <span>{t("bot.creative")} (0.8)</span>
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-sm font-medium">Max Output Tokens</Label>
-                            <Input
-                                type="number"
-                                min={256}
-                                max={65536}
-                                value={maxTokens}
-                                onChange={(e) => setMaxTokens(Number(e.target.value))}
-                                className="h-10 w-40"
-                            />
+                            <Label className="text-sm font-medium">{t("bot.maxTokens")}</Label>
+                            <div className="flex items-center gap-3">
+                                <Input
+                                    type="number"
+                                    min={256}
+                                    max={65536}
+                                    value={maxTokens}
+                                    onChange={(e) => setMaxTokens(Number(e.target.value))}
+                                    className="h-10 w-40"
+                                />
+                                <span className="text-sm font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-md">
+                                    ~{Math.round(maxTokens * 0.75).toLocaleString()} {t("bot.words")}
+                                </span>
+                            </div>
                             <p className="text-xs text-muted-foreground">
-                                Maximum length of each response (256–65,536)
+                                {t("bot.maxTokensDesc")}
                             </p>
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-sm font-medium">Custom System Prompt</Label>
+                            <Label className="text-sm font-medium">{t("bot.systemPromptTitle")}</Label>
                             <Textarea
-                                placeholder="Override the default system prompt (leave empty to use the built-in intelligent prompt)"
+                                placeholder={t("bot.systemPromptPlaceholder")}
                                 value={systemPrompt}
                                 onChange={(e) => setSystemPrompt(e.target.value)}
                                 rows={6}
                                 className="resize-y font-mono text-xs"
                             />
                             <p className="text-xs text-muted-foreground">
-                                ⚠️ Overrides the default prompt — only use if you know what you&apos;re doing. Language matching and response style will still be appended.
+                                ⚠️ {t("bot.systemPromptWarning")}
                             </p>
                         </div>
                     </CardContent>
@@ -447,24 +454,24 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
                 >
                     {saving ? (
                         <>
-                            <div className="animate-spin-slow rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                            Saving...
+                            <AppIcon name="Loader2" className="mr-2 h-4 w-4 animate-spin-slow" />
+                            {t("bot.savingConfig")}
                         </>
                     ) : saved ? (
                         <>
                             <AppIcon name="Check" className="mr-2 h-4 w-4" />
-                            Saved!
+                            {t("bot.savedConfig")}
                         </>
                     ) : (
                         <>
                             <AppIcon name="Save" className="mr-2 h-4 w-4" />
-                            Save Configuration
+                            {t("bot.saveConfig")}
                         </>
                     )}
                 </Button>
                 {saved && (
                     <span className="text-sm text-green-500 animate-in fade-in">
-                        Changes will apply to new conversations
+                        {t("bot.changesApplyNote")}
                     </span>
                 )}
             </div>

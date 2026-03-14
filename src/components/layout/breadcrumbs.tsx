@@ -4,10 +4,12 @@ import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
 import { useProject } from "@/lib/api/hooks";
 import { AppIcon } from "@/components/ui/app-icon";
+import { useTranslation } from "@/lib/i18n";
 
 export function Breadcrumbs() {
   const pathname = usePathname();
   const params = useParams();
+  const { t } = useTranslation();
   
   // If we are under a project route, fetch the project to convert ID to Name
   const projectId = params?.id as string | undefined;
@@ -37,12 +39,14 @@ export function Breadcrumbs() {
           // Format segment to be more readable
           const formattedSegment = segment === projectId && project
             ? project.name
-            : segment
-            .replace(/-/g, " ")
-            .replace(/([A-Z])/g, " $1")
-            .split(" ")
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ");
+            : segment.toLowerCase() === "projects"
+              ? t("sidebar.dashboard")
+              : segment
+                .replace(/-/g, " ")
+                .replace(/([A-Z])/g, " $1")
+                .split(" ")
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(" ");
 
           return (
             <li key={segment} className="flex items-center space-x-2">

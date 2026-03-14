@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteProjectDialog } from "@/components/projects/delete-project-dialog";
+import { useTranslation } from "@/lib/i18n";
 
 interface ProjectCardProps {
   id: string;
@@ -23,6 +24,7 @@ export function ProjectCard({
   documentCount,
 }: ProjectCardProps) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <Card
@@ -56,7 +58,7 @@ export function ProjectCard({
               onClick={(e) => e.stopPropagation()}
             >
               <AppIcon name="Trash2" className="h-4 w-4" />
-              <span className="sr-only">Delete project</span>
+              <span className="sr-only">{t("common.delete")}</span>
             </Button>
           </DeleteProjectDialog>
         </div>
@@ -64,11 +66,11 @@ export function ProjectCard({
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <AppIcon name="FileText" className="h-4 w-4" />
             <span>
-              {documentCount} {documentCount === 1 ? "document" : "documents"}
+              {documentCount} {documentCount === 1 ? t("common.document") : t("common.documents")}
             </span>
           </div>
           <Badge variant="secondary" className="font-medium">
-            {documentCount > 0 ? "Ready" : "Empty"}
+            {documentCount > 0 ? t("common.ready") : t("common.empty")}
           </Badge>
         </div>
       </CardHeader>
@@ -77,21 +79,22 @@ export function ProjectCard({
           <Button asChild className="w-full font-medium">
             <Link href={`/projects/${id}`} className="flex items-center justify-center gap-2">
               <AppIcon name="Settings" className="h-4 w-4" />
-              Manage
+              {t("common.manage")}
             </Link>
           </Button>
           <Button asChild variant="outline" className="w-full font-medium">
             <Link href={`/projects/${id}/chat`} className="flex items-center justify-center gap-2">
               <AppIcon name="MessageSquare" className="h-4 w-4" />
-              Chat
+              {t("common.chat")}
             </Link>
           </Button>
         </div>
 
         <p className="text-xs text-muted-foreground mt-4">
-          Created {createdAt.toLocaleDateString()}
+          {t("common.createdOn")} {createdAt.toLocaleDateString()}
         </p>
       </CardContent>
     </Card>
   );
 }
+

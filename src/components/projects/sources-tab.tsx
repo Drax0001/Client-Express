@@ -7,6 +7,7 @@ import { UploadInterface } from "@/components/documents/upload-interface";
 import { DocumentList } from "@/components/documents/document-list";
 import { useToast } from "@/hooks/use-toast";
 import { useDeleteDocument, useRetryDocument } from "@/lib/api/hooks";
+import { useTranslation } from "@/lib/i18n";
 
 interface SourcesTabProps {
   projectId: string;
@@ -17,6 +18,7 @@ interface SourcesTabProps {
 export function SourcesTab({ projectId, project, refetch }: SourcesTabProps) {
   const { data: session } = useSession();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const deleteDocument = useDeleteDocument();
   const retryDocument = useRetryDocument();
 
@@ -26,21 +28,21 @@ export function SourcesTab({ projectId, project, refetch }: SourcesTabProps) {
         <CardHeader className="bg-muted/30 border-b border-border/60">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
             <div>
-              <CardTitle className="text-lg">Add New Sources</CardTitle>
+              <CardTitle className="text-lg">{t("workspace.addNewSources")}</CardTitle>
               <CardDescription>
-                Upload files or import URLs to expand the chatbot's knowledge.
+                {t("workspace.addNewSourcesDesc")}
               </CardDescription>
             </div>
             {/* Plan limits badge */}
             <div className="shrink-0 bg-background border border-border/60 rounded-xl px-4 py-2 text-sm space-y-1.5 min-w-[180px]">
               <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground text-xs">Sources uploaded</span>
+                <span className="text-muted-foreground text-xs">{t("workspace.sourcesUploaded")}</span>
                 <span className="font-semibold text-xs">
                   {project.documents?.length || 0}
                 </span>
               </div>
               <p className="text-[10px] text-muted-foreground">
-                Max file size: {(session?.user as any)?.plan === "PRO" ? "10MB" : (session?.user as any)?.plan === "BUSINESS" ? "50MB" : "2MB"} per source
+                {t("workspace.maxFileSize")} {(session?.user as any)?.plan === "PRO" ? "10MB" : (session?.user as any)?.plan === "BUSINESS" ? "50MB" : "2MB"} per source
               </p>
             </div>
           </div>
@@ -50,7 +52,7 @@ export function SourcesTab({ projectId, project, refetch }: SourcesTabProps) {
             projectId={projectId}
             onUploadSuccess={() => {
               refetch();
-              toast({ title: "Sources added successfully" });
+              toast({ title: t("workspace.addedSuccess") });
             }}
           />
         </CardContent>
@@ -59,13 +61,13 @@ export function SourcesTab({ projectId, project, refetch }: SourcesTabProps) {
       <Card className="border-border/60 shadow-sm">
         <CardHeader className="bg-muted/30 border-b border-border/60 py-4 flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-lg">Trained Documents</CardTitle>
+            <CardTitle className="text-lg">{t("workspace.trainedDocs")}</CardTitle>
             <CardDescription>
-              Manage the files currently powering this chatbot.
+              {t("workspace.trainedDocsDesc")}
             </CardDescription>
           </div>
           <Badge variant="secondary">
-            {project.documents?.length || 0} Total
+            {project.documents?.length || 0} {t("workspace.total")}
           </Badge>
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
@@ -86,3 +88,4 @@ export function SourcesTab({ projectId, project, refetch }: SourcesTabProps) {
     </div>
   );
 }
+

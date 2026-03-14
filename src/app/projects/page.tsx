@@ -9,10 +9,12 @@ import { useAppKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { AppIcon } from "@/components/ui/app-icon";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useTranslation } from "@/lib/i18n";
 
 export default function ProjectsPage() {
   const { data: projects, isLoading: projectsLoading, error } = useProjects();
   const [usageData, setUsageData] = useState<any>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetch("/api/usage")
@@ -37,16 +39,16 @@ export default function ProjectsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-              Dashboard
+              {t("sidebar.dashboard")}
             </h1>
             <p className="text-muted-foreground mt-2 text-[15px]">
-              Overview of your conversational AI projects and usage metrics.
+              {t("dashboard.subtitle")}
             </p>
           </div>
           <Link href="/projects/new">
             <Button className="shadow-md hover:shadow-lg transition-all flex items-center gap-2 px-6 py-5 rounded-xl font-medium bg-foreground hover:bg-foreground/90 text-background">
               <AppIcon name="Plus" className="h-[18px] w-[18px]" />
-              New Chatbot
+              {t("sidebar.newChatbot")}
             </Button>
           </Link>
         </div>
@@ -59,7 +61,7 @@ export default function ProjectsPage() {
               <div className="p-2 bg-brand/10 text-brand rounded-lg">
                 <AppIcon name="Folder" className="h-4 w-4" />
               </div>
-              <h3 className="font-medium text-sm">Active Chatbots</h3>
+              <h3 className="font-medium text-sm">{t("dashboard.activeChatbots")}</h3>
             </div>
             {projectsLoading ? (
               <div className="flex h-10 items-center">
@@ -68,7 +70,7 @@ export default function ProjectsPage() {
             ) : (
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-semibold text-foreground">{projects?.length || 0}</span>
-                <span className="text-sm font-medium text-muted-foreground">projects</span>
+                <span className="text-sm font-medium text-muted-foreground">{t("sidebar.projects").toLowerCase()}</span>
               </div>
             )}
           </div>
@@ -79,7 +81,7 @@ export default function ProjectsPage() {
               <div className="p-2 bg-success/10 text-success rounded-lg">
                 <AppIcon name="MessageSquare" className="h-4 w-4" />
               </div>
-              <h3 className="font-medium text-sm">Messages This Month</h3>
+              <h3 className="font-medium text-sm">{t("dashboard.messagesThisMonth")}</h3>
             </div>
             {!usageData ? (
               <div className="flex h-10 items-center">
@@ -101,7 +103,7 @@ export default function ProjectsPage() {
               <div className="p-2 bg-info/10 text-info rounded-lg">
                 <AppIcon name="Database" className="h-4 w-4" />
               </div>
-              <h3 className="font-medium text-sm">Sources Indexed</h3>
+              <h3 className="font-medium text-sm">{t("dashboard.sourcesIndexed")}</h3>
             </div>
             {projectsLoading ? (
               <div className="flex h-10 items-center">
@@ -113,7 +115,7 @@ export default function ProjectsPage() {
                   {projects?.reduce((acc, p) => acc + (p.documentCount || 0), 0) || 0}
                 </span>
                 <span className="text-sm font-medium text-muted-foreground">
-                  total active
+                  {t("dashboard.totalActive")}
                 </span>
               </div>
             )}
@@ -123,25 +125,25 @@ export default function ProjectsPage() {
         {/* PROJECTS SECTION */}
         <div className="space-y-6">
           <div className="flex items-center justify-between border-b border-border/60 pb-3">
-            <h2 className="text-xl font-semibold text-foreground tracking-tight">Your Chatbots</h2>
+            <h2 className="text-xl font-semibold text-foreground tracking-tight">{t("dashboard.yourChatbots")}</h2>
           </div>
 
           {projectsLoading ? (
             <div className="flex justify-center items-center py-20">
-              <div className="loader-creative" aria-label="Loading projects..."></div>
+              <div className="loader-creative" aria-label={t("common.loading")}></div>
             </div>
           ) : error ? (
             <div className="text-center py-12 border border-destructive/20 bg-destructive/5 rounded-2xl">
-              <div className="text-destructive mb-2 font-medium">Failed to load projects</div>
+              <div className="text-destructive mb-2 font-medium">{t("auth.failed")}</div>
               <p className="text-muted-foreground mb-4">
-                {error.message || "An unexpected error occurred."}
+                {error.message || t("auth.failed")}
               </p>
               <Button
                 variant="outline"
                 className="hover:bg-destructive hover:text-white transition-colors"
                 onClick={() => window.location.reload()}
               >
-                Try Again
+                {t("common.tryAgain")}
               </Button>
             </div>
           ) : !projects || projects.length === 0 ? (
@@ -156,15 +158,15 @@ export default function ProjectsPage() {
                 </div>
               </div>
               <h3 className="text-2xl font-semibold mb-3 tracking-tight">
-                No Chatbots Yet
+                {t("dashboard.noChatbots")}
               </h3>
               <p className="text-muted-foreground text-base mb-8 max-w-sm mx-auto leading-relaxed">
-                Transform your documents into intelligent conversational AI assistants.
+                {t("dashboard.noChatbotsDesc")}
               </p>
               <Link href="/projects/new">
                 <Button className="shadow-md px-8 py-5 rounded-xl font-medium text-base bg-brand hover:bg-brand-hover text-white transition-all hover:shadow-lg hover:-translate-y-0.5" >
                   <AppIcon name="Plus" className="h-5 w-5 mr-2" />
-                  Create Your First Chatbot
+                  {t("dashboard.createFirst")}
                 </Button>
               </Link>
             </div>
@@ -186,3 +188,4 @@ export default function ProjectsPage() {
     </MainLayout>
   );
 }
+

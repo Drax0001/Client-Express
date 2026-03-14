@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/lib/i18n";
 
 interface EmbedTabProps {
   projectId: string;
@@ -14,13 +15,14 @@ interface EmbedTabProps {
 
 export function EmbedTab({ projectId, project }: EmbedTabProps) {
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleCopyLink = () => {
     const url = `${window.location.origin}/chat/${projectId}`;
     navigator.clipboard.writeText(url);
     toast({
-      title: "Link copied!",
-      description: "Public chatbot URL copied to clipboard.",
+      title: t("embed.linkCopied"),
+      description: t("embed.linkCopiedDesc"),
     });
   };
 
@@ -45,7 +47,7 @@ export function EmbedTab({ projectId, project }: EmbedTabProps) {
   };
 </script>
 <script src="${origin}/widget.js" defer></script>`);
-    toast({ title: "Copied to clipboard" });
+    toast({ title: t("common.copied") });
   };
 
   return (
@@ -55,12 +57,10 @@ export function EmbedTab({ projectId, project }: EmbedTabProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AppIcon name="Share2" className="h-5 w-5 text-brand" />
-            Share Your Chatbot
+            {t("embed.shareTitle")}
           </CardTitle>
           <CardDescription>
-            Share this link or QR code so anyone can chat with your bot
-            publicly. Note: public usage counts against your plan&apos;s
-            message quota.
+            {t("embed.shareDesc")} {t("embed.publicUsageNote")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -82,7 +82,7 @@ export function EmbedTab({ projectId, project }: EmbedTabProps) {
 
           <div className="flex flex-col items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              Scan to open the chatbot on any device
+              {t("embed.scanQR")}
             </p>
             <div className="p-4 bg-white rounded-xl border border-border shadow-sm qr-download-target hover-lift transition-transform">
               <QRCodeSVG
@@ -94,7 +94,7 @@ export function EmbedTab({ projectId, project }: EmbedTabProps) {
             </div>
             <Button variant="ghost" size="sm" onClick={handleDownloadQR}>
               <AppIcon name="Download" className="mr-2 h-4 w-4" />
-              Download QR Code
+              {t("embed.downloadQR")}
             </Button>
           </div>
         </CardContent>
@@ -103,9 +103,9 @@ export function EmbedTab({ projectId, project }: EmbedTabProps) {
       {/* EMBED WIDGET CODE */}
       <Card className="border-border/60 shadow-sm">
         <CardHeader>
-          <CardTitle>Embed Widget Code</CardTitle>
+          <CardTitle>{t("embed.widgetCode")}</CardTitle>
           <CardDescription>
-            Copy and paste this code to add the chatbot widget to your website.
+            {t("embed.widgetCodeDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -120,7 +120,7 @@ export function EmbedTab({ projectId, project }: EmbedTabProps) {
           <div className="mt-6">
             <Button variant="secondary" onClick={handleCopySnippet} className="hover-lift">
               <AppIcon name="Copy" className="mr-2 h-4 w-4" />
-              Copy Snippet
+              {t("embed.copySnippet")}
             </Button>
           </div>
         </CardContent>
@@ -128,3 +128,4 @@ export function EmbedTab({ projectId, project }: EmbedTabProps) {
     </div>
   );
 }
+

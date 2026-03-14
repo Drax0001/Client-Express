@@ -67,7 +67,7 @@ const RECOMMENDED_PRESETS = {
     chunkSize: 800,
     chunkOverlap: 150,
     temperature: 0.2,
-    maxTokens: 2048,
+    maxTokens: 5000,
     name: "Technical Documentation",
   },
   creative: {

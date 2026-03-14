@@ -175,7 +175,7 @@ export class ChatService {
     const botConfig = {
       modelId: project.modelId || "gemini-2.5-flash",
       temperature: project.temperature ?? 0.4,
-      maxTokens: project.maxTokens ?? 2048,
+      maxTokens: project.maxTokens ?? 5000,
       persona: project.persona || null,
       instructions: project.instructions || null,
       responseStyle: (project.responseStyle || "balanced") as "concise" | "balanced" | "detailed",

@@ -87,7 +87,7 @@ export default function ChatPage() {
         throw new Error("Failed to delete");
       }
     } catch {
-      toast({ title: "Failed to delete conversation", variant: "destructive" });
+      toast({ title: t("workspace.deleteError"), variant: "destructive" });
       loadConversations();
     }
   };
@@ -136,8 +136,8 @@ export default function ChatPage() {
     
     if (project.documentCount === 0) {
       toast({
-        title: "Knowledge base empty",
-        description: "Please add documents to the project before testing the chatbot.",
+        title: t("chat.emptyKB"),
+        description: t("chat.emptyKBDesc"),
         variant: "destructive",
       });
       return;
@@ -213,13 +213,13 @@ export default function ChatPage() {
     setMessages([]);
     hasAutoCreated.current = false;
     handleNewConversation();
-    toast({ title: "Conversation cleared" });
+    toast({ title: t("chat.cleared") });
   };
 
   if (projectLoading) {
     return (
       <div className="flex h-dvh items-center justify-center bg-background">
-        <div className="loader-creative" aria-label="Loading chat workspace..."></div>
+        <div className="loader-creative" aria-label={t("chat.loading")}></div>
       </div>
     );
   }
@@ -227,11 +227,11 @@ export default function ChatPage() {
   if (projectError || !project) {
     return (
       <div className="flex h-dvh flex-col items-center justify-center gap-4 bg-background">
-        <p className="text-muted-foreground">Project not found.</p>
+        <p className="text-muted-foreground">{t("workspace.projectNotFound")}</p>
         <Button asChild variant="outline">
           <Link href="/projects">
             <AppIcon name="ArrowLeft" className="mr-2 h-4 w-4" />
-            Back to Projects
+            {t("workspace.backToDashboard")}
           </Link>
         </Button>
       </div>
@@ -266,7 +266,7 @@ export default function ChatPage() {
           >
             <Link href={`/projects/${projectId}`}>
               <AppIcon name="Settings" className="h-3.5 w-3.5 mr-1" />
-              Manage Bot
+              {t("common.manage")}
             </Link>
           </Button>
         </div>
@@ -311,9 +311,9 @@ export default function ChatPage() {
                     </p>
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); handleDeleteConversation(conv.id); }}
+                    onClick={(e) => { e.stopPropagation(); if(confirm(t("chat.deleteConfirm"))) handleDeleteConversation(conv.id); }}
                     className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mr-2 p-1.5 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground"
-                    title="Delete conversation"
+                    title={t("common.delete")}
                   >
                     <AppIcon name="Trash2" className="h-3 w-3" />
                   </button>
@@ -333,14 +333,14 @@ export default function ChatPage() {
                   <AppIcon name="Database" className="h-8 w-8 text-muted-foreground" />
                 </div>
               </div>
-              <h2 className="text-xl font-semibold tracking-tight mt-2">No knowledge sources yet</h2>
+              <h2 className="text-xl font-semibold tracking-tight mt-2">{t("chat.noDocs")}</h2>
               <p className="text-sm text-muted-foreground max-w-sm">
-                Add documents to this project so the bot can answer questions about them.
+                {t("chat.noDocsDesc")}
               </p>
               <Button asChild className="mt-2 hover-lift">
                 <Link href={`/projects/${projectId}`}>
                   <AppIcon name="Plus" className="mr-2 h-4 w-4" />
-                  Add Documents
+                  {t("chat.addDocs")}
                 </Link>
               </Button>
             </div>

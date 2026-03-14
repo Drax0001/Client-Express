@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AppIcon } from "@/components/ui/app-icon";
+import { useTranslation } from "@/lib/i18n";
 
 function SignupContent() {
     const searchParams = useSearchParams();
@@ -17,6 +18,7 @@ function SignupContent() {
     const callbackUrl = searchParams?.get("callbackUrl") || "/projects";
     const error = searchParams?.get("error");
     const check = searchParams?.get("check");
+    const { t } = useTranslation();
 
     const submit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -39,7 +41,7 @@ function SignupContent() {
                 {error && (
                     <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg flex items-center gap-3">
                         <AppIcon name="AlertCircle" className="w-4 h-4 flex-shrink-0" />
-                        <p>Authentication failed. The link may have expired or was invalid.</p>
+                        <p>{t("auth.failed")}</p>
                     </div>
                 )}
 
@@ -48,17 +50,17 @@ function SignupContent() {
                         <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
                             <AppIcon name="Mail" className="w-8 h-8" />
                         </div>
-                        <h3 className="font-semibold text-xl">Check your email</h3>
+                        <h3 className="font-semibold text-xl">{t("auth.checkEmail")}</h3>
                         <p className="text-muted-foreground text-sm">
-                            We sent a magic link to <strong>{email || "your inbox"}</strong>.
-                            Click the link to verify your email and sign up instantly.
+                            {t("auth.sentMagicLink")} <strong>{email || "your inbox"}</strong>.
+                            {t("auth.clickLinkVerify")}
                         </p>
                         <Button
                             variant="outline"
                             className="mt-6 w-full"
                             onClick={() => { setSent(false); setEmail(""); }}
                         >
-                            Change email address
+                            {t("auth.changeEmail")}
                         </Button>
                     </div>
                 ) : (
@@ -74,7 +76,7 @@ function SignupContent() {
                                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                             </svg>
-                            Sign up with Google
+                            {t("auth.googleSignUp")}
                         </Button>
 
                         <div className="relative my-6">
@@ -82,16 +84,16 @@ function SignupContent() {
                                 <span className="w-full border-t border-border/80" />
                             </div>
                             <div className="relative flex justify-center text-xs uppercase text-muted-foreground tracking-widest font-medium">
-                                <span className="bg-card px-4">Or sign up with email</span>
+                                <span className="bg-card px-4">{t("auth.emailSignUp")}</span>
                             </div>
                         </div>
 
                         <form className="space-y-5" onSubmit={submit}>
                             <div className="space-y-1.5">
-                                <label className="text-sm font-medium text-foreground ml-1">Email Address</label>
+                                <label className="text-sm font-medium text-foreground ml-1">{t("auth.emailLabel")}</label>
                                 <Input
                                     type="email"
-                                    placeholder="name@example.com"
+                                    placeholder={t("auth.emailPlaceholder")}
                                     value={email}
                                     onChange={(event) => setEmail(event.target.value)}
                                     required
@@ -108,9 +110,9 @@ function SignupContent() {
                                 {submitting ? (
                                     <span className="flex items-center gap-2">
                                         <AppIcon name="Loader2" className="animate-spin-slow w-4 h-4" />
-                                        Sending secure link...
+                                        {t("auth.sendingLink")}
                                     </span>
-                                ) : "Continue with Email"}
+                                ) : t("auth.continueEmail")}
                             </Button>
                         </form>
                     </>
@@ -121,6 +123,7 @@ function SignupContent() {
 }
 
 export default function SignupPage() {
+    const { t } = useTranslation();
     return (
         <div className="min-h-screen bg-background relative flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 overflow-hidden">
             {/* Dynamic Background Element */}
@@ -139,8 +142,8 @@ export default function SignupPage() {
                 </div>
 
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-extrabold tracking-tight mb-2">Create an account</h2>
-                    <p className="text-muted-foreground text-sm">Start your enterprise RAG journey for free</p>
+                    <h2 className="text-3xl font-extrabold tracking-tight mb-2">{t("auth.createAccount")}</h2>
+                    <p className="text-muted-foreground text-sm">{t("auth.signUpSubtitle")}</p>
                 </div>
 
                 <Suspense fallback={
@@ -154,12 +157,13 @@ export default function SignupPage() {
                 </Suspense>
 
                 <p className="mt-8 text-center text-sm text-muted-foreground">
-                    Already have an account?{" "}
+                    {t("auth.alreadyHaveAccount")}{" "}
                     <Link href="/login" className="font-semibold text-primary hover:text-primary/80 transition-colors underline-offset-4 hover:underline">
-                        Sign in
+                        {t("auth.signIn")}
                     </Link>
                 </p>
             </div>
         </div>
     );
 }
+

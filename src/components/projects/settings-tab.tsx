@@ -87,24 +87,24 @@ export function SettingsTab({ projectId, project, refetch }: SettingsTabProps) {
           footerLinks: editFooterLinks.length > 0 ? editFooterLinks : undefined,
         }),
       });
-      toast({ title: t("common.saved") || "Branding saved" });
+      toast({ title: t("settings.brandingSaved") || "Branding saved" });
       setEditLogoFile(null);
       refetch();
     } catch {
-      toast({ title: "Failed to save branding", variant: "destructive" });
+      toast({ title: t("settings.failedBranding") || "Failed to save branding", variant: "destructive" });
     } finally {
       setBrandingSaving(false);
     }
   };
 
   const handleDeleteProject = async () => {
-    if (!window.confirm("Are you sure you want to delete this chatbot? This action cannot be undone.")) return;
+    if (!window.confirm(t("settings.confirmDelete") || "Are you sure you want to delete this chatbot? This action cannot be undone.")) return;
     try {
       await deleteProjectMutation.mutateAsync(projectId);
-      toast({ title: "Chatbot deleted" });
+      toast({ title: t("workspace.deleteSuccess") || "Chatbot deleted" });
       router.push("/projects");
     } catch (error) {
-      toast({ title: "Failed to delete", variant: "destructive" });
+      toast({ title: t("settings.failedDelete") || "Failed to delete", variant: "destructive" });
     }
   };
 
@@ -172,14 +172,14 @@ export function SettingsTab({ projectId, project, refetch }: SettingsTabProps) {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>User Text Color</Label>
+              <Label>{t("settings.userTextColor")}</Label>
               <div className="flex items-center gap-3">
                 <input type="color" value={editUserTextColor} onChange={e => setEditUserTextColor(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer flex-shrink-0" />
                 <Input value={editUserTextColor} onChange={e => setEditUserTextColor(e.target.value)} className="font-mono text-sm" />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Bot Text Color</Label>
+              <Label>{t("settings.botTextColor")}</Label>
               <div className="flex items-center gap-3">
                 <input type="color" value={editBotTextColor} onChange={e => setEditBotTextColor(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer flex-shrink-0" />
                 <Input value={editBotTextColor} onChange={e => setEditBotTextColor(e.target.value)} className="font-mono text-sm" />
@@ -190,7 +190,7 @@ export function SettingsTab({ projectId, project, refetch }: SettingsTabProps) {
               <div className="flex items-center gap-4">
                 {(editLogoPreview || editLogoUrl) && (
                   <div className="bg-white p-2 rounded-lg border shadow-sm">
-                    <img src={editLogoPreview || editLogoUrl} alt="Logo" className="w-12 h-12 rounded object-contain" />
+                    <img src={editLogoPreview || editLogoUrl} alt={t("workspace.chatbotName")} className="w-12 h-12 rounded object-contain" />
                   </div>
                 )}
                 <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted transition-colors text-sm font-medium hover-lift">
@@ -220,8 +220,8 @@ export function SettingsTab({ projectId, project, refetch }: SettingsTabProps) {
             <div className="space-y-4 sm:col-span-2 pt-4 border-t">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-base">Footer Links</Label>
-                  <p className="text-xs text-muted-foreground">Add up to 4 helpful links below the chat input.</p>
+                  <Label className="text-base">{t("settings.footerLinks")}</Label>
+                  <p className="text-xs text-muted-foreground">{t("settings.footerLinksDesc")}</p>
                 </div>
                 <Button
                   type="button"
@@ -231,7 +231,7 @@ export function SettingsTab({ projectId, project, refetch }: SettingsTabProps) {
                   disabled={editFooterLinks.length >= 4}
                 >
                   <AppIcon name="Plus" className="h-4 w-4 mr-2" />
-                  Add Link
+                  {t("settings.addLink")}
                 </Button>
               </div>
               
@@ -241,7 +241,7 @@ export function SettingsTab({ projectId, project, refetch }: SettingsTabProps) {
                     <div key={idx} className="flex gap-2 items-start animate-in slide-in-from-left-4 fade-in duration-300">
                       <div className="flex-1 space-y-2">
                         <Input
-                          placeholder="Link Label (e.g. Help Center)"
+                          placeholder={t("settings.linkLabelPlaceholder")}
                           value={link.label}
                           onChange={(e) => {
                             const newLinks = [...editFooterLinks];
@@ -252,7 +252,7 @@ export function SettingsTab({ projectId, project, refetch }: SettingsTabProps) {
                       </div>
                       <div className="flex-[2] space-y-2">
                         <Input
-                          placeholder="URL (e.g. https://support.acme.com)"
+                          placeholder={t("settings.linkUrlPlaceholder")}
                           value={link.url}
                           onChange={(e) => {
                             const newLinks = [...editFooterLinks];
@@ -279,7 +279,7 @@ export function SettingsTab({ projectId, project, refetch }: SettingsTabProps) {
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground text-center p-4 border rounded-lg bg-muted/50 border-dashed">
-                  No footer links added.
+                  {t("settings.noFooterLinks")}
                 </div>
               )}
             </div>
@@ -310,12 +310,12 @@ export function SettingsTab({ projectId, project, refetch }: SettingsTabProps) {
         <CardContent>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border border-destructive/20 rounded-xl bg-background/50 backdrop-blur-sm">
             <div>
-              <h4 className="font-semibold text-destructive">Delete Chatbot</h4>
-              <p className="text-sm text-muted-foreground">Permanently delete this project, its documents, and all chat history.</p>
+              <h4 className="font-semibold text-destructive">{t("settings.deleteChatbot")}</h4>
+              <p className="text-sm text-muted-foreground">{t("settings.deleteChatbotDesc")}</p>
             </div>
             <Button variant="destructive" onClick={handleDeleteProject} disabled={deleteProjectMutation.isPending} className="whitespace-nowrap hover-lift">
               <AppIcon name="Trash2" className="mr-2 h-4 w-4" />
-              {deleteProjectMutation.isPending ? "Deleting..." : "Delete Project"}
+              {deleteProjectMutation.isPending ? t("settings.deleting") : t("settings.deleteChatbot")}
             </Button>
           </div>
         </CardContent>

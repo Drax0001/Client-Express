@@ -103,7 +103,7 @@ export function Sidebar() {
           <div className="px-3 mt-auto">
             {!collapsed && (
               <h4 className="px-2 text-[12px] font-medium uppercase tracking-[0.05em] text-muted-foreground mb-2 border-t border-border pt-4">
-                Account
+                {t("common.account")}
               </h4>
             )}
             {collapsed && <div className="border-t border-border my-2 w-8 mx-auto" />}
@@ -138,10 +138,10 @@ export function Sidebar() {
                 <div className="flex flex-col min-w-0 flex-1">
                   <span className="text-sm font-medium truncate leading-none mb-1">{displayName}</span>
                   <div className="flex items-center text-xs text-muted-foreground gap-1">
-                    <span className="truncate">{plan} plan</span>
+                    <span className="truncate">{plan} {t("common.planSuffix")}</span>
                     <span>·</span>
                     <Link href="/settings?tab=billing" className="text-brand hover:underline font-medium flex items-center">
-                      Upgrade
+                      {t("common.upgrade")}
                     </Link>
                   </div>
                 </div>
@@ -204,7 +204,7 @@ export function Sidebar() {
         </Link>
         <Link href="/settings" className={`flex flex-col items-center justify-center w-16 h-full gap-1 ${pathname?.startsWith('/settings') ? "text-brand" : "text-muted-foreground"}`}>
           <AppIcon name="User" className="h-5 w-5" />
-          <span className="text-[10px] font-medium">Account</span>
+          <span className="text-[10px] font-medium">{t("common.account")}</span>
         </Link>
       </nav>
     </>

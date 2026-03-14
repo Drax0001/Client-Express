@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useProject } from "@/lib/api/hooks";
+import { useTranslation } from "@/lib/i18n";
 
 import { ChatTab } from "@/components/projects/chat-tab";
 import { SourcesTab } from "@/components/projects/sources-tab";
@@ -19,6 +20,7 @@ import { BotSettingsPanel } from "@/components/chatbots/bot-settings-panel";
 export default function ProjectPage() {
   const params = useParams();
   const projectId = params.id as string;
+  const { t } = useTranslation();
 
   const { data: project, isLoading, error, refetch } = useProject(projectId);
   const [activeTab, setActiveTab] = useState("sources");
@@ -29,7 +31,7 @@ export default function ProjectPage() {
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="flex flex-col items-center gap-4 text-muted-foreground">
             <AppIcon name="Loader2" className="h-8 w-8 animate-spin-slow text-brand" />
-            <p className="animate-pulse">Loading project workspace...</p>
+            <p className="animate-pulse">{t("workspace.loading")}</p>
           </div>
         </div>
       </MainLayout>
@@ -44,14 +46,14 @@ export default function ProjectPage() {
             <div className="h-16 w-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto mb-4">
               <AppIcon name="AlertTriangle" className="h-8 w-8" />
             </div>
-            <h2 className="text-2xl font-bold mb-2">Project Not Found</h2>
+            <h2 className="text-2xl font-bold mb-2">{t("workspace.projectNotFound")}</h2>
             <p className="text-muted-foreground mb-6">
-              The project you're looking for doesn't exist or you don't have access to it.
+              {t("workspace.projectNotFoundDesc")}
             </p>
             <Button asChild className="hover-lift">
               <Link href="/projects">
                 <AppIcon name="ArrowLeft" className="mr-2 h-4 w-4" />
-                Back to Dashboard
+                {t("workspace.backToDashboard")}
               </Link>
             </Button>
           </div>
@@ -82,7 +84,7 @@ export default function ProjectPage() {
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">{project.name}</h1>
               </div>
-              <p className="text-sm text-muted-foreground">Manage your chatbot&apos;s knowledge and settings.</p>
+              <p className="text-sm text-muted-foreground">{t("workspace.manageSubtitle")}</p>
             </div>
           </div>
         </div>
@@ -94,42 +96,42 @@ export default function ProjectPage() {
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 mr-6 h-full gap-2 transition-colors hover:text-foreground"
             >
               <AppIcon name="MessageSquare" className="h-4 w-4" />
-              Chat Preview
+              {t("workspace.chatPreview")}
             </TabsTrigger>
             <TabsTrigger
               value="sources"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 mr-6 h-full gap-2 transition-colors hover:text-foreground"
             >
               <AppIcon name="Database" className="h-4 w-4" />
-              Knowledge Sources
+              {t("workspace.knowledgeSources")}
             </TabsTrigger>
             <TabsTrigger
               value="botconfig"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 mr-6 h-full gap-2 transition-colors hover:text-foreground"
             >
               <AppIcon name="Cpu" className="h-4 w-4" />
-              Bot Config
+              {t("workspace.botConfig")}
             </TabsTrigger>
             <TabsTrigger
               value="embed"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 mr-6 h-full gap-2 transition-colors hover:text-foreground"
             >
               <AppIcon name="Code" className="h-4 w-4" />
-              Embed Widget
+              {t("workspace.embedWidget")}
             </TabsTrigger>
             <TabsTrigger
               value="analytics"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 mr-6 h-full gap-2 transition-colors hover:text-foreground"
             >
               <AppIcon name="BarChart" className="h-4 w-4" />
-              Analytics
+              {t("workspace.analytics")}
             </TabsTrigger>
             <TabsTrigger
               value="settings"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 h-full gap-2 transition-colors hover:text-foreground"
             >
               <AppIcon name="Settings" className="h-4 w-4" />
-              Settings
+              {t("workspace.projectSettings")}
             </TabsTrigger>
           </TabsList>
 
@@ -163,3 +165,4 @@ export default function ProjectPage() {
     </MainLayout>
   );
 }
+

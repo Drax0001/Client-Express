@@ -37,7 +37,7 @@ interface ChatTabProps {
 
 export function ChatTab({ projectId, project, hasDocuments, onNavigateToSources }: ChatTabProps) {
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const sendMessageMutation = useSendChatMessage();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -84,6 +84,7 @@ export function ChatTab({ projectId, project, hasDocuments, onNavigateToSources 
       if (!res.ok) {
         throw new Error("Failed to delete");
       }
+      toast({ title: t("conversations.deleteSuccess") });
     } catch {
       toast({ title: "Failed to delete conversation", variant: "destructive" });
       loadConversations();
@@ -132,8 +133,8 @@ export function ChatTab({ projectId, project, hasDocuments, onNavigateToSources 
   const handleSendMessage = async (content: string) => {
     if (!hasDocuments) {
       toast({
-        title: "Knowledge base empty",
-        description: "Please add documents to the Sources tab before testing the chatbot.",
+        title: t("chat.emptyKB"),
+        description: t("chat.emptyKBDesc"),
         variant: "destructive",
       });
       onNavigateToSources();
@@ -210,7 +211,16 @@ export function ChatTab({ projectId, project, hasDocuments, onNavigateToSources 
     setMessages([]);
     hasAutoCreated.current = false;
     handleNewConversation();
-    toast({ title: "Conversation cleared" });
+    toast({ title: t("chat.cleared") });
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
   };
 
   return (
@@ -242,13 +252,13 @@ export function ChatTab({ projectId, project, hasDocuments, onNavigateToSources 
                 >
                   <p className="font-medium truncate text-xs">{conv.title}</p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {conv._count.messages} msgs · {activeConvId === conv.id ? "Viewing" : new Date(conv.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    {conv._count.messages} {t("common.documents")} · {activeConvId === conv.id ? t("conversations.viewing") : formatDate(new Date(conv.updatedAt))}
                   </p>
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDeleteConversation(conv.id); }}
                   className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mr-2 p-1.5 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground"
-                  title="Delete conversation"
+                  title={t("common.delete")}
                 >
                   <AppIcon name="Trash2" className="h-3 w-3" />
                 </button>
@@ -293,10 +303,11 @@ export function ChatTab({ projectId, project, hasDocuments, onNavigateToSources 
         <Button variant="ghost" size="sm" asChild className="h-8 text-xs backdrop-blur-md bg-background/50 border border-border/50">
           <Link href={`/projects/${projectId}/chat`} target="_blank" rel="noopener noreferrer">
             <AppIcon name="ExternalLink" className="h-3.5 w-3.5 mr-1" />
-            Full Screen
+            {t("chat.fullScreen")}
           </Link>
         </Button>
       </div>
     </div>
   );
 }
+
