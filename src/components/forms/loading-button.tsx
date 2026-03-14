@@ -16,7 +16,7 @@ export const LoadingButton = React.forwardRef<
   return (
     <Button ref={ref} disabled={loading || disabled} {...props}>
       {loading && (
-        <AppIcon name="Loader2" className="mr-2 h-4 w-4 animate-spin" />
+        <AppIcon name="Loader2" className="mr-2 h-4 w-4 animate-spin-slow" />
       )}
       {loading ? loadingText || "Loading..." : children}
     </Button>

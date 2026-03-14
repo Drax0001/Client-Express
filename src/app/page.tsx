@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AppIcon } from "@/components/ui/app-icon";
 import Image from "next/image";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -15,11 +16,7 @@ export default function Home() {
   if (status === "loading") {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 animate-pulse">
-          <div className="w-16 h-16 rounded-2xl bg-muted" />
-          <div className="w-48 h-4 rounded bg-muted" />
-          <div className="w-32 h-3 rounded bg-muted" />
-        </div>
+        <div className="loader-creative" aria-label="Loading..."></div>
       </div>
     );
   }
@@ -30,7 +27,7 @@ export default function Home() {
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Logo */}
-          <div className="flex items-center gap-2 min-w-0">
+          <Link href="/" className="flex items-center gap-2 min-w-0 hover:opacity-90 transition-opacity">
             <Image
               src="/images/clientExpressLogo.png"
               alt="ClientExpress"
@@ -39,7 +36,7 @@ export default function Home() {
               className="shrink-0"
             />
             <span className="font-bold text-lg truncate">ClientExpress</span>
-          </div>
+          </Link>
 
           {/* Desktop nav */}
           <div className="hidden sm:flex items-center gap-2">

@@ -383,7 +383,7 @@ export default function NewProjectWizard() {
                                         className="h-11 px-8 font-medium bg-brand hover:bg-brand-hover text-white transition-all shadow-md hover:shadow-lg"
                                     >
                                         {isUploading ? (
-                                            <><div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin mr-2" />{t("wizard.processing")}</>
+                                            <><div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin-slow mr-2" />{t("wizard.processing")}</>
                                         ) : (
                                             <>{t("wizard.uploadTrain")}<AppIcon name="Sparkles" className="ml-2 h-4 w-4" /></>
                                         )}

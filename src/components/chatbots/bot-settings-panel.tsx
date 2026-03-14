@@ -128,7 +128,7 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand" />
+                <div className="animate-spin-slow rounded-full h-8 w-8 border-b-2 border-brand" />
             </div>
         );
     }
@@ -447,7 +447,7 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
                 >
                     {saving ? (
                         <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                            <div className="animate-spin-slow rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                             Saving...
                         </>
                     ) : saved ? (

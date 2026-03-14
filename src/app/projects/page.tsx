@@ -62,7 +62,9 @@ export default function ProjectsPage() {
               <h3 className="font-medium text-sm">Active Chatbots</h3>
             </div>
             {projectsLoading ? (
-              <div className="h-10 w-16 bg-muted rounded animate-pulse" />
+              <div className="flex h-10 items-center">
+                <div className="loader-creative-sm" />
+              </div>
             ) : (
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-semibold text-foreground">{projects?.length || 0}</span>
@@ -80,7 +82,9 @@ export default function ProjectsPage() {
               <h3 className="font-medium text-sm">Messages This Month</h3>
             </div>
             {!usageData ? (
-              <div className="h-10 w-24 bg-muted rounded animate-pulse" />
+              <div className="flex h-10 items-center">
+                <div className="loader-creative-sm" />
+              </div>
             ) : (
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-semibold text-foreground">{usageData.usage.messagesThisMonth}</span>
@@ -100,7 +104,9 @@ export default function ProjectsPage() {
               <h3 className="font-medium text-sm">Sources Indexed</h3>
             </div>
             {projectsLoading ? (
-              <div className="h-10 w-24 bg-muted rounded animate-pulse" />
+              <div className="flex h-10 items-center">
+                <div className="loader-creative-sm" />
+              </div>
             ) : (
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-semibold text-foreground">
@@ -121,10 +127,8 @@ export default function ProjectsPage() {
           </div>
 
           {projectsLoading ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {[...Array(4)].map((_, i) => (
-                <ProjectCardSkeleton key={i} />
-              ))}
+            <div className="flex justify-center items-center py-20">
+              <div className="loader-creative" aria-label="Loading projects..."></div>
             </div>
           ) : error ? (
             <div className="text-center py-12 border border-destructive/20 bg-destructive/5 rounded-2xl">

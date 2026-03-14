@@ -159,7 +159,7 @@ export function DocumentList({
           </Badge>
           {processingCount > 0 && (
             <Badge variant="outline" className="text-xs text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-400">
-              <AppIcon name="Loader" className="h-3 w-3 mr-1 animate-spin" />
+              <AppIcon name="Loader" className="h-3 w-3 mr-1 animate-spin-slow" />
               {processingCount} processing
             </Badge>
           )}

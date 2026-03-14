@@ -129,7 +129,7 @@ function CheckoutContent() {
                     {waitingForPayment ? (
                         <div className="flex flex-col items-center justify-center py-10 space-y-6 text-center animate-in fade-in zoom-in duration-500">
                             <div className="relative">
-                                <div className="w-20 h-20 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                                <div className="w-20 h-20 rounded-full border-4 border-primary/20 border-t-primary animate-spin-slow" />
                                 <AppIcon name="Smartphone" className="w-8 h-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary" />
                             </div>
                             <div>
@@ -175,7 +175,7 @@ function CheckoutContent() {
                             >
                                 {processing ? (
                                     <span className="flex items-center gap-2">
-                                        <AppIcon name="Loader2" className="animate-spin w-5 h-5" />
+                                        <AppIcon name="Loader2" className="animate-spin-slow w-5 h-5" />
                                         Connecting to CamPay...
                                     </span>
                                 ) : (
@@ -199,7 +199,7 @@ function CheckoutContent() {
 export default function CheckoutPage() {
     return (
         <MainLayout>
-            <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center"><AppIcon name="Loader2" className="w-8 h-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center"><AppIcon name="Loader2" className="w-8 h-8 animate-spin-slow text-primary" /></div>}>
                 <CheckoutContent />
             </Suspense>
         </MainLayout>

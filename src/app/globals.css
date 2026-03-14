@@ -43,8 +43,8 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-sans: 'Inter', 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-sans: var(--font-sans), system-ui, sans-serif;
+  --font-mono: var(--font-mono), monospace;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -57,100 +57,100 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #09090b;
+  --foreground: #020617; /* Slate 950 - True Neutral Black */
 
-  --card: #f9f9f9;
-  --card-foreground: #09090b;
+  --card: #ffffff;
+  --card-foreground: #020617;
 
   --popover: #ffffff;
-  --popover-foreground: #09090b;
+  --popover-foreground: #020617;
 
-  --primary: #6366f1;
+  --primary: #0ea5e9; /* Electric Blue */
   --primary-foreground: #ffffff;
 
-  --secondary: #e4e4e7;
-  --secondary-foreground: #09090b;
+  --secondary: #e0f2fe; /* Sky 100 */
+  --secondary-foreground: #0369a1; /* Sky 700 */
 
-  --muted: #f4f4f5;
-  --muted-foreground: #52525b;
+  --muted: #f1f5f9; /* Slate 100 - Neutral off-white */
+  --muted-foreground: #475569; /* Slate 600 - Neutral gray */
 
-  --accent: #e4e4e7;
-  --accent-foreground: #09090b;
+  --accent: #f1f5f9; /* Slate 100 - Used for hovers, neutral avoiding green/teal tint */
+  --accent-foreground: #020617;
 
-  --destructive: #ef4444;
+  --destructive: #ef4444; 
   --destructive-foreground: #ffffff;
 
-  --border: #e8e8ea;
-  --input: #e8e8ea;
-  --ring: #6366f1;
+  --border: #e2e8f0; /* Slate 200 */
+  --input: #e2e8f0;
+  --ring: #0ea5e9;
 
-  --radius: 0.5rem; /* Base 8px for buttons */
+  --radius: 0.75rem; 
 
-  --brand: #6366f1;
-  --brand-hover: #818cf8;
-  --brand-subtle: rgba(99, 102, 241, 0.1);
+  --brand: #0ea5e9; /* Electric Blue */
+  --brand-hover: #38bdf8; /* Sky 400 */
+  --brand-subtle: rgba(14, 165, 233, 0.1); 
 
-  --success: #22c55e;
+  --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
-  --info: #3b82f6;
+  --info: #0ea5e9;
 
-  --sidebar: #f9f9f9;
-  --sidebar-foreground: #09090b;
-  --sidebar-primary: #6366f1;
+  --sidebar: #f8fafc; /* Slate 50 */
+  --sidebar-foreground: #020617;
+  --sidebar-primary: #0ea5e9;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e4e4e7;
-  --sidebar-accent-foreground: #09090b;
-  --sidebar-border: #e8e8ea;
-  --sidebar-ring: #6366f1;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #020617;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #0ea5e9;
 }
 
 .dark {
-  --background: #09090b; /* Base */
-  --foreground: #fafafa; /* Primary text */
+  --background: #020617; /* Slate 950 - Deep Space */
+  --foreground: #f8fafc; /* Slate 50 - True Neutral White */
 
-  --card: #111113; /* Surface */
-  --card-foreground: #fafafa; 
+  --card: #0f172a; /* Slate 900 */
+  --card-foreground: #f8fafc; 
 
-  --popover: #111113;
-  --popover-foreground: #fafafa;
+  --popover: #0f172a;
+  --popover-foreground: #f8fafc;
 
-  --primary: #fafafa; /* Primary Text can be used for contrast buttons */
-  --primary-foreground: #09090b; 
+  --primary: #22d3ee; /* Electric Blue (Cyan 400) */
+  --primary-foreground: #020617; 
 
-  --secondary: #1a1a1f; /* Elevated */
-  --secondary-foreground: #fafafa;
+  --secondary: #1e293b; /* Slate 800 */
+  --secondary-foreground: #f8fafc; 
 
-  --muted: #111113; /* Surface for subtle backgrounds */
-  --muted-foreground: #a1a1aa; /* Secondary Text */
+  --muted: #1e293b; /* Slate 800 - Neutral dark gray */
+  --muted-foreground: #94a3b8; /* Slate 400 - Neutral gray */
 
-  --accent: #222228; /* Hover */
-  --accent-foreground: #fafafa;
+  --accent: #1e293b; /* Slate 800 - Hover state, strictly neutral */
+  --accent-foreground: #f8fafc; 
 
-  --destructive: #ef4444; /* Error */
+  --destructive: #ef4444; 
   --destructive-foreground: #ffffff;
 
-  --border: #27272a; 
-  --input: #27272a;
-  --ring: #6366f1; /* Brand */
+  --border: #1e293b; /* Slate 800 */
+  --input: #1e293b;
+  --ring: #22d3ee;
 
-  --brand: #6366f1;
-  --brand-hover: #818cf8;
-  --brand-subtle: rgba(99, 102, 241, 0.1);
+  --brand: #22d3ee; /* Electric Cyan */
+  --brand-hover: #67e8f9; /* Cyan 300 */
+  --brand-subtle: rgba(34, 211, 238, 0.15);
 
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --info: #3b82f6;
+  --success: #34d399; 
+  --warning: #fbbf24; 
+  --error: #f87171; 
+  --info: #22d3ee;
 
-  --sidebar: #09090b;
-  --sidebar-foreground: #fafafa;
-  --sidebar-primary: #6366f1;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1a1a1f; 
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #27272a;
-  --sidebar-ring: #6366f1;
+  --sidebar: #020617; 
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #22d3ee;
+  --sidebar-primary-foreground: #020617;
+  --sidebar-accent: #1e293b; 
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: #22d3ee;
 }
 
 @layer base {
@@ -170,7 +170,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', 'Geist Sans', system-ui, sans-serif;
+    font-family: var(--font-sans), system-ui, sans-serif;
   }
 }
 
@@ -184,24 +184,60 @@
     display: none;
   }
 
+  /* Base custom scrollbars globally */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted-foreground);
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
+    height: 6px;
     width: 6px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/30 rounded-full;
+    background: var(--border);
+    border-radius: 4px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/50;
+    background: var(--muted-foreground);
   }
 
   .glass {
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
     background: var(--background);
-    opacity: 0.8;
+    opacity: 0.85;
     border: 1px solid var(--border);
+  }
+
+  /* Transition utility for smooth hover lifts */
+  .hover-lift {
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .shadow-soft {
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  .dark .shadow-soft {
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
   }
 }
 
@@ -212,4 +248,63 @@
 }
 .pulse-subtle {
   animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes brand-bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-25%) scale(1.1);
+    opacity: 1;
+  }
+}
+
+.animate-brand-bounce {
+  animation: brand-bounce 1.5s infinite var(--tw-ease-in-out-back);
+}
+
+@keyframes creative-pulse {
+  0% { transform: scale(0.9); opacity: 0.5; box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7); }
+  70% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 15px rgba(2, 132, 199, 0); }
+  100% { transform: scale(0.9); opacity: 0.5; box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
+}
+
+.loader-creative {
+  width: 3rem;
+  height: 3rem;
+  background-color: var(--brand);
+  border-radius: 50%;
+  animation: creative-pulse 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.loader-creative::after {
+  content: "";
+  position: absolute;
+  width: 50%;
+  height: 50%;
+  background-color: var(--background);
+  border-radius: 50%;
+}
+
+.loader-creative-sm {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  animation: creative-pulse 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--brand);
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
 }

@@ -102,7 +102,7 @@ export function ModuleSelector({ modules, onSelect, className }: ModuleSelectorP
             {/* Confirmation message */}
             {confirming && selected && (
                 <div className="flex items-center gap-2 text-brand font-medium text-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <AppIcon name="Loader2" className="h-4 w-4 animate-spin" />
+                    <AppIcon name="Loader2" className="h-4 w-4 animate-spin-slow" />
                     Starting conversation about <span className="font-semibold">{selected.name}</span>...
                 </div>
             )}

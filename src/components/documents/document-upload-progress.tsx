@@ -34,7 +34,7 @@ export function DocumentUploadProgress({
         return (
           <AppIcon
             name="Loader2"
-            className="h-4 w-4 animate-spin text-blue-500"
+            className="h-4 w-4 animate-spin-slow text-blue-500"
           />
         );
       case "processing":

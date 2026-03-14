@@ -107,7 +107,7 @@ function LoginContent() {
                             >
                                 {submitting ? (
                                     <span className="flex items-center gap-2">
-                                        <AppIcon name="Loader2" className="animate-spin w-4 h-4" />
+                                        <AppIcon name="Loader2" className="animate-spin-slow w-4 h-4" />
                                         Sending secure link...
                                     </span>
                                 ) : "Continue with Email"}
@@ -146,7 +146,7 @@ export default function LoginPage() {
                 <Suspense fallback={
                     <Card className="border-border/60 shadow-xl backdrop-blur-xl bg-card/80">
                         <CardContent className="p-8 flex items-center justify-center min-h-[400px]">
-                            <AppIcon name="Loader2" className="w-8 h-8 animate-spin text-primary" />
+                            <AppIcon name="Loader2" className="w-8 h-8 animate-spin-slow text-primary" />
                         </CardContent>
                     </Card>
                 }>

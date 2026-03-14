@@ -1,15 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Fira_Code } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 
-const inter = Inter({
+const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const firaCode = Fira_Code({
   variable: "--font-mono",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -51,7 +51,7 @@ export default function RootLayout({
           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
         />
       </head>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
+      <body className={`${plusJakartaSans.variable} ${firaCode.variable} antialiased selection:bg-brand/20 selection:text-brand`}>
         <Providers>{children}</Providers>
       </body>
     </html>

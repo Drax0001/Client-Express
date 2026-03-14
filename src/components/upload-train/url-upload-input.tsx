@@ -185,7 +185,7 @@ export function UrlUploadInput({
         return <AppIcon name="AlertCircle" className="h-4 w-4 text-red-500" />;
       case "validating":
         return (
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          <div className="h-4 w-4 animate-spin-slow rounded-full border-2 border-current border-t-transparent" />
         );
       default:
         return null;
@@ -266,7 +266,7 @@ export function UrlUploadInput({
         >
           {isValidating ? (
             <>
-              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              <div className="mr-2 h-4 w-4 animate-spin-slow rounded-full border-2 border-current border-t-transparent" />
               Adding...
             </>
           ) : (

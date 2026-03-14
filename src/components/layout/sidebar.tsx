@@ -45,7 +45,7 @@ export function Sidebar() {
           <Link href="/projects" className="flex items-center gap-2 overflow-hidden">
             <Image src="/images/clientExpressLogo.png" alt="ClientExpress" width={32} height={32} className="shrink-0 rounded-lg object-contain bg-primary/10" />
             {!collapsed && (
-              <span className="font-semibold tracking-tight text-primary-foreground truncate">
+              <span className="font-bold tracking-tight text-foreground text-lg truncate">
                 ClientExpress
               </span>
             )}

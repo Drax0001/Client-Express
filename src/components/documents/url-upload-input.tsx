@@ -93,7 +93,7 @@ export function UrlUploadInput({
         >
           {isValidating ? (
             <>
-              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              <div className="mr-2 h-4 w-4 animate-spin-slow rounded-full border-2 border-current border-t-transparent" />
               Adding...
             </>
           ) : (

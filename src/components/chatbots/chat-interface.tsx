@@ -148,6 +148,69 @@ export function ChatInterface({
     }
   };
 
+  const handleExportPdf = () => {
+    if (onExportConversation) {
+      onExportConversation();
+      return;
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${displayName} - Chat Export</title>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; color: #020617; padding: 2rem; max-width: 800px; margin: 0 auto; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .header { border-bottom: 2px solid #e2e8f0; padding-bottom: 1.5rem; margin-bottom: 2rem; }
+            .header h2 { margin: 0 0 0.5rem 0; color: #0f172a; }
+            .message { margin-bottom: 1.5rem; display: flex; flex-direction: column; }
+            .user-msg { align-items: flex-end; }
+            .bot-msg { align-items: flex-start; }
+            .bubble { max-width: 85%; padding: 1rem 1.25rem; border-radius: 1rem; font-size: 0.95rem; }
+            .user-bubble { background-color: #0284c7; color: white; border-bottom-right-radius: 0.25rem; }
+            .bot-bubble { background-color: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; border-bottom-left-radius: 0.25rem; white-space: pre-wrap; }
+            .meta { font-size: 0.75rem; color: #64748b; margin-top: 0.35rem; }
+            @media print { 
+              body { padding: 0; }
+              .bubble { break-inside: avoid; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h2>${displayName} - Conversation Export</h2>
+            <div class="meta">Exported on ${new Date().toLocaleString()}</div>
+          </div>
+          <div class="messages">
+            ${messages.length === 0 ? '<p>No messages in this conversation.</p>' : ''}
+            ${messages.map(msg => `
+              <div class="message ${msg.role === 'user' ? 'user-msg' : 'bot-msg'}">
+                <div class="bubble ${msg.role === 'user' ? 'user-bubble' : 'bot-bubble'}">
+                  ${msg.content.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br/>")}
+                </div>
+                <div class="meta">${msg.role === 'user' ? 'You' : displayName}</div>
+              </div>
+            `).join('')}
+          </div>
+          <script>
+            window.onload = () => { 
+              setTimeout(() => {
+                window.print(); 
+              }, 300);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+    
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+    }
+  };
+
   // Time formatter removed per user request
 
   // Resolve colors
@@ -193,7 +256,7 @@ export function ChatInterface({
           {!isUser && (
             <Avatar className="h-8 w-8 mt-1 shrink-0">
               {branding?.logoUrl ? (
-                <AvatarImage src={branding.logoUrl} alt={displayName} />
+                <AvatarImage src={branding.logoUrl} alt={displayName} className="object-contain p-0.5" />
               ) : null}
               <AvatarFallback className="bg-primary/10 text-primary">
                 <AppIcon name="Bot" className="h-4 w-4" />
@@ -380,9 +443,9 @@ export function ChatInterface({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onExportConversation}>
+            <DropdownMenuItem onClick={handleExportPdf}>
               <AppIcon name="Download" className="h-4 w-4 mr-2" />
-              Export Conversation
+              Export as PDF
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onClearConversation}>
