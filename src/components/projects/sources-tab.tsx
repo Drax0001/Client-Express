@@ -25,7 +25,7 @@ export function SourcesTab({ projectId, project, refetch }: SourcesTabProps) {
   return (
     <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300 h-full overflow-y-auto pb-10">
       <Card className="border-border/60 shadow-sm">
-        <CardHeader className="bg-muted/30 border-b border-border/60">
+        <CardHeader className="border-b border-border/60">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
             <div>
               <CardTitle className="text-lg">{t("workspace.addNewSources")}</CardTitle>
@@ -59,7 +59,7 @@ export function SourcesTab({ projectId, project, refetch }: SourcesTabProps) {
       </Card>
 
       <Card className="border-border/60 shadow-sm">
-        <CardHeader className="bg-muted/30 border-b border-border/60 py-4 flex flex-row items-center justify-between">
+        <CardHeader className="border-b border-border/60 py-4 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-lg">{t("workspace.trainedDocs")}</CardTitle>
             <CardDescription>

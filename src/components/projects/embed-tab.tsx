@@ -68,7 +68,7 @@ export function EmbedTab({ projectId, project }: EmbedTabProps) {
             <Input
               value={typeof window !== "undefined" ? `${window.location.origin}/chat/${projectId}` : `/chat/${projectId}`}
               readOnly
-              className="font-mono text-sm bg-muted/30"
+              className="font-mono text-sm bg-brand/5 border-transparent inner-shadow-soft"
             />
             <Button variant="outline" size="sm" onClick={handleCopyLink} className="shrink-0 hover-lift">
               <AppIcon name="Copy" className="h-4 w-4" />
@@ -109,7 +109,7 @@ export function EmbedTab({ projectId, project }: EmbedTabProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="bg-muted p-4 rounded-xl font-mono text-sm overflow-x-auto text-muted-foreground border border-border">
+          <div className="bg-brand/5 p-4 rounded-xl font-mono text-sm overflow-x-auto text-muted-foreground border border-border/60 inner-shadow-soft">
             {`<script>
   window.chatbotConfig = {
     chatbotId: "${projectId}",

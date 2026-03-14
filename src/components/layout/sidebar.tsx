@@ -14,13 +14,15 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { data: session } = useSession();
   const { data: projects, isLoading } = useProjects();
-  const { data: usage } = useUsage();
+  const { data: usageData } = useUsage();
   const pathname = usePathname();
   const { locale, setLocale, t } = useTranslation();
 
   const displayName = session?.user?.name?.trim() || session?.user?.email || "User";
-  const plan = usage?.plan || "Free";
-  const progressPercent = usage?.maxMessagesPerMonth ? Math.min(100, Math.round((usage.messagesThisMonth / usage.maxMessagesPerMonth) * 100)) : 0;
+  const plan = usageData?.plan || "Free";
+  const messagesThisMonth = usageData?.usage?.messagesThisMonth || 0;
+  const maxMessages = usageData?.limits?.maxMessagesPerMonth || 50;
+  const progressPercent = Math.min(100, Math.round((messagesThisMonth / maxMessages) * 100));
 
   useEffect(() => {
     const handleResize = () => {
@@ -133,14 +135,14 @@ export function Sidebar() {
         <div className="p-3 border-t border-border shrink-0">
           <div className="flex flex-col gap-3">
             {/* The Limits Progress Bar */}
-            {!collapsed && usage && (
-                <div className="px-1 py-1">
+            {!collapsed && usageData && (
+                <div className="px-1 py-1 group">
                     <div className="flex items-center justify-between text-[11px] mb-1.5 px-0.5">
-                        <span className="font-medium text-muted-foreground uppercase tracking-wide">Messages</span>
-                        <span className="font-medium">{usage.messagesThisMonth} / {usage.maxMessagesPerMonth === Infinity ? '∞' : usage.maxMessagesPerMonth}</span>
+                        <span className="font-medium text-muted-foreground group-hover:text-foreground transition-colors uppercase tracking-wide">Messages</span>
+                        <span className="font-medium text-muted-foreground group-hover:text-foreground transition-colors">{messagesThisMonth.toLocaleString()} / {maxMessages === 999999 ? '∞' : maxMessages.toLocaleString()}</span>
                     </div>
-                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden border border-border/50">
-                        <div className={`h-full ${progressPercent > 95 ? 'bg-destructive' : progressPercent > 80 ? 'bg-orange-500' : 'bg-brand'} transition-all duration-500`} style={{ width: `${progressPercent}%` }} />
+                    <div className="h-1.5 w-full bg-border/50 rounded-full overflow-hidden inner-shadow-soft">
+                        <div className={`h-full ${progressPercent > 95 ? 'bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.5)]' : progressPercent > 80 ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'bg-brand shadow-[0_0_8px_rgba(14,165,233,0.5)]'} transition-all duration-500`} style={{ width: `${progressPercent}%` }} />
                     </div>
                 </div>
             )}

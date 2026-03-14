@@ -118,7 +118,7 @@ export function SettingsTab({ projectId, project, refetch }: SettingsTabProps) {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>{t("settings.chatbotName")}</Label>
-            <Input defaultValue={project.name} disabled className="bg-muted/50" />
+            <Input defaultValue={project.name} disabled className="opacity-70 bg-transparent" />
             <p className="text-xs text-muted-foreground">{t("settings.nameDisabled")}</p>
           </div>
         </CardContent>
@@ -185,7 +185,7 @@ export function SettingsTab({ projectId, project, refetch }: SettingsTabProps) {
                 <Input value={editBotTextColor} onChange={e => setEditBotTextColor(e.target.value)} className="font-mono text-sm" />
               </div>
             </div>
-            <div className="space-y-2 sm:col-span-2 p-4 bg-muted/30 rounded-xl border border-border/50">
+            <div className="space-y-2 sm:col-span-2 p-4 rounded-xl border border-border/50 inner-shadow-soft">
               <Label className="block mb-2">{t("wizard.logoUpload")}</Label>
               <div className="flex items-center gap-4">
                 {(editLogoPreview || editLogoUrl) && (
@@ -193,7 +193,7 @@ export function SettingsTab({ projectId, project, refetch }: SettingsTabProps) {
                     <img src={editLogoPreview || editLogoUrl} alt={t("workspace.chatbotName")} className="w-12 h-12 rounded object-contain" />
                   </div>
                 )}
-                <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted transition-colors text-sm font-medium hover-lift">
+                <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border/60 bg-transparent hover:bg-brand/5 hover:border-brand/30 transition-colors text-sm font-medium hover-lift">
                   <AppIcon name="Upload" className="h-4 w-4" />
                   {editLogoFile ? editLogoFile.name : (editLogoUrl ? t("logo.change") : t("wizard.logoUpload"))}
                   <input
@@ -278,7 +278,7 @@ export function SettingsTab({ projectId, project, refetch }: SettingsTabProps) {
                   ))}
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground text-center p-4 border rounded-lg bg-muted/50 border-dashed">
+                <div className="text-sm text-muted-foreground text-center p-4 border rounded-lg border-dashed">
                   {t("settings.noFooterLinks")}
                 </div>
               )}
