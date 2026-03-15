@@ -83,13 +83,13 @@ export function FileUploadArea({
   const getStatusColor = (status: ValidatedFile["status"]) => {
     switch (status) {
       case "ready":
-        return "border-green-200 bg-green-50";
+        return "border-success/20 bg-success/10";
       case "error":
-        return "border-red-200 bg-red-50";
+        return "border-destructive/20 bg-destructive/10";
       case "validating":
-        return "border-blue-200 bg-blue-50";
+        return "border-brand/20 bg-brand/5";
       default:
-        return "border-gray-200";
+        return "border-border/60";
     }
   };
 
@@ -233,8 +233,8 @@ export function FileUploadArea({
         />
 
         <div className="flex flex-col items-center gap-4">
-          <div className="p-3 bg-muted rounded-full">
-            <AppIcon name="Upload" className="h-6 w-6 text-muted-foreground" />
+          <div className="p-3 bg-brand/10 border border-brand/20 rounded-full">
+            <AppIcon name="Upload" className="h-6 w-6 text-brand" />
           </div>
 
           <div className="space-y-2">
@@ -270,7 +270,7 @@ export function FileUploadArea({
               {readyCount > 0 && (
                 <Badge
                   variant="secondary"
-                  className="text-green-700 bg-green-100"
+                  className="text-success bg-success/10 border-success/20"
                 >
                   {readyCount} ready
                 </Badge>
@@ -322,7 +322,7 @@ export function FileUploadArea({
                   {file.validationErrors.length > 0 && (
                     <div className="space-y-1">
                       {file.validationErrors.map((error, index) => (
-                        <p key={index} className="text-xs text-red-600">
+                        <p key={index} className="text-xs text-destructive">
                           {error}
                         </p>
                       ))}

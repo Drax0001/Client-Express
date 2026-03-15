@@ -130,7 +130,7 @@ export function EmbedWidget({ projectId, projectName }: EmbedWidgetProps) {
                             </div>
                             <div className="leading-tight">
                                 <h3 className="font-semibold text-sm">{projectName}</h3>
-                                <span className="text-xs text-brand-foreground/80">Online</span>
+                                <span className="text-xs text-white/70">Online</span>
                             </div>
                         </div>
 

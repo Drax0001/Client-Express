@@ -46,7 +46,7 @@ export default function ProjectsPage() {
             </p>
           </div>
           <Link href="/projects/new">
-            <Button className="shadow-md hover:shadow-lg transition-all flex items-center gap-2 px-6 py-5 rounded-xl font-medium bg-foreground hover:bg-foreground/90 text-background">
+            <Button className="shadow-md hover:shadow-lg transition-all flex items-center gap-2 px-6 py-5 rounded-xl font-medium bg-brand hover:bg-brand-hover text-white">
               <AppIcon name="Plus" className="h-[18px] w-[18px]" />
               {t("sidebar.newChatbot")}
             </Button>

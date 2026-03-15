@@ -81,9 +81,9 @@ export function Sidebar() {
                     <Link
                       key={project.id}
                       href={`/projects/${project.id}`}
-                      className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm transition-colors ${isActive
-                        ? "bg-brand/10 text-brand font-medium"
-                        : "text-secondary-foreground hover:bg-accent hover:text-accent-foreground"
+                      className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm transition-all border border-transparent ${isActive
+                        ? "bg-brand/10 text-brand font-medium border-brand/20 shadow-sm"
+                        : "text-secondary-foreground hover:bg-brand/5 hover:border-brand/20 hover:text-brand"
                         } ${collapsed ? "justify-center" : ""}`}
                     >
                       <div className={`shrink-0 w-2 h-2 rounded-full ${isActive ? "bg-success" : "bg-muted-foreground/30"}`} />
@@ -95,7 +95,7 @@ export function Sidebar() {
 
               <Link
                 href="/projects/new"
-                className={`flex items-center gap-2.5 px-2 py-1.5 mt-1 rounded-md text-sm text-muted-foreground hover:text-foreground transition-colors ${collapsed ? "justify-center" : ""}`}
+                className={`flex items-center gap-2.5 px-2 py-1.5 mt-1 rounded-md text-sm text-muted-foreground border border-transparent hover:border-brand/30 hover:bg-brand/5 hover:text-brand transition-all ${collapsed ? "justify-center" : ""}`}
               >
                 <AppIcon name="Plus" className="h-[14px] w-[14px] shrink-0" />
                 {!collapsed && <span>{t("sidebar.newChatbot")}</span>}
@@ -115,14 +115,14 @@ export function Sidebar() {
             <nav className="space-y-[2px]">
               <Link
                 href="/settings"
-                className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm text-secondary-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${collapsed ? "justify-center" : ""}`}
+                className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm text-secondary-foreground border border-transparent hover:border-border/60 hover:bg-accent/40 hover:text-accent-foreground transition-all ${collapsed ? "justify-center" : ""}`}
               >
                 <AppIcon name="Settings" className="h-[16px] w-[16px] shrink-0" />
                 {!collapsed && <span>{t("settings.title")}</span>}
               </Link>
               <Link
                 href="/settings?tab=billing"
-                className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm text-secondary-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${collapsed ? "justify-center" : ""}`}
+                className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm text-secondary-foreground border border-transparent hover:border-border/60 hover:bg-accent/40 hover:text-accent-foreground transition-all ${collapsed ? "justify-center" : ""}`}
               >
                 <AppIcon name="CreditCard" className="h-[16px] w-[16px] shrink-0" />
                 {!collapsed && <span>{t("settings.billing")}</span>}
@@ -157,7 +157,7 @@ export function Sidebar() {
                   <div className="flex items-center text-xs text-muted-foreground gap-1">
                     <span className="truncate">{plan} {t("common.planSuffix")}</span>
                     <span>·</span>
-                    <Link href="/settings?tab=billing" className="text-brand hover:underline font-medium flex items-center">
+                    <Link href="/settings?tab=billing" className="text-brand hover:bg-brand/5 px-2 py-0.5 rounded border border-transparent hover:border-brand/30 transition-all font-medium flex items-center">
                       {t("common.upgrade")}
                     </Link>
                   </div>

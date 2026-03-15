@@ -103,9 +103,9 @@ const STATUS_CONFIG = {
   cancelled: {
     label: "Cancelled",
     description: "Training was stopped",
-    color: "text-gray-600",
-    bgColor: "bg-gray-50",
-    borderColor: "border-gray-200",
+    color: "text-muted-foreground",
+    bgColor: "bg-muted/50",
+    borderColor: "border-border/50",
     iconName: "X",
   },
 };
@@ -278,7 +278,7 @@ export function TrainingProgress({
                         isCompleted &&
                         "bg-green-500 border-green-500 text-white",
                         isCurrent && "border-blue-500 text-blue-500",
-                        isPending && "border-gray-300 text-gray-400",
+                        isPending && "border-border text-muted-foreground/50",
                       )}
                     >
                       {isCompleted ? (
@@ -299,7 +299,7 @@ export function TrainingProgress({
                           "text-sm font-medium",
                           isCompleted && "text-green-700",
                           isCurrent && "text-blue-700",
-                          isPending && "text-gray-500",
+                           isPending && "text-muted-foreground/70",
                         )}
                       >
                         {step.label}
@@ -359,10 +359,10 @@ export function TrainingProgress({
             <div className="flex items-center gap-3">
               <AppIcon name="CheckCircle" className="h-8 w-8 text-green-500" />
               <div>
-                <h3 className="font-semibold text-green-800">
+                <h3 className="font-semibold text-green-700 dark:text-green-400">
                   Training Complete!
                 </h3>
-                <p className="text-sm text-green-700">
+                <p className="text-sm text-green-600 dark:text-green-500/90">
                   Your chatbot is ready to answer questions based on the
                   uploaded documents.
                 </p>

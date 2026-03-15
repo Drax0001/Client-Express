@@ -47,7 +47,7 @@ export function ProjectCard({
               className="focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
               onClick={(e) => e.stopPropagation()}
             >
-              <span className="line-clamp-2">{name}</span>
+              <span className="line-clamp-2 text-foreground">{name}</span>
             </Link>
           </CardTitle>
           <DeleteProjectDialog projectId={id} projectName={name}>

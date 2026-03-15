@@ -23,7 +23,7 @@ export function LanguageSwitcher() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2 h-9 px-3 hover-lift border border-border/40">
+                <Button variant="outline" size="sm" className="gap-2 h-9 px-3 hover-lift border-border/60">
                     <span className="text-base">{currentLang.flag}</span>
                     <span className="hidden md:inline font-medium">{currentLang.label}</span>
                     <AppIcon name="ChevronDown" className="h-3 w-3 opacity-50" />

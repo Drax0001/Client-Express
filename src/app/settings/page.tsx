@@ -78,13 +78,21 @@ function SettingsInner() {
 
   return (
     <div className="max-w-4xl max-md:mt-4 mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-          Account Settings
-        </h1>
-        <p className="text-muted-foreground mt-2 text-[15px]">
-          Manage your profile, technical preferences, and billing.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            Account Settings
+          </h1>
+          <p className="text-muted-foreground mt-2 text-[15px]">
+            Manage your profile, technical preferences, and billing.
+          </p>
+        </div>
+        <Button asChild variant="outline" className="sm:self-end hover-lift border-border/60">
+          <Link href="/projects" className="flex items-center gap-2">
+            <AppIcon name="LayoutDashboard" className="h-4 w-4" />
+            Back to Dashboard
+          </Link>
+        </Button>
       </div>
 
       <Tabs defaultValue={defaultTab} className="w-full">

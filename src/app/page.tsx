@@ -110,7 +110,7 @@ export default function Home() {
             <Badge variant="outline">{t("landing.heroTagline2")}</Badge>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-foreground">
             {t("landing.hero")}
           </h1>
 
@@ -142,7 +142,7 @@ export default function Home() {
                     <div className="mx-auto w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                       <AppIcon name={item.icon as any} className="h-6 w-6 text-primary" />
                     </div>
-                    <div className="mt-4 font-semibold">{item.title}</div>
+                    <div className="mt-4 font-semibold text-foreground">{item.title}</div>
                     <div className="mt-1 text-sm text-muted-foreground">{item.desc}</div>
                   </div>
                 ))}

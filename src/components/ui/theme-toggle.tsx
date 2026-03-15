@@ -28,10 +28,10 @@ export function ThemeToggle() {
 
   return (
     <Button
-      variant="ghost"
+      variant="outline"
       size="icon"
       onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      className="rounded-xl hover:bg-accent/50"
+      className="rounded-xl h-9 w-9"
     >
       <AppIcon
         name="Sun"
