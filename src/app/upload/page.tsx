@@ -2,6 +2,7 @@
 
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -30,7 +31,7 @@ export default function UploadPage() {
             </div>
           </div>
           <Button asChild className="w-full">
-            <a href="/projects">Back to Projects</a>
+            <Link href="/projects">Back to Projects</Link>
           </Button>
         </CardContent>
       </Card>

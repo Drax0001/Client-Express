@@ -47,15 +47,15 @@ export default function Home() {
             <ThemeToggle />
             {status === "authenticated" ? (
               <Button asChild size="sm">
-                <a href="/projects">{t("sidebar.dashboard")}</a>
+                <Link href="/projects">{t("sidebar.dashboard")}</Link>
               </Button>
             ) : (
               <>
                 <Button asChild variant="ghost" size="sm">
-                  <a href="/login">{t("common.signIn")}</a>
+                  <Link href="/login">{t("common.signIn")}</Link>
                 </Button>
                 <Button asChild size="sm">
-                  <a href="/signup">{t("common.getStarted")}</a>
+                  <Link href="/signup">{t("common.getStarted")}</Link>
                 </Button>
               </>
             )}
@@ -86,7 +86,7 @@ export default function Home() {
             </div>
             {status === "authenticated" ? (
               <Button asChild className="w-full">
-                <a href="/projects" onClick={() => setMobileMenuOpen(false)}>{t("sidebar.dashboard")}</a>
+                <Link href="/projects" onClick={() => setMobileMenuOpen(false)}>{t("sidebar.dashboard")}</Link>
               </Button>
             ) : (
               <>
@@ -120,12 +120,12 @@ export default function Home() {
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button asChild size="lg" className="w-full sm:w-auto">
-              <a href={status === "authenticated" ? "/projects" : "/login"}>
+              <Link href={status === "authenticated" ? "/projects" : "/login"}>
                 {t("landing.heroCta")}
-              </a>
+              </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
-              <a href="#how-it-works">{t("landing.howItWorks")}</a>
+              <Link href="#how-it-works">{t("landing.howItWorks")}</Link>
             </Button>
           </div>
 
@@ -214,7 +214,7 @@ export default function Home() {
                 ))}
               </ul>
               <Button asChild variant="outline" className="w-full">
-                <a href={status === "authenticated" ? "/projects" : "/signup"}>{t("common.getStarted")}</a>
+                <Link href={status === "authenticated" ? "/projects" : "/signup"}>{t("common.getStarted")}</Link>
               </Button>
             </div>
 
@@ -239,7 +239,7 @@ export default function Home() {
                 ))}
               </ul>
               <Button asChild className="w-full">
-                <a href="/checkout?plan=PRO">{t("landing.upgradePro")}</a>
+                <Link href="/checkout?plan=PRO">{t("landing.upgradePro")}</Link>
               </Button>
             </div>
 
@@ -261,7 +261,7 @@ export default function Home() {
                 ))}
               </ul>
               <Button asChild variant="outline" className="w-full">
-                <a href="/checkout?plan=BUSINESS">{t("landing.upgradeBusiness")}</a>
+                <Link href="/checkout?plan=BUSINESS">{t("landing.upgradeBusiness")}</Link>
               </Button>
             </div>
           </div>
@@ -277,13 +277,13 @@ export default function Home() {
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button asChild size="lg" className="w-full sm:w-auto h-12 px-8 text-base">
-              <a href={status === "authenticated" ? "/projects" : "/signup"}>
+              <Link href={status === "authenticated" ? "/projects" : "/signup"}>
                 {t("common.getStarted")}
-              </a>
+              </Link>
             </Button>
             {status !== "authenticated" && (
               <Button asChild size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 text-base">
-                <a href="/login">{t("common.signIn")}</a>
+                <Link href="/login">{t("common.signIn")}</Link>
               </Button>
             )}
           </div>
