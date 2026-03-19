@@ -13,6 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "@/lib/i18n";
+import { UpgradeModal } from "@/components/projects/upgrade-modal";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -91,6 +92,7 @@ export default function NewProjectWizard() {
     const { t } = useTranslation();
     const [step, setStep] = useState(1);
     const [projectId, setProjectId] = useState<string | null>(null);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     // Step 1 State
     const [projectName, setProjectName] = useState("");
@@ -153,8 +155,10 @@ export default function NewProjectWizard() {
             const res = await createProjectMutation.mutateAsync({ name: projectName.trim() });
             setProjectId(res.id);
             setStep(2);
-        } catch (error) {
-            // Handled by mutation hook
+        } catch (error: any) {
+            if (error?.status === 403 || error?.error?.message === "Plan Limit Exceeded" || error?.error?.details?.includes("limit") || error?.error?.details?.includes("upgrade")) {
+                setShowUpgradeModal(true);
+            }
         }
     };
 
@@ -257,6 +261,14 @@ export default function NewProjectWizard() {
 
     return (
         <MainLayout>
+            <UpgradeModal
+                open={showUpgradeModal}
+                onOpenChange={setShowUpgradeModal}
+                title="Project Limit Reached"
+                description="You've reached the maximum number of chatbots allowed on your current plan. Upgrade to create more."
+                featureName="Additional Chatbots"
+                requiredPlan="PRO"
+            />
             <div className="max-w-3xl mx-auto w-full pt-4 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
                 {/* Wizard Header & Progress */}

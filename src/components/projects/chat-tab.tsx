@@ -4,10 +4,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { ChatInterface, ChatBranding, SuggestedMessage } from "@/components/chatbots/chat-interface";
-import { useSendChatMessage } from "@/lib/api/hooks";
+import { useSendChatMessage, useUsage } from "@/lib/api/hooks";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
 import Link from "next/link";
+import { UpgradeModal } from "@/components/projects/upgrade-modal";
 
 interface ChatMessage {
   id: string;
@@ -39,11 +40,13 @@ export function ChatTab({ projectId, project, hasDocuments, onNavigateToSources 
   const { toast } = useToast();
   const { t, locale } = useTranslation();
   const sendMessageMutation = useSendChatMessage();
+  const { data: usageData } = useUsage();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const hasAutoCreated = useRef(false);
@@ -193,11 +196,20 @@ export function ChatTab({ projectId, project, hasDocuments, onNavigateToSources 
       loadConversations();
     } catch (err: any) {
       if (err.name === "AbortError") return;
+      
+      // Check for limit reached
+      if (err?.status === 403 || err?.error?.message === "Plan Limit Exceeded" || err?.error?.details?.includes("reach")) {
+        setShowUpgradeModal(true);
+        // Remove the user's optimistic message since it wasn't processed
+        setMessages((prev) => prev.filter(m => m.id !== userMessage.id));
+        return;
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           id: `error-${Date.now()}`,
-          content: err?.error?.message || "Failed to get a response from the AI. Please try again.",
+          content: err?.error?.details || err?.error?.message || err?.message || "Failed to get a response from the AI. Please try again.",
           role: "assistant",
           timestamp: new Date(),
         },
@@ -269,7 +281,7 @@ export function ChatTab({ projectId, project, hasDocuments, onNavigateToSources 
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 border border-border/60 rounded-xl bg-card shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+      <div className="flex-1 min-h-0 border border-border/60 rounded-xl bg-card shadow-sm overflow-hidden flex flex-col">
         {!hasDocuments ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-muted-foreground bg-background/50">
             <AppIcon name="Database" className="h-12 w-12 mb-4 opacity-30" />
@@ -307,6 +319,14 @@ export function ChatTab({ projectId, project, hasDocuments, onNavigateToSources 
           </Link>
         </Button>
       </div>
+
+      <UpgradeModal 
+        open={showUpgradeModal} 
+        onOpenChange={setShowUpgradeModal}
+        title="Message Limit Reached"
+        description={`You have reached your limit of ${usageData?.limits.maxMessagesPerMonth} messages for your current plan. Upgrade to unlock more capacity.`}
+        requiredPlan="PRO"
+      />
     </div>
   );
 }

@@ -17,7 +17,7 @@ interface FileUploadAreaProps {
 
 export function FileUploadArea({
   onFileSelect,
-  accept = ".pdf,.docx,.txt",
+  accept = ".pdf,.docx,.txt,.xlsx,.csv,.pptx",
   maxSize = 10 * 1024 * 1024, // 10MB default
   multiple = true,
   disabled = false,
@@ -156,7 +156,7 @@ export function FileUploadArea({
               Drag and drop files here, or click to select
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Supported: PDF, DOCX, TXT • Max {formatFileSize(maxSize)} each
+              Supported: PDF, DOCX, TXT, XLSX, CSV, PPTX • Max {formatFileSize(maxSize)} each
             </p>
           </div>
 

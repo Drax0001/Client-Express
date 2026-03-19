@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    const { projectId, message, conversationId, sessionId } = body;
+    const { projectId, message, conversationId, sessionId, userContext } = body;
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -65,6 +65,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Detect locale from Accept-Language header
+    const locale = request.headers.get("accept-language")?.split(",")[0]?.split(";")[0]?.split("-")[0] ?? null;
+
     console.log(`API: Chat - processing message for project ${projectId}`);
 
     // Process the chat message using project-level RAG pipeline
@@ -73,15 +76,18 @@ export async function POST(request: NextRequest) {
       projectId,
       message: message.trim(),
       conversationHistory: body.conversationHistory,
+      userContext: userContext ?? null,
     });
+
+    const wasResolved = result.sourceCount > 0;
 
     // Persist messages to conversation if conversationId is provided
     if (body.conversationId) {
       try {
         await prisma.projectChatMessage.createMany({
           data: [
-            { conversationId: body.conversationId, role: "user", content: message.trim() },
-            { conversationId: body.conversationId, role: "assistant", content: result.answer },
+            { conversationId: body.conversationId, role: "user",      content: message.trim(), locale, wasResolved: true },
+            { conversationId: body.conversationId, role: "assistant", content: result.answer,  locale, wasResolved },
           ],
         });
         await prisma.projectConversation.update({
@@ -92,6 +98,7 @@ export async function POST(request: NextRequest) {
         console.error("Failed to persist conversation messages:", e);
       }
     }
+
 
     console.log(`API: Chat - response generated for project ${projectId}`);
 

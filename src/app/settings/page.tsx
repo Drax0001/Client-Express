@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import { useTranslation } from "@/lib/i18n";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { AppIcon } from "@/components/ui/app-icon";
 import Link from "next/link";
+import { ApiKeysTab } from "@/components/profile/api-keys-tab";
 
 type Profile = {
   id: string;
@@ -22,6 +24,7 @@ type Profile = {
 
 function SettingsInner() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get("tab") || "general";
 
@@ -81,16 +84,16 @@ function SettingsInner() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-            Account Settings
+            {t("settings.title")}
           </h1>
           <p className="text-muted-foreground mt-2 text-[15px]">
-            Manage your profile, technical preferences, and billing.
+            {t("settings.subtitle")}
           </p>
         </div>
         <Button asChild variant="outline" className="sm:self-end hover-lift border-border/60">
           <Link href="/projects" className="flex items-center gap-2">
             <AppIcon name="LayoutDashboard" className="h-4 w-4" />
-            Back to Dashboard
+            {t("workspace.backToDashboard")}
           </Link>
         </Button>
       </div>
@@ -98,23 +101,26 @@ function SettingsInner() {
       <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="mb-8 bg-muted/50 border border-border/50 p-1 w-full sm:w-auto overflow-x-auto flex sm:inline-flex justify-start">
           <TabsTrigger value="general" className="rounded-md flex-1 sm:flex-none">
-            General
+            {t("settings.general")}
           </TabsTrigger>
           <TabsTrigger value="billing" className="rounded-md flex-1 sm:flex-none">
-            Billing & Usage
+            {t("settings.billing")}
+          </TabsTrigger>
+          <TabsTrigger value="apikeys" className="rounded-md flex-1 sm:flex-none">
+            API Keys
           </TabsTrigger>
         </TabsList>
 
         {/* GENERAL TAB */}
-        <TabsContent value="general" className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
+        <TabsContent value="general" className="space-y-6 focus-visible:outline-none focus-visible:ring-0 min-h-[600px]">
           <Card className="border-border/60 bg-card/50 shadow-sm backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="text-xl">Profile Information</CardTitle>
-              <CardDescription>Update your personal details and how we can reach you.</CardDescription>
+              <CardTitle className="text-xl">{t("settings.profile")}</CardTitle>
+              <CardDescription>{t("settings.profileDesc")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">Name</label>
+                <label className="text-sm font-medium text-foreground">{t("settings.name")}</label>
                 <Input
                   value={profileName}
                   onChange={(event) => setProfileName(event.target.value)}
@@ -123,20 +129,20 @@ function SettingsInner() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">Email address</label>
+                <label className="text-sm font-medium text-foreground">{t("settings.email")}</label>
                 <Input
                   value={profile?.email ?? ""}
                   disabled
                   className="max-w-md bg-muted/40 text-muted-foreground opacity-80"
                 />
-                <p className="text-xs text-muted-foreground">Email addresses cannot be changed directly.</p>
+                <p className="text-xs text-muted-foreground">{t("settings.emailNote")}</p>
               </div>
               <div className="flex items-center gap-3 pt-2 border-t border-border/40 mt-4">
-                <Button onClick={saveProfile} disabled={savingProfile} className="bg-foreground text-background hover:bg-foreground/90 transition-colors">
-                  {savingProfile ? "Saving..." : "Save profile"}
+                <Button onClick={saveProfile} disabled={savingProfile} className="bg-brand hover:bg-brand-hover text-white transition-colors">
+                  {savingProfile ? t("settings.saving") : t("settings.saveProfile")}
                 </Button>
                 <Button variant="ghost" onClick={() => signOut({ callbackUrl: "/" })} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">
-                  Sign out
+                  {t("common.signOut")}
                 </Button>
               </div>
             </CardContent>
@@ -145,11 +151,11 @@ function SettingsInner() {
         </TabsContent>
 
         {/* BILLING TAB */}
-        <TabsContent value="billing" className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
+        <TabsContent value="billing" className="space-y-6 focus-visible:outline-none focus-visible:ring-0 min-h-[600px]">
           <Card className="border-border/60 bg-card/50 shadow-sm backdrop-blur-sm overflow-hidden">
             <CardHeader className="pb-4">
-              <CardTitle className="text-xl">Plan & Usage</CardTitle>
-              <CardDescription>Track your active limits and upgrade your features.</CardDescription>
+              <CardTitle className="text-xl">{t("settings.planUsage")}</CardTitle>
+              <CardDescription>{t("settings.planUsageDesc")}</CardDescription>
             </CardHeader>
             <CardContent>
               {!usageData ? (
@@ -167,21 +173,21 @@ function SettingsInner() {
                     <div className="relative z-10 w-full sm:w-auto">
                       <div className="flex items-center gap-2 mb-1">
                         <AppIcon name="Zap" className="h-5 w-5 text-brand" />
-                        <h4 className="font-semibold text-lg text-foreground">{usageData.plan} Plan</h4>
+                        <h4 className="font-semibold text-lg text-foreground">{usageData.plan} {t("settings.plan")}</h4>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Your limits will automatically reset on <span className="text-foreground font-medium">{new Date(usageData.usage.resetDate).toLocaleDateString()}</span>.
+                        {t("settings.resetDate")} <span className="text-foreground font-medium">{new Date(usageData.usage.resetDate).toLocaleDateString()}</span>.
                       </p>
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto mt-3 sm:mt-0">
                       {usageData.plan === "FREE" && (
                         <Button asChild className="relative z-10 w-full sm:w-auto bg-brand hover:bg-brand-hover text-white shadow-md hover:shadow-lg transition-all">
-                          <Link href="/checkout?plan=PRO">Upgrade to Pro</Link>
+                          <Link href="/checkout?plan=PRO">{t("settings.upgradeToProBtn")}</Link>
                         </Button>
                       )}
                       {usageData.plan !== "BUSINESS" && (
                         <Button asChild variant={usageData.plan === "FREE" ? "outline" : "default"} className={usageData.plan === "FREE" ? "relative z-10 w-full sm:w-auto bg-background hover:bg-muted text-foreground transition-all" : "relative z-10 w-full sm:w-auto bg-brand hover:bg-brand-hover text-white shadow-md hover:shadow-lg transition-all"}>
-                          <Link href="/checkout?plan=BUSINESS">Upgrade to Business</Link>
+                          <Link href="/checkout?plan=BUSINESS">{t("settings.upgradeToBusinessBtn")}</Link>
                         </Button>
                       )}
                     </div>
@@ -193,7 +199,7 @@ function SettingsInner() {
                     <div className="space-y-3 p-4 border border-border/40 rounded-xl bg-background/50">
                       <div className="flex justify-between items-end">
                         <div>
-                          <p className="text-sm font-medium text-foreground">Monthly Messages</p>
+                          <p className="text-sm font-medium text-foreground">{t("settings.monthlyMessages")}</p>
                           <p className="text-xs text-muted-foreground mt-0.5">Used traversing your knowledge</p>
                         </div>
                         <span className="text-sm font-semibold bg-surface px-2 py-0.5 rounded-md border border-border/40">
@@ -212,7 +218,7 @@ function SettingsInner() {
                     <div className="space-y-3 p-4 border border-border/40 rounded-xl bg-background/50">
                       <div className="flex justify-between items-end">
                         <div>
-                          <p className="text-sm font-medium text-foreground">Document Sources</p>
+                          <p className="text-sm font-medium text-foreground">{t("settings.documentSources")}</p>
                           <p className="text-xs text-muted-foreground mt-0.5">Files & URLs combined</p>
                         </div>
                         <span className="text-sm font-semibold bg-surface px-2 py-0.5 rounded-md border border-border/40">
@@ -229,13 +235,18 @@ function SettingsInner() {
                   </div>
 
                   <div className="text-center sm:text-left text-xs text-muted-foreground py-2 px-4 bg-muted/30 rounded-lg inline-block">
-                    Maximum allowed upload size per source: <strong className="text-foreground">{usageData.limits.maxSourceSizeBytes / (1024 * 1024)} MB</strong>
+                    {t("settings.maxUploadSize")} <strong className="text-foreground">{usageData.limits.maxSourceSizeBytes / (1024 * 1024)} MB</strong>
                   </div>
 
                 </div>
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* API KEYS TAB */}
+        <TabsContent value="apikeys" className="space-y-6 focus-visible:outline-none focus-visible:ring-0 min-h-[600px]">
+          <ApiKeysTab plan={usageData?.plan || "FREE"} />
         </TabsContent>
 
       </Tabs>

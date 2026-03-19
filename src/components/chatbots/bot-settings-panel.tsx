@@ -85,6 +85,7 @@ interface BotConfig {
     contextMessage: string | null;
     modules: SuggestedMsg[] | null;
     availableModels: ModelDefinition[];
+    userPlan: "FREE" | "PRO" | "BUSINESS";
 }
 
 interface BotSettingsPanelProps {
@@ -98,6 +99,7 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [userPlan, setUserPlan] = useState<"FREE" | "PRO" | "BUSINESS">("FREE");
 
     // Form state
     const [modelId, setModelId] = useState("gemini-2.5-flash");
@@ -144,6 +146,7 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
             if (!res.ok) throw new Error("Failed to load config");
             const data: BotConfig = await res.json();
             setConfig(data);
+            setUserPlan(data.userPlan || "FREE");
             setModelId(data.modelId);
             setPersona(data.persona || "");
             setInstructions(data.instructions || "");
@@ -207,6 +210,8 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
     }
 
     const models = config?.availableModels || [];
+    const tierRank: Record<string, number> = { FREE: 0, PRO: 1, BUSINESS: 2 };
+    const userRank = tierRank[userPlan] ?? 0;
 
     return (
         <div className="space-y-6 max-w-3xl pb-10 animate-in fade-in duration-300">
@@ -229,37 +234,59 @@ export function BotSettingsPanel({ projectId }: BotSettingsPanelProps) {
                 </CardHeader>
                 <CardContent className="space-y-3">
                     <div className="grid gap-3">
-                        {models.map((model) => (
-                            <button
-                                key={model.id}
-                                onClick={() => setModelId(model.id)}
-                                className={`flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left ${modelId === model.id
-                                    ? "border-brand bg-brand/5 shadow-sm"
-                                    : "border-border/60 hover:border-border hover:bg-muted/30"
+                        {models.map((model) => {
+                            const modelRank = tierRank[model.tier] ?? 0;
+                            const isLocked = modelRank > userRank;
+                            return (
+                                <button
+                                    key={model.id}
+                                    onClick={() => !isLocked && setModelId(model.id)}
+                                    disabled={isLocked}
+                                    className={`flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left ${
+                                        isLocked
+                                            ? "border-border/40 bg-muted/20 opacity-60 cursor-not-allowed"
+                                            : modelId === model.id
+                                                ? "border-brand bg-brand/5 shadow-sm"
+                                                : "border-border/60 hover:border-border hover:bg-muted/30"
                                     }`}
-                            >
-                                <div className={`mt-0.5 w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${modelId === model.id ? "border-brand" : "border-muted-foreground/40"
+                                >
+                                    <div className={`mt-0.5 w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
+                                        isLocked
+                                            ? "border-muted-foreground/20"
+                                            : modelId === model.id ? "border-brand" : "border-muted-foreground/40"
                                     }`}>
-                                    {modelId === model.id && (
-                                        <div className="w-2 h-2 rounded-full bg-brand" />
-                                    )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="font-semibold text-sm">{model.name}</span>
-                                        {model.preview && (
-                                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5">
-                                                Preview
-                                            </Badge>
+                                        {!isLocked && modelId === model.id && (
+                                            <div className="w-2 h-2 rounded-full bg-brand" />
                                         )}
-                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
-                                            {model.contextWindow} context
-                                        </Badge>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">{model.description}</p>
-                                </div>
-                            </button>
-                        ))}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="font-semibold text-sm">{model.name}</span>
+                                            {isLocked && (
+                                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-1">
+                                                    <AppIcon name="Lock" className="h-2.5 w-2.5" />
+                                                    {model.tier}
+                                                </Badge>
+                                            )}
+                                            {model.preview && (
+                                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5">
+                                                    Preview
+                                                </Badge>
+                                            )}
+                                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
+                                                {model.contextWindow} context
+                                            </Badge>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">{model.description}</p>
+                                        {isLocked && (
+                                            <p className="text-[11px] text-brand mt-1">
+                                                Upgrade to {model.tier} to unlock this model
+                                            </p>
+                                        )}
+                                    </div>
+                                </button>
+                            );
+                        })}
                     </div>
                 </CardContent>
             </Card>

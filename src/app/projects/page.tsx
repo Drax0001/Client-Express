@@ -1,36 +1,40 @@
 "use client";
 
 import { MainLayout } from "@/components/layout/main-layout";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { ProjectCard } from "@/components/data/project-card";
-import { ProjectCardSkeleton } from "@/components/ui/skeletons";
-import { useProjects } from "@/lib/api/hooks";
-import { useAppKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
-import { AppIcon } from "@/components/ui/app-icon";
-import { useState, useEffect } from "react";
+import { useProjects, useUsage } from "@/lib/api/hooks";
+import { useTranslation, getClientLocale } from "@/lib/i18n";
 import Link from "next/link";
-import { useTranslation } from "@/lib/i18n";
+import { useRouter } from "next/navigation";
+import { UpgradeModal } from "@/components/projects/upgrade-modal";
+import React, { useState } from "react";
 
-export default function ProjectsPage() {
-  const { data: projects, isLoading: projectsLoading, error } = useProjects();
-  const [usageData, setUsageData] = useState<any>(null);
+export default function DashboardPage() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const { data: projects, isLoading: projectsLoading, error } = useProjects();
+  const { data: usageData } = useUsage();
 
-  useEffect(() => {
-    fetch("/api/usage")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch usage");
-        return res.json();
-      })
-      .then((data) => setUsageData(data))
-      .catch(console.error);
-  }, []);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  useAppKeyboardShortcuts({
-    createProject: () => {
-      window.location.href = "/projects/new";
-    },
-  });
+  // Time-based greeting logic
+  const hour = new Date().getHours();
+  let greetingKey = "dashboard.goodEvening";
+  if (hour < 12) greetingKey = "dashboard.goodMorning";
+  else if (hour < 18) greetingKey = "dashboard.goodAfternoon";
+
+  const handleCreateClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (usageData && projects) {
+      if (projects.length >= usageData.limits.maxProjects) {
+        setShowUpgradeModal(true);
+        return;
+      }
+    }
+    router.push("/projects/new");
+  };
 
   return (
     <MainLayout>
@@ -39,19 +43,28 @@ export default function ProjectsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-              {t("sidebar.dashboard")}
+              {t(greetingKey)}
             </h1>
             <p className="text-muted-foreground mt-2 text-[15px]">
-              {t("dashboard.subtitle")}
+              {t("dashboard.welcomeBack")}
             </p>
           </div>
-          <Link href="/projects/new">
-            <Button className="shadow-md hover:shadow-lg transition-all flex items-center gap-2 px-6 py-5 rounded-xl font-medium bg-brand hover:bg-brand-hover text-white">
-              <AppIcon name="Plus" className="h-[18px] w-[18px]" />
-              {t("sidebar.newChatbot")}
-            </Button>
-          </Link>
+          <Button
+            className="shadow-md hover:shadow-lg transition-all flex items-center gap-2 px-6 py-5 rounded-xl font-medium bg-brand hover:bg-brand-hover text-white"
+            onClick={handleCreateClick}
+          >
+            <AppIcon name="Plus" className="h-[18px] w-[18px]" />
+            {t("dashboard.createNew")}
+          </Button>
         </div>
+
+        <UpgradeModal
+          open={showUpgradeModal}
+          onOpenChange={setShowUpgradeModal}
+          title="Chatbot Limit Reached"
+          description={`You have reached your limit of ${usageData?.limits.maxProjects} chatbots for your current plan. Upgrade to unlock more capacity.`}
+          requiredPlan="PRO"
+        />
 
         {/* METRICS DASHBOARD */}
         <div className="grid gap-4 md:grid-cols-3">

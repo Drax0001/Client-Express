@@ -25,6 +25,7 @@ export interface ChatRequest {
   projectId: string;
   message: string;
   conversationHistory?: Array<{ role: "user" | "assistant"; content: string }>;
+  userContext?: Record<string, unknown> | null;
 }
 
 /**
@@ -136,7 +137,7 @@ export class ChatService {
    * @throws ServiceUnavailableError if external services are unavailable
    */
   async processQuery(request: ChatRequest): Promise<ChatResponse> {
-    const { projectId, message, conversationHistory } = request;
+    const { projectId, message, conversationHistory, userContext } = request;
     const { embeddingService, llmService, config } =
       await this.getActiveServices();
 
@@ -325,18 +326,24 @@ export class ChatService {
       ? `\n\nADDITIONAL INSTRUCTIONS FROM THE PROJECT OWNER:\n${botConfig.instructions}`
       : "";
 
+    // Build user context prefix (Feature 11 — personalization)
+    const userContextPrefix = userContext
+      ? `Current user context: ${JSON.stringify(userContext)}\n\n`
+      : "";
+
     // Build the system prompt based on confidence level
     let systemPrompt: string;
 
     if (botConfig.customSystemPrompt) {
       // User provided a full custom system prompt override
-      systemPrompt = botConfig.customSystemPrompt
+      systemPrompt = userContextPrefix
+        + botConfig.customSystemPrompt
         + `\n\nIMPORTANT: ALWAYS respond in the SAME LANGUAGE as the user's question.`
         + personaSection
         + instructionsSection;
     } else if (isConfident) {
       // Full-confidence prompt
-      systemPrompt = `You are a knowledgeable, warm, and professional expert assistant. You possess the knowledge contained in the provided context naturally.${personaSection}
+      systemPrompt = userContextPrefix + `You are a knowledgeable, warm, and professional expert assistant. You possess the knowledge contained in the provided context naturally.${personaSection}
 
 CORE RULES:
 1. Answer authoritatively using the information from the context. Synthesize information across multiple sources when relevant.
@@ -350,7 +357,7 @@ CORE RULES:
 9. Use a professional but conversational tone — be the expert the user is consulting.${instructionsSection}`;
     } else if (hasPartialMatch) {
       // Low-confidence prompt — still helpful
-      systemPrompt = `You are a helpful, warm, and professional expert assistant. The user asked a question and your internal knowledge base has only partial relevance. Your job is to still be as helpful as possible without breaking character.${personaSection}
+      systemPrompt = userContextPrefix + `You are a helpful, warm, and professional expert assistant. The user asked a question and your internal knowledge base has only partial relevance. Your job is to still be as helpful as possible without breaking character.${personaSection}
 
 RULES:
 1. Review your knowledge carefully. Even if it's not a perfect match, extract and share ANY useful information that relates to the user's question confidently.
@@ -364,7 +371,7 @@ RULES:
 9. NEVER just say "I don't know" — always provide value, guidance, and suggestions.${instructionsSection}`;
     } else {
       // No relevant context at all — still be helpful
-      systemPrompt = `You are a helpful, warm, and professional assistant. The user asked a question but no relevant information was found in the available documents.${personaSection}
+      systemPrompt = userContextPrefix + `You are a helpful, warm, and professional assistant. The user asked a question but no relevant information was found in the available documents.${personaSection}
 
 RULES:
 1. ALWAYS respond in the SAME LANGUAGE as the user's question.
@@ -372,8 +379,11 @@ RULES:
 3. Suggest 2-3 alternative questions the user could try that might relate to the document content.
 4. Encourage the user to upload additional documents if the topic isn't covered.
 5. Be genuinely helpful — offer guidance on how to get the most out of the assistant.
-6. NEVER give a flat "I don't know" — always provide actionable suggestions.${instructionsSection}`;
+      6. NEVER give a flat "I don't know" — always provide actionable suggestions.${instructionsSection}`;
     }
+
+    // Ensure multilingual support is active
+    systemPrompt += "\n\nIMPORTANT: Always detect the language of the user's message and respond in that same language. Do not default to English unless the user writes in English.";
 
     // Build conversation context from history
     let conversationContext = "";

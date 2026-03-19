@@ -57,12 +57,20 @@ export async function POST(
       );
     }
 
+    // Feature 9: Multilingual Auto-Detection & Feature 11: Personalization Context
+    const locale = request.headers.get("accept-language")?.split(",")[0]?.split(";")[0] ?? null;
+    let combinedContext = body.userContext || {};
+    if (locale) {
+      combinedContext = { browserLocale: locale, ...combinedContext };
+    }
+
     // 4. Process the query using ChatService
     const chatService = new ChatService(project.userId);
     const result = await chatService.processQuery({
       projectId,
       message: body.message.trim(),
       conversationHistory: body.conversationHistory,
+      userContext: Object.keys(combinedContext).length > 0 ? combinedContext : undefined,
     });
 
     return NextResponse.json(

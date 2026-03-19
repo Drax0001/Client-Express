@@ -52,7 +52,8 @@ export function useUsage() {
       const response = await apiClient.get("/usage");
       return response.data;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,   // 30 seconds — stays fresh after each message
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -204,11 +205,16 @@ export function useUploadDocument() {
  * Send a chat message
  */
 export function useSendChatMessage() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: [mutationKeys.sendChatMessage],
     mutationFn: async (data: ChatRequest): Promise<ChatResponse> => {
       const response = await apiClient.post("/chat", data);
       return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["usage"] as const });
     },
     onError: (error: any) => {
       toast({

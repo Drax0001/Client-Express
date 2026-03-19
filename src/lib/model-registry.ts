@@ -2,7 +2,7 @@
  * Model Registry
  *
  * Predefined Gemini models available for bot configuration.
- * All models are currently on the FREE tier.
+ * Gemini 2.5 series: FREE. Gemini 3.x series: PRO+
  */
 
 export interface ModelDefinition {
@@ -43,7 +43,7 @@ export const MODEL_REGISTRY: ModelDefinition[] = [
         id: "gemini-3-flash-preview",
         name: "Gemini 3 Flash",
         description: "Latest generation — fast and capable",
-        tier: "FREE",
+        tier: "PRO",
         maxTokens: 65536,
         contextWindow: "1M",
         released: "Jan 2025",

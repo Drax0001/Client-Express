@@ -28,7 +28,14 @@ export function AnalyticsTab({ projectId }: AnalyticsTabProps) {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [datePreset, setDatePreset] = useState<"week" | "month" | "30days">("week");
-  const [analyticsData, setAnalyticsData] = useState<{ dailyData: any[]; moduleData: any[]; stats: any } | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<{
+    dailyData: any[];
+    moduleData: any[];
+    stats: any;
+    topQuestions?: { question: string; count: number }[];
+    localeBreakdown?: { locale: string; count: number }[];
+  } | null>(null);
+
 
   const loadAnalytics = useCallback(async () => {
     try {
@@ -46,7 +53,9 @@ export function AnalyticsTab({ projectId }: AnalyticsTabProps) {
 
   const lineData = analyticsData?.dailyData || [];
   const barData = analyticsData?.moduleData || [];
-  const stats = analyticsData?.stats || { totalMessages: 0, totalConversations: 0, avgMessagesPerConv: 0 };
+  const stats = analyticsData?.stats || { totalMessages: 0, totalConversations: 0, avgMessagesPerConv: 0, fallbackRate: 0 };
+  const topQuestions: { question: string; count: number }[] = analyticsData?.topQuestions || [];
+  const localeBreakdown: { locale: string; count: number }[] = analyticsData?.localeBreakdown || [];
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-300 h-full overflow-y-auto pb-8">
@@ -117,6 +126,18 @@ export function AnalyticsTab({ projectId }: AnalyticsTabProps) {
             <div className="text-2xl font-bold">{stats.avgMessagesPerConv}</div>
           </CardContent>
         </Card>
+        <Card className="border-border/60 shadow-sm hover-lift" style={{ transitionDelay: "150ms" }}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between space-y-0 pb-2">
+              <p className="text-sm font-medium">Fallback Rate</p>
+              <AppIcon name="AlertCircle" className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className={`text-2xl font-bold ${stats.fallbackRate > 30 ? "text-destructive" : "text-foreground"}`}>
+              {stats.fallbackRate ?? 0}%
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Bot responses without relevant context</p>
+          </CardContent>
+        </Card>
       </div>
 
       <Card className="border-border/60 shadow-sm">
@@ -134,13 +155,13 @@ export function AnalyticsTab({ projectId }: AnalyticsTabProps) {
               />
               <XAxis
                 dataKey="name"
-                stroke="hsl(var(--muted-foreground))"
+                stroke="#0ea5e9"
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
-                stroke="hsl(var(--muted-foreground))"
+                stroke="#0ea5e9"
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
@@ -156,9 +177,9 @@ export function AnalyticsTab({ projectId }: AnalyticsTabProps) {
               <Line
                 type="monotone"
                 dataKey="messages"
-                stroke="hsl(var(--brand))"
+                stroke="#0ea5e9"
                 strokeWidth={3}
-                dot={{ fill: "hsl(var(--brand))", r: 4 }}
+                dot={{ fill: "#0ea5e9", r: 4 }}
                 activeDot={{ r: 6 }}
               />
             </LineChart>
@@ -185,7 +206,7 @@ export function AnalyticsTab({ projectId }: AnalyticsTabProps) {
               />
               <XAxis
                 type="number"
-                stroke="hsl(var(--muted-foreground))"
+                stroke="#0ea5e9"
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
@@ -193,7 +214,7 @@ export function AnalyticsTab({ projectId }: AnalyticsTabProps) {
               <YAxis
                 dataKey="name"
                 type="category"
-                stroke="hsl(var(--muted-foreground))"
+                stroke="#0ea5e9"
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
@@ -209,13 +230,60 @@ export function AnalyticsTab({ projectId }: AnalyticsTabProps) {
               <Bar
                 dataKey="requests"
                 name={t("analytics.totalMessages")}
-                fill="hsl(var(--brand))"
+                fill="#0ea5e9"
                 radius={[0, 4, 4, 0]}
               />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      {/* Top Questions */}
+      {topQuestions.length > 0 && (
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AppIcon name="HelpCircle" className="h-4 w-4 text-brand" />
+              Top Questions (30 days)
+            </CardTitle>
+            <CardDescription>Most frequently asked user questions</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-2">
+              {topQuestions.map((q, i) => (
+                <div key={i} className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-muted/30 transition-colors">
+                  <span className="text-xs font-bold text-muted-foreground w-5 shrink-0 pt-0.5">{i + 1}.</span>
+                  <p className="text-sm flex-1 min-w-0 truncate">{q.question}</p>
+                  <span className="text-xs bg-muted px-2 py-0.5 rounded-full shrink-0">{q.count}×</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Locale Breakdown */}
+      {localeBreakdown.length > 0 && (
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AppIcon name="Globe" className="h-4 w-4 text-brand" />
+              User Languages (30 days)
+            </CardTitle>
+            <CardDescription>Detected user browser languages from Accept-Language header</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex flex-wrap gap-2">
+              {localeBreakdown.map(l => (
+                <div key={l.locale} className="flex items-center gap-1.5 bg-muted/40 border border-border/40 rounded-full px-3 py-1">
+                  <span className="text-sm font-medium uppercase">{l.locale}</span>
+                  <span className="text-xs text-muted-foreground">{l.count}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

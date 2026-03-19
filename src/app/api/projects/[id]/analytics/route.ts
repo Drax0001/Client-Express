@@ -3,8 +3,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "../../../../../../lib/prisma";
 
 /**
- * GET /api/projects/[id]/analytics - Get analytics data for a project
- * Returns daily message counts and module distribution
+ * GET /api/projects/[id]/analytics
+ * Returns daily message counts, hourly distribution, fallback rate, top questions, and locale breakdown.
  */
 export async function GET(
     request: NextRequest,
@@ -20,90 +20,103 @@ export async function GET(
     const from = searchParams.get("from");
     const to = searchParams.get("to");
 
-    // Default: last 7 days
     const endDate = to ? new Date(to) : new Date();
     const startDate = from ? new Date(from) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     endDate.setHours(23, 59, 59, 999);
     startDate.setHours(0, 0, 0, 0);
 
+    const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
     try {
-        // Get all conversations for this project
         const conversations = await prisma.projectConversation.findMany({
             where: { projectId },
             select: { id: true, module: true },
         });
-
         const convIds = conversations.map(c => c.id);
 
-        // Get messages in the date range
         const messages = await prisma.projectChatMessage.findMany({
             where: {
                 conversationId: { in: convIds },
                 createdAt: { gte: startDate, lte: endDate },
             },
-            select: {
-                createdAt: true,
-                role: true,
-                conversationId: true,
-            },
+            select: { createdAt: true, role: true, conversationId: true, wasResolved: true },
         });
 
-        // Group by day for line chart
+        // Daily chart (we graph all messages, or just user messages? The chart usually shows traffic. Let's use only user messages for the graph to match the usage!)
+        const userMessages = messages.filter(m => m.role === "user");
+
         const dailyMap: Record<string, number> = {};
         const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-        for (const msg of messages) {
+        for (const msg of userMessages) {
             const d = new Date(msg.createdAt);
             const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
             dailyMap[key] = (dailyMap[key] || 0) + 1;
         }
-
-        // Fill in missing days
         const dailyData: { name: string; date: string; messages: number }[] = [];
-        const current = new Date(startDate);
-        while (current <= endDate) {
-            const key = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
-            dailyData.push({
-                name: dayNames[current.getDay()],
-                date: key,
-                messages: dailyMap[key] || 0,
-            });
-            current.setDate(current.getDate() + 1);
+        const cur = new Date(startDate);
+        while (cur <= endDate) {
+            const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, "0")}-${String(cur.getDate()).padStart(2, "0")}`;
+            dailyData.push({ name: dayNames[cur.getDay()], date: key, messages: dailyMap[key] || 0 });
+            cur.setDate(cur.getDate() + 1);
         }
 
-        // Activity by Time of Day distribution (0-23 hours)
+        // Hourly distribution (based on user messages)
         const hourlyMap: Record<number, number> = {};
         for (let i = 0; i < 24; i++) hourlyMap[i] = 0;
-
-        for (const msg of messages) {
-            const hour = new Date(msg.createdAt).getHours();
-            hourlyMap[hour]++;
-        }
-
-        const formatHour = (h: number) => {
-            if (h === 0) return "12 AM";
-            if (h === 12) return "12 PM";
-            return h < 12 ? `${h} AM` : `${h - 12} PM`;
-        };
-
+        for (const msg of userMessages) hourlyMap[new Date(msg.createdAt).getHours()]++;
+        const fmtHour = (h: number) => h === 0 ? "12 AM" : h === 12 ? "12 PM" : h < 12 ? `${h} AM` : `${h - 12} PM`;
         const hourlyData = Object.entries(hourlyMap)
-            .map(([hourStr, requests]) => ({ name: formatHour(parseInt(hourStr)), requests }))
-            .filter(item => item.requests > 0) // Only show hours with activity
+            .map(([h, r]) => ({ name: fmtHour(parseInt(h)), requests: r }))
+            .filter(x => x.requests > 0)
             .sort((a, b) => b.requests - a.requests)
-            .slice(0, 10); // Show top 10 most active hours
+            .slice(0, 10);
 
-        // Summary stats
-        const totalMessages = messages.length;
+        // Stats
+        const totalMessages = userMessages.length; // use ONLY user messages for the stat!
         const totalConversations = conversations.length;
         const avgMessagesPerConv = totalConversations > 0 ? Math.round(totalMessages / totalConversations) : 0;
 
+        // Fallback rate
+        const assistantMsgs = messages.filter(m => m.role === "assistant");
+        const unresolvedCount = assistantMsgs.filter(m => !m.wasResolved).length;
+        const fallbackRate = assistantMsgs.length > 0 ? Math.round((unresolvedCount / assistantMsgs.length) * 100) : 0;
+
+        // Top questions (30d)
+        const userMsgs30d = await prisma.projectChatMessage.findMany({
+            where: { conversationId: { in: convIds }, role: "user", createdAt: { gte: since30d } },
+            select: { content: true },
+            take: 300,
+        });
+        const qFreq: Record<string, number> = {};
+        for (const m of userMsgs30d) {
+            const key = m.content.trim().toLowerCase().slice(0, 120);
+            qFreq[key] = (qFreq[key] || 0) + 1;
+        }
+        const topQuestions = Object.entries(qFreq)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10)
+            .map(([question, count]) => ({ question, count }));
+
+        // Locale breakdown (30d)
+        const localeMsgs = await prisma.projectChatMessage.findMany({
+            where: { conversationId: { in: convIds }, role: "user", locale: { not: null }, createdAt: { gte: since30d } },
+            select: { locale: true },
+        });
+        const lFreq: Record<string, number> = {};
+        for (const m of localeMsgs) {
+            const l = m.locale ?? "unknown";
+            lFreq[l] = (lFreq[l] || 0) + 1;
+        }
+        const localeBreakdown = Object.entries(lFreq)
+            .sort((a, b) => b[1] - a[1])
+            .map(([locale, count]) => ({ locale, count }));
+
         return NextResponse.json({
             dailyData,
-            moduleData: hourlyData, // Exposing hourly format over the old moduleData key for backward compatibility on frontend typings
-            stats: {
-                totalMessages,
-                totalConversations,
-                avgMessagesPerConv,
-            },
+            moduleData: hourlyData,
+            stats: { totalMessages, totalConversations, avgMessagesPerConv, fallbackRate, unresolvedCount },
+            topQuestions,
+            localeBreakdown,
         });
     } catch (error) {
         console.error("Analytics error:", error);

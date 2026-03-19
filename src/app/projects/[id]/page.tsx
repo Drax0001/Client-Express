@@ -1,11 +1,9 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useProject } from "@/lib/api/hooks";
 import { useTranslation } from "@/lib/i18n";
@@ -15,15 +13,25 @@ import { SourcesTab } from "@/components/projects/sources-tab";
 import { EmbedTab } from "@/components/projects/embed-tab";
 import { AnalyticsTab } from "@/components/projects/analytics-tab";
 import { SettingsTab } from "@/components/projects/settings-tab";
+import { CustomizeTab } from "@/components/projects/customize-tab";
 import { BotSettingsPanel } from "@/components/chatbots/bot-settings-panel";
+import { LogsTab } from "@/components/projects/logs-tab";
+import { LeadsTab } from "@/components/projects/leads-tab";
 
 export default function ProjectPage() {
   const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const projectId = params.id as string;
   const { t } = useTranslation();
 
   const { data: project, isLoading, error, refetch } = useProject(projectId);
-  const [activeTab, setActiveTab] = useState("sources");
+  const activeTab = searchParams?.get("tab") || "sources";
+
+  // Helper to navigate between tabs via sidebar (also used by ChatTab)
+  const setActiveTab = (tab: string) => {
+    router.push(`/projects/${projectId}?tab=${tab}`);
+  };
 
   if (isLoading) {
     return (
@@ -63,106 +71,75 @@ export default function ProjectPage() {
   }
 
   const hasDocuments = project.documentCount > 0;
-  const chatBranding = project?.branding;
 
   return (
     <MainLayout>
       <div className="flex flex-col h-full overflow-hidden w-full max-w-6xl mx-auto animate-in fade-in duration-300">
-        {/* Workspace Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0 border overflow-hidden shadow-sm"
-              style={chatBranding?.primaryColor ? { backgroundColor: chatBranding.primaryColor + '1a', borderColor: chatBranding.primaryColor + '33' } : { backgroundColor: 'hsl(var(--brand) / 0.1)', borderColor: 'hsl(var(--brand) / 0.2)' }}
-            >
-              {chatBranding?.logoUrl ? (
-                <img src={chatBranding.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
-              ) : (
-                <AppIcon name="Bot" className="h-6 w-6" style={{ color: chatBranding?.primaryColor || 'hsl(var(--brand))' }} />
-              )}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight text-foreground">{project.name}</h1>
-              </div>
-              <p className="text-sm text-muted-foreground">{t("workspace.manageSubtitle")}</p>
-            </div>
+        {/* Slim Project Header */}
+        <div className="flex items-center justify-between gap-4 mb-6 shrink-0">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">{project.name}</h1>
+            <p className="text-sm text-muted-foreground">{t("workspace.manageSubtitle")}</p>
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="bg-transparent h-auto min-h-14 p-0 shrink-0 border-b border-border/60 w-full justify-start overflow-visible overflow-x-auto custom-scrollbar flex-nowrap">
-            <TabsTrigger
-              value="chat"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 mr-6 h-full gap-2 transition-colors hover:text-foreground"
-            >
-              <AppIcon name="MessageSquare" className="h-4 w-4" />
-              {t("workspace.chatPreview")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="sources"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 mr-6 h-full gap-2 transition-colors hover:text-foreground"
-            >
-              <AppIcon name="Database" className="h-4 w-4" />
-              {t("workspace.knowledgeSources")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="botconfig"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 mr-6 h-full gap-2 transition-colors hover:text-foreground"
-            >
-              <AppIcon name="Cpu" className="h-4 w-4" />
-              {t("workspace.botConfig")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="embed"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 mr-6 h-full gap-2 transition-colors hover:text-foreground"
-            >
-              <AppIcon name="Code" className="h-4 w-4" />
-              {t("workspace.embedWidget")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="analytics"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 mr-6 h-full gap-2 transition-colors hover:text-foreground"
-            >
-              <AppIcon name="BarChart" className="h-4 w-4" />
-              {t("workspace.analytics")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="settings"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-brand data-[state=active]:text-foreground text-muted-foreground bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 h-full gap-2 transition-colors hover:text-foreground"
-            >
-              <AppIcon name="Settings" className="h-4 w-4" />
-              {t("workspace.projectSettings")}
-            </TabsTrigger>
-          </TabsList>
-
-          <div className="flex-1 min-h-0 relative mt-6 w-full">
-            <TabsContent value="chat" className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none">
+        {/* Tab Content — rendered based on URL ?tab= param */}
+        <div className="flex-1 min-h-0 relative w-full flex flex-col">
+          {activeTab === "chat" && (
+            <div className="flex-1 min-h-0 flex flex-col animate-in fade-in duration-200">
               <ChatTab projectId={projectId} project={project} hasDocuments={hasDocuments} onNavigateToSources={() => setActiveTab("sources")} />
-            </TabsContent>
+            </div>
+          )}
 
-            <TabsContent value="sources" className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none">
+          {activeTab === "sources" && (
+            <div className="flex-1 min-h-0 animate-in fade-in duration-200">
               <SourcesTab projectId={projectId} project={project} refetch={refetch} />
-            </TabsContent>
+            </div>
+          )}
 
-            <TabsContent value="botconfig" className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none max-w-5xl overflow-y-auto pb-8">
+          {activeTab === "botconfig" && (
+            <div className="flex-1 min-h-0 overflow-y-auto pb-8 animate-in fade-in duration-200">
               <BotSettingsPanel projectId={projectId} />
-            </TabsContent>
+            </div>
+          )}
 
-            <TabsContent value="embed" className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none">
+          {activeTab === "customize" && (
+            <div className="flex-1 min-h-0 animate-in fade-in duration-200">
+              <CustomizeTab projectId={projectId} project={project} refetch={refetch} />
+            </div>
+          )}
+
+          {activeTab === "embed" && (
+            <div className="flex-1 min-h-0 animate-in fade-in duration-200">
               <EmbedTab projectId={projectId} project={project} />
-            </TabsContent>
+            </div>
+          )}
 
-            <TabsContent value="analytics" className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none">
+          {activeTab === "analytics" && (
+            <div className="flex-1 min-h-0 animate-in fade-in duration-200">
               <AnalyticsTab projectId={projectId} />
-            </TabsContent>
+            </div>
+          )}
 
-            <TabsContent value="settings" className="h-full m-0 data-[state=inactive]:hidden focus-visible:outline-none">
+          {activeTab === "settings" && (
+            <div className="flex-1 min-h-0 animate-in fade-in duration-200">
               <SettingsTab projectId={projectId} project={project} refetch={refetch} />
-            </TabsContent>
-          </div>
-        </Tabs>
+            </div>
+          )}
+
+          {activeTab === "logs" && (
+            <div className="flex-1 min-h-0 animate-in fade-in duration-200">
+              <LogsTab projectId={projectId} />
+            </div>
+          )}
+
+          {activeTab === "leads" && (
+            <div className="flex-1 min-h-0 animate-in fade-in duration-200">
+              <LeadsTab projectId={projectId} />
+            </div>
+          )}
+        </div>
       </div>
     </MainLayout>
   );
 }
-

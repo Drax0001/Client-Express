@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "../../../../../../lib/prisma";
-import { MODEL_REGISTRY, DEFAULT_MODEL_ID } from "@/lib/model-registry";
+import { MODEL_REGISTRY, DEFAULT_MODEL_ID, getModelsForTier } from "@/lib/model-registry";
+import { getUserPlanAndUsage } from "@/lib/limits";
 
 /**
  * GET /api/projects/[id]/bot-config
@@ -38,9 +39,12 @@ export async function GET(
             return NextResponse.json({ error: "Project not found" }, { status: 404 });
         }
 
+        const { plan } = await getUserPlanAndUsage(session.user.id);
+
         return NextResponse.json({
             ...project,
-            availableModels: MODEL_REGISTRY,
+            userPlan: plan,
+            availableModels: MODEL_REGISTRY, // Full list — UI uses userPlan to show lock icons
         });
     } catch (error) {
         console.error("Bot config GET error:", error);
@@ -78,13 +82,22 @@ export async function PATCH(
             return NextResponse.json({ error: "Project not found" }, { status: 404 });
         }
 
-        // Validate modelId
+        // Validate modelId and enforce plan gating
         if (body.modelId) {
             const validModel = MODEL_REGISTRY.find((m) => m.id === body.modelId);
             if (!validModel) {
                 return NextResponse.json(
                     { error: `Invalid model: ${body.modelId}` },
                     { status: 400 },
+                );
+            }
+            const { plan } = await getUserPlanAndUsage(session.user.id);
+            const allowedModels = getModelsForTier(plan);
+            const isAllowed = allowedModels.some((m) => m.id === body.modelId);
+            if (!isAllowed) {
+                return NextResponse.json(
+                    { error: `Model '${validModel.name}' requires the ${validModel.tier} plan or higher.` },
+                    { status: 403 },
                 );
             }
         }

@@ -41,6 +41,12 @@ export class TextExtractor {
         return await this.extractFromDocx(buffer);
       } else if (lowerFilename.endsWith(".txt")) {
         return await this.extractFromTxt(buffer);
+      } else if (lowerFilename.endsWith(".xlsx") || lowerFilename.endsWith(".xls")) {
+        return await this.extractFromXlsx(buffer);
+      } else if (lowerFilename.endsWith(".csv")) {
+        return await this.extractFromCsv(buffer);
+      } else if (lowerFilename.endsWith(".pptx")) {
+        return await this.extractFromPptx(buffer);
       } else {
         throw new ValidationError(`Unsupported file format: ${filename}`);
       }
@@ -123,8 +129,59 @@ export class TextExtractor {
       return buffer.toString("utf-8");
     } catch (error) {
       throw new ValidationError(
-        `Failed to extract text from TXT: ${error instanceof Error ? error.message : "Unknown error"
-        }`,
+        `Failed to extract text from TXT: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  }
+
+  /**
+   * Extract text from XLSX/XLS file
+   */
+  async extractFromXlsx(buffer: Buffer): Promise<string> {
+    try {
+      const xlsx = await import("xlsx");
+      const workbook = xlsx.read(buffer, { type: "buffer" });
+      let text = "";
+      for (const sheetName of workbook.SheetNames) {
+        const sheet = workbook.Sheets[sheetName];
+        const csv = xlsx.utils.sheet_to_csv(sheet);
+        if (csv.trim()) {
+          text += `--- Sheet: ${sheetName} ---\n${csv}\n\n`;
+        }
+      }
+      return text.trim();
+    } catch (error) {
+      throw new ValidationError(
+        `Failed to extract text from Excel file: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  }
+
+  /**
+   * Extract text from CSV file
+   */
+  async extractFromCsv(buffer: Buffer): Promise<string> {
+    try {
+      return buffer.toString("utf-8");
+    } catch (error) {
+      throw new ValidationError(
+        `Failed to extract text from CSV file: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  }
+
+  /**
+   * Extract text from PPTX file
+   */
+  async extractFromPptx(buffer: Buffer): Promise<string> {
+    try {
+      const { OfficeParser } = await import("officeparser");
+      const ast = await OfficeParser.parseOffice(buffer);
+      const text = ast.toText();
+      return typeof text === "string" ? text : String(text);
+    } catch (error) {
+      throw new ValidationError(
+        `Failed to extract text from PowerPoint: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   }

@@ -75,6 +75,9 @@ export interface GetProjectWithDocumentsResponse extends GetProjectResponse {
     logoUrl?: string;
     chatbotDisplayName?: string;
     welcomeMessage?: string;
+    theme?: "light" | "dark" | "auto";
+    showBranding?: boolean;
+    suggestedMessages?: string[];
   } | null;
   documents: Document[];
 }

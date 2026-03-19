@@ -40,6 +40,11 @@ const fr: Record<TranslationKey, string> = {
     // Dashboard
     "dashboard.title": "Tableau de bord",
     "dashboard.subtitle": "Aperçu de vos projets d'IA conversationnelle et de vos métriques d'utilisation.",
+    "dashboard.goodMorning": "Bonjour",
+    "dashboard.goodAfternoon": "Bon après-midi",
+    "dashboard.goodEvening": "Bonsoir",
+    "dashboard.welcomeBack": "Bienvenue dans votre espace de travail.",
+    "dashboard.createNew": "Créer un Chatbot",
     "dashboard.activeChatbots": "Chatbots Actifs",
     "dashboard.projects": "projets",
     "dashboard.messagesThisMonth": "Messages ce mois",
@@ -340,6 +345,38 @@ const fr: Record<TranslationKey, string> = {
     // Logo management
     "logo.change": "Changer le logo",
     "logo.remove": "Supprimer le logo",
+
+    // Project Sidebar Nav
+    "projectNav.customize": "Personnaliser",
+    "projectNav.logs": "Journaux",
+    "projectNav.leads": "Prospects",
+
+    // API Keys
+    "apikeys.title": "Clés API",
+    "apikeys.subtitle": "Gérez les clés utilisées pour authentifier vos requêtes API de manière programmatique.",
+    "apikeys.availableOnPro": "Disponible avec PRO",
+    "apikeys.availableOnProDesc": "Les clés API sont uniquement disponibles sur les forfaits PRO et BUSINESS. ",
+    "apikeys.yourKeys": "Vos clés secrètes",
+    "apikeys.yourKeysDesc": "Ne partagez pas vos clés API avec quiconque et ne les commitez pas dans un contrôle de version.",
+    "apikeys.createKey": "Créer une nouvelle clé secrète",
+    "apikeys.createKeyDesc": "Cette clé vous permettra d'authentifier les requêtes API de manière programmatique.",
+    "apikeys.nameLabel": "Nom",
+    "apikeys.namePlaceholder": "Mon application incroyable",
+    "apikeys.saveSafe": "Veuillez enregistrer cette clé secrète dans un endroit sûr et accessible.",
+    "apikeys.wontBeAbleToView": "Pour des raisons de sécurité, vous ne pourrez plus la voir via votre compte. Si vous perdez cette clé secrète, vous devrez en générer une nouvelle.",
+    "apikeys.done": "Terminé",
+    "apikeys.noKeys": "Vous n'avez pas encore de clés API.",
+    "apikeys.colName": "NOM",
+    "apikeys.colKey": "CLÉ SECRÈTE",
+    "apikeys.colCreated": "CRÉÉ",
+    "apikeys.colLastUsed": "DERNIÈRE UTILISATION",
+    "apikeys.neverUsed": "Jamais",
+    "apikeys.confirmRevoke": "Êtes-vous sûr de vouloir révoquer cette clé API ?",
+    "apikeys.revokeSuccess": "Clé API révoquée avec succès",
+    "apikeys.createFailed": "Échec de la création de la clé API",
+    "apikeys.tryAgain": "Veuillez réessayer plus tard.",
+    "apikeys.revokeFailed": "Échec de la révocation",
+    "apikeys.revokeFailedDesc": "Impossible de révoquer la clé API.",
 };
 
 export default fr;

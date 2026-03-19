@@ -38,6 +38,11 @@ const en = {
     // Dashboard
     "dashboard.title": "Dashboard",
     "dashboard.subtitle": "Overview of your conversational AI projects and usage metrics.",
+    "dashboard.goodMorning": "Good morning",
+    "dashboard.goodAfternoon": "Good afternoon",
+    "dashboard.goodEvening": "Good evening",
+    "dashboard.welcomeBack": "Welcome back to your workspace.",
+    "dashboard.createNew": "Create New",
     "dashboard.activeChatbots": "Active Chatbots",
     "dashboard.projects": "projects",
     "dashboard.messagesThisMonth": "Messages This Month",
@@ -338,6 +343,38 @@ const en = {
     // Logo management
     "logo.change": "Change Logo",
     "logo.remove": "Remove Logo",
+
+    // Project Sidebar Nav
+    "projectNav.customize": "Customize",
+    "projectNav.logs": "Logs",
+    "projectNav.leads": "Leads",
+
+    // API Keys
+    "apikeys.title": "API Keys",
+    "apikeys.subtitle": "Manage keys used to programmatically authenticate your API requests.",
+    "apikeys.availableOnPro": "Available on PRO",
+    "apikeys.availableOnProDesc": "API keys are only available on the PRO and BUSINESS plans. ",
+    "apikeys.yourKeys": "Your secret keys",
+    "apikeys.yourKeysDesc": "Do not share your API keys with anyone or commit them to version control.",
+    "apikeys.createKey": "Create new secret key",
+    "apikeys.createKeyDesc": "This key will allow you to authenticate API requests programmatically.",
+    "apikeys.nameLabel": "Name",
+    "apikeys.namePlaceholder": "My amazing app",
+    "apikeys.saveSafe": "Please save this secret key somewhere safe and accessible.",
+    "apikeys.wontBeAbleToView": "For security reasons, you won't be able to view it again through your account. If you lose this secret key, you'll need to generate a new one.",
+    "apikeys.done": "Done",
+    "apikeys.noKeys": "You don't have any API keys yet.",
+    "apikeys.colName": "NAME",
+    "apikeys.colKey": "SECRET KEY",
+    "apikeys.colCreated": "CREATED",
+    "apikeys.colLastUsed": "LAST USED",
+    "apikeys.neverUsed": "Never",
+    "apikeys.confirmRevoke": "Are you sure you want to revoke this API key?",
+    "apikeys.revokeSuccess": "API key revoked successfully",
+    "apikeys.createFailed": "Failed to create API key",
+    "apikeys.tryAgain": "Please try again later.",
+    "apikeys.revokeFailed": "Revoke failed",
+    "apikeys.revokeFailedDesc": "Could not revoke the API key.",
 } as const;
 
 export type TranslationKey = keyof typeof en;

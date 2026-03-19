@@ -36,6 +36,11 @@ model Project {
   instructions   String?  @db.Text
   responseStyle  String   @default("balanced")
   contextMessage String?  @db.Text
+
+  // Lead capture
+  leadCaptureEnabled Boolean @default(false)
+  leadCaptureFields  Json?   // e.g. ["name","email","phone"]
+  leads              Lead[]
 }
 
 model User {
@@ -50,6 +55,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   projects      Project[]
+  apiKeys       ApiKey[]
   
   subscription  Subscription?
   usageTracker  UsageTracker?
@@ -232,7 +238,35 @@ model ProjectChatMessage {
   role           String   // "user" | "assistant"
   content        String
   rating         String?  // "positive" | "negative"
+  wasResolved    Boolean  @default(true)  // false = bot had no relevant context
+  locale         String?  // e.g. "fr", "en" — from Accept-Language header
   createdAt      DateTime @default(now())
 
   @@map("project_chat_messages")
-} 
+}
+
+model Lead {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String?
+  email       String?
+  phone       String?
+  collectedAt DateTime @default(now())
+
+  @@map("leads")
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  keyHash    String    @unique
+  prefix     String    // First 11 chars for display e.g. "ce_abc12345"
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime?
+
+  @@map("api_keys")
+}

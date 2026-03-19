@@ -50,6 +50,7 @@ export function SourcesTab({ projectId, project, refetch }: SourcesTabProps) {
         <CardContent className="p-6">
           <UploadInterface
             projectId={projectId}
+            currentDocumentCount={project.documents?.length || 0}
             onUploadSuccess={() => {
               refetch();
               toast({ title: t("workspace.addedSuccess") });

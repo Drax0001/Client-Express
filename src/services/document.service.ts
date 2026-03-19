@@ -24,7 +24,7 @@ export interface Document {
   id: string;
   projectId: string;
   filename: string;
-  fileType: "pdf" | "docx" | "txt" | "url";
+  fileType: "pdf" | "docx" | "txt" | "url" | "xlsx" | "csv" | "pptx";
   status: DocumentStatus;
   uploadedAt: Date;
   errorMessage?: string;
@@ -42,12 +42,15 @@ const FILE_SIZE_LIMITS = {
   pdf: 10 * 1024 * 1024, // 10MB
   docx: 10 * 1024 * 1024, // 10MB
   txt: 5 * 1024 * 1024, // 5MB
+  xlsx: 10 * 1024 * 1024, // 10MB
+  csv: 10 * 1024 * 1024, // 10MB
+  pptx: 20 * 1024 * 1024, // 20MB
 };
 
 /**
  * Supported file types
  */
-const SUPPORTED_FILE_TYPES = ["pdf", "docx", "txt"];
+const SUPPORTED_FILE_TYPES = ["pdf", "docx", "txt", "xlsx", "csv", "pptx"];
 
 /**
  * Service class for document management operations
@@ -283,7 +286,7 @@ export class DocumentService {
         id: document.id,
         projectId: document.projectId,
         filename: document.filename,
-        fileType: document.fileType as "pdf" | "docx" | "txt" | "url",
+        fileType: document.fileType as "pdf" | "docx" | "txt" | "url" | "xlsx" | "csv" | "pptx",
         status: document.status as DocumentStatus,
         uploadedAt: document.uploadedAt,
         errorMessage: document.errorMessage || undefined,
@@ -338,7 +341,7 @@ export class DocumentService {
         id: document.id,
         projectId: document.projectId,
         filename: document.filename,
-        fileType: document.fileType as "pdf" | "docx" | "txt" | "url",
+        fileType: document.fileType as "pdf" | "docx" | "txt" | "url" | "xlsx" | "csv" | "pptx",
         status: document.status as DocumentStatus,
         uploadedAt: document.uploadedAt,
         errorMessage: document.errorMessage || undefined,
@@ -419,6 +422,18 @@ export class DocumentService {
             case "txt":
               extractedText =
                 await this.textExtractor.extractFromTxt(fileBuffer);
+              break;
+            case "xlsx":
+              extractedText =
+                await this.textExtractor.extractFromXlsx(fileBuffer);
+              break;
+            case "csv":
+              extractedText =
+                await this.textExtractor.extractFromCsv(fileBuffer);
+              break;
+            case "pptx":
+              extractedText =
+                await this.textExtractor.extractFromPptx(fileBuffer);
               break;
             default:
               throw new ValidationError(

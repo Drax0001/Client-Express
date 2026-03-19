@@ -12,7 +12,7 @@ export default async function WidgetPage({
 
     const project = await prisma.project.findUnique({
         where: { id: projectId },
-        select: { name: true }
+        select: { name: true, leadCaptureEnabled: true, leadCaptureFields: true, branding: true }
     });
 
     // If the project doesn't exist, we don't render the chat interface
@@ -22,8 +22,14 @@ export default async function WidgetPage({
 
     return (
         <Providers>
-            <div className="w-full h-screen bg-transparent pointer-events-none flex justify-end items-end p-4 sm:p-6 overflow-hidden">
-                <EmbedWidget projectId={projectId} projectName={project.name} />
+            <div className={`w-full h-screen bg-transparent pointer-events-none flex justify-end items-end p-4 sm:p-6 overflow-hidden ${(project.branding as any)?.theme === 'dark' ? 'dark' : ''}`}>
+                <EmbedWidget 
+                  projectId={projectId} 
+                  projectName={project.name} 
+                  leadCaptureEnabled={project.leadCaptureEnabled}
+                  leadCaptureFields={project.leadCaptureFields as string[] | null}
+                  branding={project.branding as any}
+                />
             </div>
         </Providers>
     );

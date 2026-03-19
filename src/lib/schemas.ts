@@ -82,7 +82,7 @@ export const UploadDocumentResponseSchema = z.object({
   id: z.string().uuid(),
   projectId: z.string().uuid(),
   filename: z.string(),
-  fileType: z.enum(["pdf", "docx", "txt", "url"]),
+  fileType: z.enum(["pdf", "docx", "txt", "url", "xlsx", "csv", "pptx"]),
   status: z.enum(["pending", "processing", "ready", "failed"]),
   uploadedAt: z.string().datetime(),
 });

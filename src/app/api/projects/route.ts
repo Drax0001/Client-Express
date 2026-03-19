@@ -10,6 +10,7 @@ import { CreateProjectSchema } from "@/lib/schemas";
 import { errorHandler } from "@/lib/error-handler";
 import { auth } from "@/lib/auth";
 import { checkProjectLimit } from "@/lib/limits";
+import { authenticateApiKey } from "@/lib/api-key-auth";
 
 const projectService = new ProjectService();
 
@@ -17,14 +18,20 @@ const projectService = new ProjectService();
  * GET /api/projects
  * Retrieves all projects with document counts
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     console.log("API: GET /api/projects - Starting request");
     const session = await auth();
-    if (!session || !session.user?.id) {
+    let userId = session?.user?.id;
+
+    if (!userId) {
+      const apiKeyAuth = await authenticateApiKey(request as NextRequest);
+      if (apiKeyAuth) userId = apiKeyAuth.userId;
+    }
+
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const userId = session.user.id;
     const projects = await projectService.getAllProjects(userId);
     console.log("API: GET /api/projects - Success, returning", projects.length, "projects");
     return NextResponse.json(projects, { status: 200 });
@@ -41,10 +48,16 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session || !session.user?.id) {
+    let userId = session?.user?.id;
+
+    if (!userId) {
+      const apiKeyAuth = await authenticateApiKey(request);
+      if (apiKeyAuth) userId = apiKeyAuth.userId;
+    }
+
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const userId = session.user.id;
 
     const limitCheck = await checkProjectLimit(userId);
     if (!limitCheck.allowed) {

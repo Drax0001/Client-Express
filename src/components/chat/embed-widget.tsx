@@ -11,6 +11,9 @@ import ReactMarkdown from "react-markdown";
 interface EmbedWidgetProps {
     projectId: string;
     projectName: string;
+    leadCaptureEnabled?: boolean;
+    leadCaptureFields?: string[] | null;
+    branding?: any;
 }
 
 interface Message {
@@ -20,14 +23,75 @@ interface Message {
     timestamp: Date;
 }
 
-export function EmbedWidget({ projectId, projectName }: EmbedWidgetProps) {
+export function EmbedWidget({ projectId, projectName, leadCaptureEnabled, leadCaptureFields, branding }: EmbedWidgetProps) {
     const [isOpen, setIsOpen] = React.useState(false);
     const [messages, setMessages] = React.useState<Message[]>([]);
     const [inputMessage, setInputMessage] = React.useState("");
     const [isLoading, setIsLoading] = React.useState(false);
 
+    // Extract branding properties
+    const primaryColor = branding?.primaryColor || "hsl(var(--brand))";
+    const userBubbleColor = branding?.userBubbleColor || primaryColor;
+    const botBubbleColor = branding?.botBubbleColor || "hsl(var(--background))";
+    const headerColor = branding?.headerColor || primaryColor;
+    const userTextColor = branding?.userTextColor || "#ffffff";
+    const botTextColor = branding?.botTextColor || "hsl(var(--foreground))";
+    const logoUrl = branding?.logoUrl;
+    const chatbotDisplayName = branding?.chatbotDisplayName || projectName;
+    const welcomeMessage = branding?.welcomeMessage || "Hi there! How can I help you today?";
+    const showBranding = branding?.showBranding !== false;
+    const suggestedMessages = branding?.suggestedMessages || [];
+    const footerLinks = branding?.footerLinks || [];
+
+    // Lead capture state
+    const [hasSubmittedLead, setHasSubmittedLead] = React.useState(false);
+    const [isSubmittingLead, setIsSubmittingLead] = React.useState(false);
+    const [leadForm, setLeadForm] = React.useState({ name: "", email: "", phone: "" });
+
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+    React.useEffect(() => {
+        if (typeof window !== "undefined") {
+            const submitted = sessionStorage.getItem(`lead_${projectId}`);
+            if (submitted === "true") setHasSubmittedLead(true);
+        }
+    }, [projectId]);
+
+    const showLeadForm = leadCaptureEnabled && !hasSubmittedLead;
+    const requiredFields = leadCaptureFields || ["name", "email"];
+    const needsName = requiredFields.includes("name");
+    const needsEmail = requiredFields.includes("email");
+    const needsPhone = requiredFields.includes("phone");
+
+    const isLeadFormValid = () => {
+        if (needsName && !leadForm.name.trim()) return false;
+        if (needsEmail && !leadForm.email.trim()) return false;
+        if (needsPhone && !leadForm.phone.trim()) return false;
+        return true;
+    };
+
+    const handleLeadSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!isLeadFormValid() || isSubmittingLead) return;
+
+        setIsSubmittingLead(true);
+        try {
+            const res = await fetch(`/api/widget/${projectId}/leads`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(leadForm),
+            });
+            if (res.ok) {
+                sessionStorage.setItem(`lead_${projectId}`, "true");
+                setHasSubmittedLead(true);
+            }
+        } catch (error) {
+            console.error("Failed to submit lead", error);
+        } finally {
+            setIsSubmittingLead(false);
+        }
+    };
 
     // Notify parent frame to resize
     React.useEffect(() => {
@@ -46,10 +110,10 @@ export function EmbedWidget({ projectId, projectName }: EmbedWidgetProps) {
         if (isOpen) {
             messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }
-    }, [messages, isOpen]);
+    }, [messages, isOpen, showLeadForm]);
 
     const handleSendMessage = async () => {
-        if (!inputMessage.trim() || isLoading) return;
+        if (showLeadForm || !inputMessage.trim() || isLoading) return;
 
         const userMessage: Message = {
             id: `user-${Date.now()}`,
@@ -123,13 +187,19 @@ export function EmbedWidget({ projectId, projectName }: EmbedWidgetProps) {
                 <div className="w-[360px] h-[520px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-100px)] bg-card border border-border shadow-2xl rounded-2xl overflow-hidden flex flex-col mb-4 animate-in slide-in-from-bottom-5 fade-in duration-300">
 
                     {/* Header */}
-                    <div className="bg-brand text-white p-4 flex items-center justify-between shrink-0">
+                    <div className="p-4 flex items-center justify-between shrink-0" style={{ backgroundColor: headerColor, color: "#fff" }}>
                         <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center">
-                                <AppIcon name="Bot" className="h-5 w-5 text-white" />
-                            </div>
-                            <div className="leading-tight">
-                                <h3 className="font-semibold text-sm">{projectName}</h3>
+                            {logoUrl ? (
+                                <div className="h-8 w-8 rounded-full bg-white p-1 overflow-hidden shadow-sm flex items-center justify-center shrink-0">
+                                    <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
+                                </div>
+                            ) : (
+                                <div className="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center">
+                                    <AppIcon name="Bot" className="h-5 w-5 text-white" />
+                                </div>
+                            )}
+                            <div className="leading-tight flex-1 min-w-0">
+                                <h3 className="font-semibold text-sm truncate">{chatbotDisplayName}</h3>
                                 <span className="text-xs text-white/70">Online</span>
                             </div>
                         </div>
@@ -145,12 +215,59 @@ export function EmbedWidget({ projectId, projectName }: EmbedWidgetProps) {
                     {/* Messages Area */}
                     <ScrollArea className="flex-1 p-4 bg-muted/30">
                         <div className="space-y-4">
-                            {messages.length === 0 ? (
+                            {showLeadForm ? (
+                                <div className="p-5 bg-background rounded-2xl border border-border shadow-sm max-w-[90%] fade-in animate-in mx-auto mt-4">
+                                    <h4 className="font-semibold text-foreground mb-1 text-[15px]">Welcome! 👋</h4>
+                                    <p className="text-xs text-muted-foreground mb-4">Please fill out this form to start chatting with us.</p>
+                                    <form onSubmit={handleLeadSubmit} className="space-y-3">
+                                        {needsName && (
+                                            <div>
+                                                <label className="text-[11px] font-medium text-muted-foreground block mb-1">Name</label>
+                                                <input required type="text" className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-muted/30 focus-visible:outline-none focus:ring-1 focus:ring-brand" value={leadForm.name} onChange={e => setLeadForm({ ...leadForm, name: e.target.value })} />
+                                            </div>
+                                        )}
+                                        {needsEmail && (
+                                            <div>
+                                                <label className="text-[11px] font-medium text-muted-foreground block mb-1">Email</label>
+                                                <input required type="email" className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-muted/30 focus-visible:outline-none focus:ring-1 focus:ring-brand" value={leadForm.email} onChange={e => setLeadForm({ ...leadForm, email: e.target.value })} />
+                                            </div>
+                                        )}
+                                        {needsPhone && (
+                                            <div>
+                                                <label className="text-[11px] font-medium text-muted-foreground block mb-1">Phone</label>
+                                                <input required type="tel" className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-muted/30 focus-visible:outline-none focus:ring-1 focus:ring-brand" value={leadForm.phone} onChange={e => setLeadForm({ ...leadForm, phone: e.target.value })} />
+                                            </div>
+                                        )}
+                                        <Button type="submit" disabled={isSubmittingLead || !isLeadFormValid()} className="w-full h-9 mt-2 text-xs bg-brand hover:bg-brand-hover">
+                                            {isSubmittingLead ? "Submitting..." : "Start Chatting"}
+                                        </Button>
+                                    </form>
+                                </div>
+                            ) : messages.length === 0 ? (
                                 <div className="text-center py-8 text-muted-foreground flex flex-col items-center">
                                     <div className="bg-background w-12 h-12 rounded-full flex items-center justify-center mb-3 shadow-sm border border-border">
-                                        <AppIcon name="MessageSquare" className="h-5 w-5 text-brand" />
+                                        {logoUrl ? (
+                                            <img src={logoUrl} className="max-w-[70%] max-h-[70%] object-contain" alt="Logo" />
+                                        ) : (
+                                            <AppIcon name="MessageSquare" className="h-5 w-5" style={{ color: primaryColor }} />
+                                        )}
                                     </div>
-                                    <p className="text-sm">Hi there! How can I help you today?</p>
+                                    <p className="text-sm whitespace-pre-wrap">{welcomeMessage}</p>
+
+                                    {suggestedMessages.length > 0 && (
+                                        <div className="flex flex-wrap justify-center gap-2 mt-6 max-w-full">
+                                            {suggestedMessages.map((msg: string, i: number) => (
+                                                <button
+                                                    key={i}
+                                                    onClick={() => setInputMessage(msg)}
+                                                    className="text-xs px-3 py-1.5 rounded-full border shadow-sm transition-colors hover:opacity-80 text-left bg-background"
+                                                    style={{ borderColor: primaryColor, color: primaryColor }}
+                                                >
+                                                    {msg}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 messages.map((msg) => (
@@ -163,11 +280,15 @@ export function EmbedWidget({ projectId, projectName }: EmbedWidgetProps) {
                                     >
                                         <div
                                             className={cn(
-                                                "p-3 rounded-2xl text-[14px] leading-relaxed",
+                                                "p-3 rounded-2xl text-[14px] leading-relaxed shadow-sm",
                                                 msg.role === "user"
-                                                    ? "bg-brand text-white rounded-br-sm"
-                                                    : "bg-background border border-border text-foreground rounded-bl-sm shadow-sm prose prose-sm dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 max-w-none"
+                                                    ? "rounded-br-sm"
+                                                    : "border border-border rounded-bl-sm prose prose-sm dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 max-w-none"
                                             )}
+                                            style={msg.role === "user" 
+                                                ? { backgroundColor: userBubbleColor, color: userTextColor }
+                                                : { backgroundColor: botBubbleColor, color: botTextColor }
+                                            }
                                         >
                                             <div className="whitespace-pre-wrap">
                                                 {msg.role === "user" ? (
@@ -219,16 +340,28 @@ export function EmbedWidget({ projectId, projectName }: EmbedWidgetProps) {
                                 size="icon"
                                 onClick={handleSendMessage}
                                 disabled={!inputMessage.trim() || isLoading}
-                                className="absolute right-1 bottom-1 h-9 w-9 rounded-full bg-brand hover:bg-brand-hover text-white transition-all shadow-sm shrink-0"
+                                className="absolute right-1 bottom-1 h-9 w-9 rounded-full text-white transition-all shadow-sm shrink-0 hover:opacity-90"
+                                style={{ backgroundColor: primaryColor }}
                             >
                                 <AppIcon name="Send" className="h-4 w-4 ml-0.5" />
                             </Button>
                         </div>
-                        <div className="mt-2 text-center">
-                            <a href="https://example.com" target="_blank" rel="noreferrer" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">
-                                Powered by ClientExpress
-                            </a>
-                        </div>
+                        {showBranding && (
+                            <div className="mt-2 text-center text-[10px] text-muted-foreground flex flex-col gap-1 items-center">
+                                <a href="https://example.com" target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">
+                                    Powered by ClientExpress
+                                </a>
+                            </div>
+                        )}
+                        {footerLinks.length > 0 && (
+                            <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[10px]">
+                                {footerLinks.map((link: any, i: number) => (
+                                    <a key={i} href={link.url} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground hover:underline transition-colors">
+                                        {link.label}
+                                    </a>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                 </div>
@@ -238,7 +371,8 @@ export function EmbedWidget({ projectId, projectName }: EmbedWidgetProps) {
             {!isOpen && (
                 <Button
                     onClick={() => setIsOpen(true)}
-                    className="h-14 w-14 rounded-full shadow-xl bg-brand hover:bg-brand-hover transition-transform hover:scale-105 pointer-events-auto flex items-center justify-center p-0 group"
+                    className="h-14 w-14 rounded-full shadow-xl transition-transform hover:scale-105 pointer-events-auto flex items-center justify-center p-0 group"
+                    style={{ backgroundColor: primaryColor }}
                 >
                     <AppIcon name="MessageSquare" className="h-6 w-6 text-white group-hover:animate-pulse" />
                 </Button>
