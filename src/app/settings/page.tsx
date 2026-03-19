@@ -112,7 +112,7 @@ function SettingsInner() {
         </TabsList>
 
         {/* GENERAL TAB */}
-        <TabsContent value="general" className="space-y-6 focus-visible:outline-none focus-visible:ring-0 min-h-[600px]">
+        <TabsContent value="general" className="space-y-6 focus-visible:outline-none focus-visible:ring-0 min-h-[600px] animate-tab-in">
           <Card className="border-border/60 bg-card/50 shadow-sm backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-xl">{t("settings.profile")}</CardTitle>
@@ -151,7 +151,7 @@ function SettingsInner() {
         </TabsContent>
 
         {/* BILLING TAB */}
-        <TabsContent value="billing" className="space-y-6 focus-visible:outline-none focus-visible:ring-0 min-h-[600px]">
+        <TabsContent value="billing" className="space-y-6 focus-visible:outline-none focus-visible:ring-0 min-h-[600px] animate-tab-in">
           <Card className="border-border/60 bg-card/50 shadow-sm backdrop-blur-sm overflow-hidden">
             <CardHeader className="pb-4">
               <CardTitle className="text-xl">{t("settings.planUsage")}</CardTitle>
@@ -245,7 +245,7 @@ function SettingsInner() {
         </TabsContent>
 
         {/* API KEYS TAB */}
-        <TabsContent value="apikeys" className="space-y-6 focus-visible:outline-none focus-visible:ring-0 min-h-[600px]">
+        <TabsContent value="apikeys" className="space-y-6 focus-visible:outline-none focus-visible:ring-0 min-h-[600px] animate-tab-in">
           <ApiKeysTab plan={usageData?.plan || "FREE"} />
         </TabsContent>
 

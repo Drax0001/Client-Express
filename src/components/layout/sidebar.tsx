@@ -228,20 +228,20 @@ export function Sidebar() {
 
             {/* Project Nav Items */}
             <div className="flex-1 overflow-y-auto scrollbar-hide py-3">
-              <nav className="px-3 space-y-[2px]">
+              <nav className="px-3 space-y-[2px] animate-stagger-in">
                 {PROJECT_NAV_ITEMS.map((item) => {
                   const isActive = activeTab === item.tab;
                   return (
                     <Link
                       key={item.tab}
                       href={`/projects/${projectId}?tab=${item.tab}`}
-                      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all border border-transparent ${
+                      className={`sidebar-link flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm border border-transparent ${
                         isActive
-                          ? "bg-brand/10 text-brand font-medium border-brand/20 shadow-sm"
+                          ? "sidebar-link-active bg-brand/10 text-brand font-medium border-brand/20 shadow-sm"
                           : "text-secondary-foreground hover:bg-brand/5 hover:border-brand/20 hover:text-brand"
                       } ${collapsed ? "justify-center" : ""}`}
                     >
-                      <AppIcon name={item.icon} className={`h-4 w-4 shrink-0 ${isActive ? "text-brand" : "text-muted-foreground"}`} />
+                      <AppIcon name={item.icon} className={`h-4 w-4 shrink-0 transition-colors duration-200 ${isActive ? "text-brand" : "text-muted-foreground"}`} />
                       {!collapsed && <span className="truncate">{t(item.labelKey as any) || item.tab}</span>}
                     </Link>
                   );

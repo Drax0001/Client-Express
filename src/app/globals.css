@@ -332,3 +332,103 @@
 .animate-spin-slow {
   animation: spin-slow 3s linear infinite;
 }
+
+/* ─── Tab Content Transitions ─── */
+@keyframes tab-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tab-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tab-fade-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-tab-in {
+  animation: tab-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-tab-fade {
+  animation: tab-fade-scale 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ─── Sidebar Link Transitions ─── */
+.sidebar-link {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-link::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 60%;
+  border-radius: 0 4px 4px 0;
+  background: var(--brand);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-link:hover {
+  transform: translateX(2px);
+}
+
+.sidebar-link-active::before {
+  transform: translateY(-50%) scaleY(1);
+}
+
+.sidebar-link-active {
+  transform: translateX(2px);
+}
+
+/* ─── Staggered Fade-in for Lists ─── */
+@keyframes stagger-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-stagger-in > * {
+  animation: stagger-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-stagger-in > *:nth-child(1) { animation-delay: 0.02s; }
+.animate-stagger-in > *:nth-child(2) { animation-delay: 0.04s; }
+.animate-stagger-in > *:nth-child(3) { animation-delay: 0.06s; }
+.animate-stagger-in > *:nth-child(4) { animation-delay: 0.08s; }
+.animate-stagger-in > *:nth-child(5) { animation-delay: 0.10s; }
+.animate-stagger-in > *:nth-child(6) { animation-delay: 0.12s; }
+.animate-stagger-in > *:nth-child(7) { animation-delay: 0.14s; }
+.animate-stagger-in > *:nth-child(8) { animation-delay: 0.16s; }
+.animate-stagger-in > *:nth-child(9) { animation-delay: 0.18s; }
+

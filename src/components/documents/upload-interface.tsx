@@ -253,16 +253,16 @@ export function UploadInterface({
           <TabsTrigger value="qa" className="text-xs sm:text-sm">Q&amp;A Pairs</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="files" className="space-y-6">
+        <TabsContent value="files" className="space-y-6 animate-tab-in">
           <FileUploadArea onFileSelect={handleFileUpload} disabled={uploadMutation.isPending} />
         </TabsContent>
 
-        <TabsContent value="url" className="space-y-6">
+        <TabsContent value="url" className="space-y-6 animate-tab-in">
           <UrlUploadInput onUrlSubmit={handleUrlUpload} disabled={uploadMutation.isPending} />
         </TabsContent>
 
         {/* ── Text Paste ───────────────────────────────────────────── */}
-        <TabsContent value="text" className="space-y-3 pt-2">
+        <TabsContent value="text" className="space-y-3 pt-2 animate-tab-in">
           <p className="text-sm text-muted-foreground">
             Paste any text — articles, notes, documentation — and it becomes a searchable knowledge source.
           </p>
@@ -290,7 +290,7 @@ export function UploadInterface({
         </TabsContent>
 
         {/* ── Q&A Pairs ────────────────────────────────────────────── */}
-        <TabsContent value="qa" className="space-y-3 pt-2">
+        <TabsContent value="qa" className="space-y-3 pt-2 animate-tab-in">
           <p className="text-sm text-muted-foreground">
             Define explicit Q&amp;A pairs. The bot uses these as authoritative answers for matching questions.
           </p>
