@@ -92,7 +92,7 @@ export function EmbedTab({ projectId, project }: EmbedTabProps) {
                 includeMargin={false}
               />
             </div>
-            <Button variant="ghost" size="sm" onClick={handleDownloadQR}>
+            <Button className="bg-brand hover:bg-brand-hover text-white" size="sm" onClick={handleDownloadQR}>
               <AppIcon name="Download" className="mr-2 h-4 w-4" />
               {t("embed.downloadQR")}
             </Button>

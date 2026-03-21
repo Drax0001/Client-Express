@@ -219,7 +219,7 @@ export function DocumentList({
                   doc.status === "failed"
                     ? "bg-destructive/10"
                     : doc.status === "ready"
-                    ? "bg-green-500/10"
+                    ? "bg-brand/10"
                     : "bg-muted"
                 }`}>
                   <AppIcon
@@ -228,7 +228,7 @@ export function DocumentList({
                       doc.status === "failed"
                         ? "text-destructive"
                         : doc.status === "ready"
-                        ? "text-green-600"
+                        ? "text-brand"
                         : "text-muted-foreground"
                     }`}
                   />

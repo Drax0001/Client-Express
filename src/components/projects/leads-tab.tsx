@@ -5,6 +5,7 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "@/lib/i18n";
 
 interface Lead {
   id: string;
@@ -19,6 +20,7 @@ interface LeadsTabProps {
 }
 
 export function LeadsTab({ projectId }: LeadsTabProps) {
+  const { t } = useTranslation();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -39,7 +41,7 @@ export function LeadsTab({ projectId }: LeadsTabProps) {
   useEffect(() => { load(); }, [load]);
 
   const downloadCSV = () => {
-    const headers = ["Name", "Email", "Phone", "Collected At"];
+    const headers = [t("leads.colName"), t("leads.colEmail"), t("leads.colPhone"), t("leads.colDate")];
     const rows = leads.map(l => [
       l.name ?? "",
       l.email ?? "",
@@ -72,17 +74,17 @@ export function LeadsTab({ projectId }: LeadsTabProps) {
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
                 <AppIcon name="Users" className="h-5 w-5 text-brand" />
-                Collected Leads
+                {t("leads.collectedLeads")}
                 {total > 0 && <Badge variant="secondary">{total}</Badge>}
               </CardTitle>
               <CardDescription>
-                Visitors who submitted the pre-chat form before starting a conversation.
+                {t("leads.collectedLeadsDesc")}
               </CardDescription>
             </div>
             {leads.length > 0 && (
               <Button variant="outline" size="sm" onClick={downloadCSV}>
                 <AppIcon name="Download" className="mr-1.5 h-3.5 w-3.5" />
-                Export CSV
+                {t("leads.exportCSV")}
               </Button>
             )}
           </div>
@@ -91,18 +93,18 @@ export function LeadsTab({ projectId }: LeadsTabProps) {
           {leads.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground">
               <AppIcon name="UserX" className="h-10 w-10 opacity-20" />
-              <p className="text-sm font-medium">No leads collected yet</p>
-              <p className="text-xs">Enable lead capture in Settings to start collecting contact info before users chat.</p>
+              <p className="text-sm font-medium">{t("leads.noLeads")}</p>
+              <p className="text-xs">{t("leads.noLeadsDesc")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/60">
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium text-xs">Name</th>
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium text-xs">Email</th>
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium text-xs">Phone</th>
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium text-xs">Date</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium text-xs">{t("leads.colName")}</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium text-xs">{t("leads.colEmail")}</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium text-xs">{t("leads.colPhone")}</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium text-xs">{t("leads.colDate")}</th>
                   </tr>
                 </thead>
                 <tbody>

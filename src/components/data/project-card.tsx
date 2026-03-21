@@ -30,7 +30,7 @@ export function ProjectCard({
     <Card
       role="button"
       tabIndex={0}
-      className="group relative overflow-hidden transition-all duration-200 touch-manipulation border border-border/60 shadow-medium bg-card cursor-pointer hover:shadow-strong hover:-translate-y-1 hover:border-brand/40"
+      className="group relative overflow-hidden transition-all duration-200 touch-manipulation border border-border/60 shadow-medium bg-card cursor-pointer hover:shadow-strong hover:-translate-y-1 hover:border-brand/40 active:scale-[0.98]"
       onClick={() => router.push(`/projects/${id}`)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -76,14 +76,14 @@ export function ProjectCard({
       </CardHeader>
       <CardContent className="pt-0 p-6">
         <div className="grid grid-cols-2 gap-3" onClick={(e) => e.stopPropagation()}>
-          <Button asChild className="w-full font-medium">
+          <Button asChild className="w-full font-medium active:scale-[0.97] transition-transform">
             <Link href={`/projects/${id}`} className="flex items-center justify-center gap-2">
               <AppIcon name="Settings" className="h-4 w-4" />
               {t("common.manage")}
             </Link>
           </Button>
-          <Button asChild variant="outline" className="w-full font-medium">
-            <Link href={`/projects/${id}/chat`} className="flex items-center justify-center gap-2">
+          <Button asChild variant="outline" className="w-full font-medium active:scale-[0.97] transition-transform">
+            <Link href={`/projects/${id}?tab=chat`} className="flex items-center justify-center gap-2">
               <AppIcon name="MessageSquare" className="h-4 w-4" />
               {t("common.chat")}
             </Link>

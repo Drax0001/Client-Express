@@ -19,7 +19,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           <TopNavbar />
         </Suspense>
         <main className="flex-1 min-w-0 w-full overflow-y-auto pb-16 md:pb-0" style={{ scrollbarGutter: "stable" }}>
-          <div className="w-full h-full mx-auto p-4 md:p-8 flex flex-col">
+          <div className="w-full min-h-full mx-auto p-4 md:p-8 flex flex-col">
             {children}
           </div>
         </main>

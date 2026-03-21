@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "@/lib/i18n";
 
 interface Message {
   id: string;
@@ -30,6 +31,7 @@ interface LogsTabProps {
 }
 
 export function LogsTab({ projectId }: LogsTabProps) {
+  const { t } = useTranslation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "negative" | "unresolved">("all");
@@ -112,7 +114,7 @@ export function LogsTab({ projectId }: LogsTabProps) {
         <div className="relative flex-1 min-w-[200px]">
           <AppIcon name="Search" className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search conversations..."
+            placeholder={t("logs.search")}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="pl-9 h-9"
@@ -127,7 +129,7 @@ export function LogsTab({ projectId }: LogsTabProps) {
               onClick={() => setFilter(f)}
               className={filter === f ? "bg-brand hover:bg-brand-hover text-white" : ""}
             >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
+              {t(`logs.filter${f.charAt(0).toUpperCase() + f.slice(1)}` as any)}
             </Button>
           ))}
         </div>
@@ -136,8 +138,8 @@ export function LogsTab({ projectId }: LogsTabProps) {
       {filtered.length === 0 && (
         <div className="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
           <AppIcon name="MessageSquare" className="h-10 w-10 opacity-20" />
-          <p className="text-sm">No conversations yet.</p>
-          <p className="text-xs">Conversations will appear here once users start chatting with your bot.</p>
+          <p className="text-sm">{t("logs.noConversations")}</p>
+          <p className="text-xs">{t("logs.noConversationsDesc")}</p>
         </div>
       )}
 
@@ -153,10 +155,10 @@ export function LogsTab({ projectId }: LogsTabProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-sm truncate">
-                      {conv.title || "Untitled conversation"}
+                      {conv.title || t("logs.untitled")}
                     </span>
                     <Badge variant="outline" className="text-[10px] h-4 px-1.5">
-                      {conv._count.messages} messages
+                      {conv._count.messages} {t("logs.messages")}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
@@ -203,7 +205,7 @@ export function LogsTab({ projectId }: LogsTabProps) {
                               👎
                             </button>
                             {!msg.wasResolved && (
-                              <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-1">No context found</Badge>
+                              <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-1">{t("logs.noContext")}</Badge>
                             )}
                           </div>
                         )}

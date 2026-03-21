@@ -80,7 +80,7 @@ function SettingsInner() {
 
 
   return (
-    <div className="max-w-4xl max-md:mt-4 mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
+    <div className="w-full max-w-4xl max-md:mt-4 mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">
@@ -99,7 +99,7 @@ function SettingsInner() {
       </div>
 
       <Tabs defaultValue={defaultTab} className="w-full">
-        <TabsList className="mb-8 bg-muted/50 border border-border/50 p-1 w-full sm:w-auto overflow-x-auto flex sm:inline-flex justify-start">
+        <TabsList className="mb-8 bg-muted/50 border border-border/50 p-1 w-full sm:w-auto h-auto overflow-x-auto scrollbar-hide flex sm:inline-flex justify-start">
           <TabsTrigger value="general" className="rounded-md flex-1 sm:flex-none">
             {t("settings.general")}
           </TabsTrigger>
@@ -107,7 +107,7 @@ function SettingsInner() {
             {t("settings.billing")}
           </TabsTrigger>
           <TabsTrigger value="apikeys" className="rounded-md flex-1 sm:flex-none">
-            API Keys
+            {t("apikeys.title") || "API Keys"}
           </TabsTrigger>
         </TabsList>
 
