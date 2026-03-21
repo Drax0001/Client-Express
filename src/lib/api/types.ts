@@ -19,6 +19,12 @@ export interface UsageResponse {
 // PROJECT TYPES
 // ======================================
 
+export interface SuggestedMessage {
+  label: string;
+  prompt: string;
+  subMessages?: SuggestedMessage[];
+}
+
 /**
  * Project entity from database
  */
@@ -27,7 +33,7 @@ export interface Project {
   name: string;
   createdAt: string;
   documentCount: number;
-  modules?: Array<{ name: string; description: string }>;
+  modules?: SuggestedMessage[];
   branding?: {
     primaryColor?: string;
     userBubbleColor?: string;

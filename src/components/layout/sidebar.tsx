@@ -343,23 +343,23 @@ function SidebarFooter({
           </div>
         )}
 
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center shrink-0">
+        <Link href="/settings" className="flex items-center gap-2.5 hover:bg-muted/50 p-1.5 -ml-1.5 rounded-lg transition-colors group/profile cursor-pointer">
+          <div className="w-8 h-8 rounded-full bg-muted group-hover/profile:bg-brand/10 group-hover/profile:text-brand border border-border group-hover/profile:border-brand/30 flex items-center justify-center shrink-0 transition-colors">
             <span className="text-xs font-medium">{displayName.charAt(0).toUpperCase()}</span>
           </div>
           {!collapsed && (
             <div className="flex flex-col min-w-0 flex-1">
-              <span className="text-sm font-medium truncate leading-none mb-1">{displayName}</span>
+              <span className="text-sm font-medium truncate leading-none mb-1 group-hover/profile:text-brand transition-colors">{displayName}</span>
               <div className="flex items-center text-xs text-muted-foreground gap-1">
                 <span className="truncate">{plan} {t("common.planSuffix")}</span>
                 <span>·</span>
-                <Link href="/settings?tab=billing" className="text-brand hover:bg-brand/5 px-2 py-0.5 rounded border border-transparent hover:border-brand/30 transition-all font-medium flex items-center">
+                <Link href="/settings?tab=billing" onClick={(e) => e.stopPropagation()} className="text-brand hover:bg-brand/5 px-2 py-0.5 rounded border border-transparent hover:border-brand/30 transition-all font-medium flex items-center">
                   {t("common.upgrade")}
                 </Link>
               </div>
             </div>
           )}
-        </div>
+        </Link>
 
         {!collapsed ? (
           <div className="flex items-center justify-between border-t border-border/50 pt-2 -mx-1 px-1">

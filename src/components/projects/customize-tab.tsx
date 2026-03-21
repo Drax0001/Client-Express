@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useUsage } from "@/lib/api/hooks";
 import { UpgradeModal } from "@/components/projects/upgrade-modal";
 import { Textarea } from "@/components/ui/textarea";
+import { SuggestedMessage } from "@/lib/api/types";
+import { SuggestedMessagesEditor } from "./suggested-messages-editor";
 
 interface CustomizeTabProps {
   projectId: string;
@@ -38,7 +40,7 @@ export function CustomizeTab({ projectId, project, refetch }: CustomizeTabProps)
   // New Feature 8 fields
   const [editTheme, setEditTheme] = useState<"light" | "dark" | "auto">("light");
   const [editShowBranding, setEditShowBranding] = useState(true);
-  const [editSuggestedMessages, setEditSuggestedMessages] = useState<string[]>([]);
+  const [editSuggestedMessages, setEditSuggestedMessages] = useState<SuggestedMessage[]>([]);
   const [editFooterLinks, setEditFooterLinks] = useState<{label: string, url: string}[]>([]);
 
   const [brandingSaving, setBrandingSaving] = useState(false);
@@ -59,7 +61,17 @@ export function CustomizeTab({ projectId, project, refetch }: CustomizeTabProps)
 
       setEditTheme(b.theme || "light");
       setEditShowBranding(b.showBranding ?? true);
-      setEditSuggestedMessages(b.suggestedMessages || []);
+
+      let initialMsgs: SuggestedMessage[] = [];
+      if (Array.isArray(project?.modules)) {
+        initialMsgs = project.modules;
+      } else if (Array.isArray(b.suggestedMessages)) {
+        initialMsgs = b.suggestedMessages.map((msg: any) => ({
+          label: typeof msg === "string" ? msg : msg.label || "",
+          prompt: typeof msg === "string" ? msg : msg.prompt || ""
+        }));
+      }
+      setEditSuggestedMessages(initialMsgs);
       setEditFooterLinks(b.footerLinks || []);
     }
   }, [project?.branding]);
@@ -96,8 +108,16 @@ export function CustomizeTab({ projectId, project, refetch }: CustomizeTabProps)
           welcomeMessage: editWelcomeMsg || undefined,
           theme: editTheme,
           showBranding: editShowBranding,
-          suggestedMessages: editSuggestedMessages.length > 0 ? editSuggestedMessages : undefined,
           footerLinks: editFooterLinks.length > 0 ? editFooterLinks : undefined,
+        }),
+      });
+
+      // Save modules (Suggested Messages) to the bot-config endpoint
+      await fetch(`/api/projects/${projectId}/bot-config`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          modules: editSuggestedMessages
         }),
       });
       toast({ title: t("settings.brandingSaved") || "Branding saved" });
@@ -110,22 +130,7 @@ export function CustomizeTab({ projectId, project, refetch }: CustomizeTabProps)
     }
   };
 
-  const addSuggestedMessage = () => {
-    if (editSuggestedMessages.length >= 4) return;
-    setEditSuggestedMessages([...editSuggestedMessages, ""]);
-  };
 
-  const updateSuggestedMessage = (index: number, val: string) => {
-    const nextMsg = [...editSuggestedMessages];
-    nextMsg[index] = val;
-    setEditSuggestedMessages(nextMsg);
-  };
-
-  const removeSuggestedMessage = (index: number) => {
-    const nextMsg = [...editSuggestedMessages];
-    nextMsg.splice(index, 1);
-    setEditSuggestedMessages(nextMsg);
-  };
 
   const addFooterLink = () => {
     if (editFooterLinks.length >= 3) return;
@@ -155,10 +160,10 @@ export function CustomizeTab({ projectId, project, refetch }: CustomizeTabProps)
   const isDark = editTheme === "dark"; // auto is hard to preview, default to light for preview if auto
 
   return (
-    <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto h-full overflow-hidden pb-6 animate-in fade-in duration-300">
+    <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto pb-6 animate-in fade-in duration-300">
 
       {/* LEFT PANE: FORM */}
-      <div className="flex-1 overflow-y-auto pr-2 pb-10 space-y-6 custom-scrollbar">
+      <div className="flex-1 pr-2 pb-10 space-y-6">
 
         {/* Basic Info */}
         <Card className="border-border/60 shadow-sm">
@@ -278,22 +283,13 @@ export function CustomizeTab({ projectId, project, refetch }: CustomizeTabProps)
             <div className="space-y-3 pt-4 border-t border-border/60">
               <div className="flex items-center justify-between">
                 <Label>Suggested Messages</Label>
-                <div className="text-xs text-muted-foreground">{editSuggestedMessages.length} / 4</div>
               </div>
-              <p className="text-xs text-muted-foreground mb-2">Provide quick prompts for the user to select at the start of the chat.</p>
-              {editSuggestedMessages.map((msg, i) => (
-                <div key={i} className="flex gap-2">
-                  <Input value={msg} onChange={e => updateSuggestedMessage(i, e.target.value)} placeholder="e.g. How does pricing work?" />
-                  <Button variant="ghost" size="sm" onClick={() => removeSuggestedMessage(i)} className="text-muted-foreground hover:text-destructive">
-                    <AppIcon name="Trash2" className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-              {editSuggestedMessages.length < 4 && (
-                <Button variant="outline" size="sm" onClick={addSuggestedMessage} className="w-full border-dashed">
-                  <AppIcon name="Plus" className="mr-2 h-4 w-4" /> Add Suggestion
-                </Button>
-              )}
+              <p className="text-xs text-muted-foreground mb-2">Provide quick prompts for the user to select at the start of the chat. You can optionally attach follow-up suggestions.</p>
+              
+              <SuggestedMessagesEditor 
+                messages={editSuggestedMessages}
+                onChange={setEditSuggestedMessages}
+              />
             </div>
 
             <div className="space-y-3 pt-4 border-t border-border/60">
@@ -404,13 +400,13 @@ export function CustomizeTab({ projectId, project, refetch }: CustomizeTabProps)
           {/* Suggestions */}
           {editSuggestedMessages.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-auto pb-4">
-              {editSuggestedMessages.map((msg, i) => msg && (
+              {editSuggestedMessages.map((msg, i) => msg.label && (
                 <div
                   key={i}
                   className="text-xs px-3 py-1.5 rounded-full border shadow-sm cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
                   style={{ borderColor: editPrimaryColor, color: editPrimaryColor, backgroundColor: isDark ? 'transparent' : '#fff' }}
                 >
-                  {msg}
+                  {msg.label}
                 </div>
               ))}
             </div>

@@ -28,10 +28,7 @@ interface Message {
   responseTime?: number;
 }
 
-export interface SuggestedMessage {
-  label: string;
-  prompt: string;
-}
+import { SuggestedMessage } from "@/lib/api/types";
 
 export interface ChatBranding {
   primaryColor?: string;
@@ -79,6 +76,7 @@ export function ChatInterface({
 }: ChatInterfaceProps) {
   const [inputMessage, setInputMessage] = React.useState("");
   const [isTyping, setIsTyping] = React.useState(false);
+  const [activeSubMessages, setActiveSubMessages] = React.useState<SuggestedMessage[]>([]);
   const [ratings, setRatings] = React.useState<Record<string, "positive" | "negative">>({});
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -101,13 +99,19 @@ export function ChatInterface({
     setIsTyping(isLoading);
   }, [isLoading]);
 
-  const handleSendMessage = (content?: string) => {
+  const handleSendMessage = (content?: string, subMsgs?: SuggestedMessage[]) => {
     const msg = content || inputMessage.trim();
     if (msg && !isLoading) {
       onSendMessage?.(msg);
       setInputMessage("");
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto";
+      }
+
+      if (subMsgs && subMsgs.length > 0) {
+        setActiveSubMessages(subMsgs);
+      } else {
+        setActiveSubMessages([]);
       }
     }
   };
@@ -222,18 +226,23 @@ export function ChatInterface({
 
   // Suggested message pills
   const SuggestedPills = () => {
-    if (suggestedMessages.length === 0) return null;
+    const pillsToShow = [...activeSubMessages, ...suggestedMessages.filter(sm => !activeSubMessages.find(sub => sub.label === sm.label))];
+    if (pillsToShow.length === 0) return null;
     return (
       <div className="flex flex-wrap gap-2 mt-3 mb-1">
-        {suggestedMessages.map((sm, idx) => (
+        {pillsToShow.map((sm, idx) => (
           <button
             key={idx}
-            onClick={() => handleSendMessage(sm.prompt)}
+            onClick={() => handleSendMessage(sm.prompt, sm.subMessages)}
             disabled={isLoading}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-border/60 bg-background hover:bg-muted/60 hover:border-border transition-all hover:scale-105 active:scale-95 text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             style={branding?.primaryColor ? { borderColor: branding.primaryColor + "40", color: branding.primaryColor } : undefined}
           >
-            <AppIcon name="Sparkles" className="h-3 w-3" />
+            {activeSubMessages.includes(sm) ? (
+              <AppIcon name="CornerDownRight" className="h-3 w-3" />
+            ) : (
+              <AppIcon name="Sparkles" className="h-3 w-3" />
+            )}
             {sm.label}
           </button>
         ))}
@@ -475,15 +484,19 @@ export function ChatInterface({
               </div>
               {/* Suggested messages after welcome */}
               <div className="flex flex-wrap gap-2 justify-center mt-6">
-                {suggestedMessages.map((sm, idx) => (
+                {[...activeSubMessages, ...suggestedMessages.filter(sm => !activeSubMessages.find(sub => sub.label === sm.label))].map((sm, idx) => (
                   <button
                     key={idx}
-                    onClick={() => handleSendMessage(sm.prompt)}
+                    onClick={() => handleSendMessage(sm.prompt, sm.subMessages)}
                     disabled={isLoading}
                     className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border border-border/60 bg-background hover:bg-muted/60 hover:border-border transition-all text-foreground shadow-sm disabled:opacity-50"
                     style={branding?.primaryColor ? { borderColor: branding.primaryColor + "40", color: branding.primaryColor } : undefined}
                   >
-                    <AppIcon name="Sparkles" className="h-3.5 w-3.5" />
+                    {activeSubMessages.includes(sm) ? (
+                      <AppIcon name="CornerDownRight" className="h-3.5 w-3.5" />
+                    ) : (
+                      <AppIcon name="Sparkles" className="h-3.5 w-3.5" />
+                    )}
                     {sm.label}
                   </button>
                 ))}

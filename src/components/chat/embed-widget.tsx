@@ -8,12 +8,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 
+import { SuggestedMessage } from "@/lib/api/types";
+
 interface EmbedWidgetProps {
     projectId: string;
     projectName: string;
     leadCaptureEnabled?: boolean;
     leadCaptureFields?: string[] | null;
     branding?: any;
+    modules?: any;
 }
 
 interface Message {
@@ -23,11 +26,12 @@ interface Message {
     timestamp: Date;
 }
 
-export function EmbedWidget({ projectId, projectName, leadCaptureEnabled, leadCaptureFields, branding }: EmbedWidgetProps) {
+export function EmbedWidget({ projectId, projectName, leadCaptureEnabled, leadCaptureFields, branding, modules }: EmbedWidgetProps) {
     const [isOpen, setIsOpen] = React.useState(false);
     const [messages, setMessages] = React.useState<Message[]>([]);
     const [inputMessage, setInputMessage] = React.useState("");
     const [isLoading, setIsLoading] = React.useState(false);
+    const [activeSubMessages, setActiveSubMessages] = React.useState<SuggestedMessage[]>([]);
 
     // Extract branding properties
     const primaryColor = branding?.primaryColor || "hsl(var(--brand))";
@@ -40,7 +44,16 @@ export function EmbedWidget({ projectId, projectName, leadCaptureEnabled, leadCa
     const chatbotDisplayName = branding?.chatbotDisplayName || projectName;
     const welcomeMessage = branding?.welcomeMessage || "Hi there! How can I help you today?";
     const showBranding = branding?.showBranding !== false;
-    const suggestedMessages = branding?.suggestedMessages || [];
+    let suggestedMessages: SuggestedMessage[] = [];
+    if (Array.isArray(modules)) {
+        suggestedMessages = modules;
+    } else if (Array.isArray(branding?.suggestedMessages)) {
+        // Fallback for legacy format
+        suggestedMessages = branding.suggestedMessages.map((m: any) => ({
+            label: typeof m === "string" ? m : m.label,
+            prompt: typeof m === "string" ? m : m.prompt
+        }));
+    }
     const footerLinks = branding?.footerLinks || [];
 
     // Lead capture state
@@ -112,12 +125,13 @@ export function EmbedWidget({ projectId, projectName, leadCaptureEnabled, leadCa
         }
     }, [messages, isOpen, showLeadForm]);
 
-    const handleSendMessage = async () => {
-        if (showLeadForm || !inputMessage.trim() || isLoading) return;
+    const handleSendMessage = async (customPrompt?: string, subMsgs?: SuggestedMessage[]) => {
+        const messageText = customPrompt || inputMessage.trim();
+        if (showLeadForm || !messageText || isLoading) return;
 
         const userMessage: Message = {
             id: `user-${Date.now()}`,
-            content: inputMessage.trim(),
+            content: messageText,
             role: "user",
             timestamp: new Date(),
         };
@@ -125,6 +139,12 @@ export function EmbedWidget({ projectId, projectName, leadCaptureEnabled, leadCa
         setMessages((prev) => [...prev, userMessage]);
         setInputMessage("");
         setIsLoading(true);
+
+        if (subMsgs && subMsgs.length > 0) {
+            setActiveSubMessages(subMsgs);
+        } else {
+            setActiveSubMessages([]);
+        }
 
         if (textareaRef.current) {
             textareaRef.current.style.height = "auto";
@@ -256,14 +276,19 @@ export function EmbedWidget({ projectId, projectName, leadCaptureEnabled, leadCa
 
                                     {suggestedMessages.length > 0 && (
                                         <div className="flex flex-wrap justify-center gap-2 mt-6 max-w-full">
-                                            {suggestedMessages.map((msg: string, i: number) => (
+                                            {[...activeSubMessages, ...suggestedMessages.filter(sm => !activeSubMessages.find(sub => sub.label === sm.label))].map((msg, i) => (
                                                 <button
                                                     key={i}
-                                                    onClick={() => setInputMessage(msg)}
-                                                    className="text-xs px-3 py-1.5 rounded-full border shadow-sm transition-colors hover:opacity-80 text-left bg-background"
+                                                    onClick={() => handleSendMessage(msg.prompt, msg.subMessages)}
+                                                    className="text-xs px-3 py-1.5 rounded-full border shadow-sm transition-colors hover:opacity-80 text-left bg-background flex items-center gap-1.5"
                                                     style={{ borderColor: primaryColor, color: primaryColor }}
                                                 >
-                                                    {msg}
+                                                    {activeSubMessages.includes(msg) ? (
+                                                        <AppIcon name="CornerDownRight" className="h-3 w-3" />
+                                                    ) : (
+                                                        <AppIcon name="Sparkles" className="h-3 w-3" />
+                                                    )}
+                                                    {msg.label}
                                                 </button>
                                             ))}
                                         </div>
@@ -338,7 +363,7 @@ export function EmbedWidget({ projectId, projectName, leadCaptureEnabled, leadCa
                             />
                             <Button
                                 size="icon"
-                                onClick={handleSendMessage}
+                                onClick={() => handleSendMessage()}
                                 disabled={!inputMessage.trim() || isLoading}
                                 className="absolute right-1 bottom-1 h-9 w-9 rounded-full text-white transition-all shadow-sm shrink-0 hover:opacity-90"
                                 style={{ backgroundColor: primaryColor }}

@@ -74,7 +74,7 @@ export default function ProjectPage() {
 
   return (
     <MainLayout>
-      <div className="flex flex-col h-full overflow-hidden w-full max-w-6xl mx-auto animate-in fade-in duration-300">
+      <div className="flex-1 min-h-[500px] flex flex-col w-full max-w-6xl mx-auto animate-in fade-in duration-300">
         {/* Slim Project Header */}
         <div className="flex items-center justify-between gap-4 mb-6 shrink-0">
           <div className="min-w-0">
@@ -86,55 +86,55 @@ export default function ProjectPage() {
         {/* Tab Content — rendered based on URL ?tab= param */}
         <div className="flex-1 min-h-0 relative w-full flex flex-col">
           {activeTab === "chat" && (
-            <div className="flex-1 min-h-0 flex flex-col animate-tab-in">
+            <div className="flex-1 min-h-0 flex flex-col animate-tab-in h-full">
               <ChatTab projectId={projectId} project={project} hasDocuments={hasDocuments} onNavigateToSources={() => setActiveTab("sources")} />
             </div>
           )}
 
           {activeTab === "sources" && (
-            <div className="flex-1 min-h-0 animate-tab-in">
+            <div className="flex-1 min-h-0 flex flex-col animate-tab-in h-full">
               <SourcesTab projectId={projectId} project={project} refetch={refetch} />
             </div>
           )}
 
           {activeTab === "botconfig" && (
-            <div className="flex-1 min-h-0 overflow-y-auto pb-8 animate-tab-in">
+            <div className="flex-1 min-h-0 flex flex-col animate-tab-in h-full overflow-y-auto pb-8">
               <BotSettingsPanel projectId={projectId} />
             </div>
           )}
 
           {activeTab === "customize" && (
-            <div className="flex-1 min-h-0 animate-tab-in">
+            <div className="flex-1 min-h-0 flex flex-col animate-tab-in h-full">
               <CustomizeTab projectId={projectId} project={project} refetch={refetch} />
             </div>
           )}
 
           {activeTab === "embed" && (
-            <div className="flex-1 min-h-0 animate-tab-in">
+            <div className="flex-1 min-h-0 flex flex-col animate-tab-in h-full">
               <EmbedTab projectId={projectId} project={project} />
             </div>
           )}
 
           {activeTab === "analytics" && (
-            <div className="flex-1 min-h-0 animate-tab-in">
+            <div className="flex-1 min-h-0 flex flex-col animate-tab-in h-full">
               <AnalyticsTab projectId={projectId} />
             </div>
           )}
 
           {activeTab === "settings" && (
-            <div className="flex-1 min-h-0 animate-tab-in">
+            <div className="flex-1 min-h-0 flex flex-col animate-tab-in h-full">
               <SettingsTab projectId={projectId} project={project} refetch={refetch} />
             </div>
           )}
 
           {activeTab === "logs" && (
-            <div className="flex-1 min-h-0 animate-tab-in">
+            <div className="flex-1 min-h-0 flex flex-col animate-tab-in h-full">
               <LogsTab projectId={projectId} />
             </div>
           )}
 
           {activeTab === "leads" && (
-            <div className="flex-1 min-h-0 animate-tab-in">
+            <div className="flex-1 min-h-0 flex flex-col animate-tab-in h-full">
               <LeadsTab projectId={projectId} />
             </div>
           )}

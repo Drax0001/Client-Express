@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { AppIcon } from "@/components/ui/app-icon";
 import Link from "next/link";
@@ -25,6 +25,7 @@ type Profile = {
 function SettingsInner() {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { update } = useSession();
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get("tab") || "general";
 
@@ -66,6 +67,7 @@ function SettingsInner() {
     setSavingProfile(false);
     if (response.ok) {
       await loadProfile();
+      await update({ name: profileName });
       toast({ title: "Profile updated" });
       return;
     }

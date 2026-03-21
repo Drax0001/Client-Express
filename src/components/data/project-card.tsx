@@ -30,7 +30,7 @@ export function ProjectCard({
     <Card
       role="button"
       tabIndex={0}
-      className="group relative overflow-hidden transition-all duration-200 touch-manipulation border border-border/60 shadow-medium bg-card cursor-pointer hover:shadow-strong hover:-translate-y-1 hover:border-brand/40 active:scale-[0.98]"
+      className="group relative overflow-hidden transition-all duration-300 touch-manipulation border border-border/50 shadow-sm bg-gradient-to-br from-card to-card/50 cursor-pointer hover:shadow-[0_8px_30px_rgba(14,165,233,0.12)] dark:hover:shadow-[0_8px_30px_rgba(14,165,233,0.08)] hover:-translate-y-1.5 hover:border-brand/40 active:scale-[0.98]"
       onClick={() => router.push(`/projects/${id}`)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -69,7 +69,7 @@ export function ProjectCard({
               {documentCount} {documentCount === 1 ? t("common.document") : t("common.documents")}
             </span>
           </div>
-          <Badge variant="secondary" className="font-medium">
+          <Badge variant="secondary" className="font-medium group-hover:bg-brand/10 group-hover:text-brand transition-colors duration-300">
             {documentCount > 0 ? t("common.ready") : t("common.empty")}
           </Badge>
         </div>

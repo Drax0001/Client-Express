@@ -5,7 +5,8 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
 import { ProjectCard } from "@/components/data/project-card";
 import { useProjects, useUsage } from "@/lib/api/hooks";
-import { useTranslation, getClientLocale } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UpgradeModal } from "@/components/projects/upgrade-modal";
@@ -16,14 +17,18 @@ export default function DashboardPage() {
   const router = useRouter();
   const { data: projects, isLoading: projectsLoading, error } = useProjects();
   const { data: usageData } = useUsage();
-
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const { data: session } = useSession();
+  const displayName = session?.user?.name?.trim() || session?.user?.email?.split('@')[0] || "User";
 
   // Time-based greeting logic
   const hour = new Date().getHours();
-  let greetingKey = "dashboard.goodEvening";
-  if (hour < 12) greetingKey = "dashboard.goodMorning";
-  else if (hour < 18) greetingKey = "dashboard.goodAfternoon";
+  let baseKey = "dashboard.goodEvening";
+  if (hour < 12) baseKey = "dashboard.goodMorning";
+  else if (hour < 18) baseKey = "dashboard.goodAfternoon";
+
+  // Pseudo-random index based on hour and name to prevent React hydration errors
+  const variantIndex = (hour + (displayName.charCodeAt(0) || 0)) % 3;
+  const greetingKey = `${baseKey}.${variantIndex}` as any;
 
   const handleCreateClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -36,6 +41,8 @@ export default function DashboardPage() {
     router.push("/projects/new");
   };
 
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
   return (
     <MainLayout>
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out max-w-6xl mx-auto w-full">
@@ -43,7 +50,7 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-              {t(greetingKey)}
+              {t(greetingKey, { name: displayName })}
             </h1>
             <p className="text-muted-foreground mt-2 text-[15px]">
               {t("dashboard.welcomeBack")}
@@ -69,9 +76,9 @@ export default function DashboardPage() {
         {/* METRICS DASHBOARD */}
         <div className="grid gap-4 md:grid-cols-3">
           {/* Active Chatbots Metric */}
-          <div className="p-6 rounded-2xl bg-card/60 backdrop-blur-sm border border-border/60 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="group p-6 rounded-2xl bg-gradient-to-br from-card/80 to-muted/20 backdrop-blur-md border border-border/50 shadow-sm flex flex-col justify-between hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:hover:shadow-[0_8px_30px_rgba(255,255,255,0.03)] hover:-translate-y-1 hover:border-brand/30 transition-all duration-300">
             <div className="flex items-center gap-2 text-muted-foreground mb-4">
-              <div className="p-2 bg-brand/10 text-brand rounded-lg">
+              <div className="p-2 bg-brand/10 text-brand rounded-lg group-hover:scale-110 transition-transform duration-300">
                 <AppIcon name="Folder" className="h-4 w-4" />
               </div>
               <h3 className="font-medium text-sm">{t("dashboard.activeChatbots")}</h3>
@@ -89,9 +96,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Messages Metric */}
-          <div className="p-6 rounded-2xl bg-card/60 backdrop-blur-sm border border-border/60 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="group p-6 rounded-2xl bg-gradient-to-br from-card/80 to-muted/20 backdrop-blur-md border border-border/50 shadow-sm flex flex-col justify-between hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:hover:shadow-[0_8px_30px_rgba(255,255,255,0.03)] hover:-translate-y-1 hover:border-success/30 transition-all duration-300">
             <div className="flex items-center gap-2 text-muted-foreground mb-4">
-              <div className="p-2 bg-success/10 text-success rounded-lg">
+              <div className="p-2 bg-success/10 text-success rounded-lg group-hover:scale-110 transition-transform duration-300">
                 <AppIcon name="MessageSquare" className="h-4 w-4" />
               </div>
               <h3 className="font-medium text-sm">{t("dashboard.messagesThisMonth")}</h3>
@@ -111,9 +118,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Sources Metric */}
-          <div className="p-6 rounded-2xl bg-card/60 backdrop-blur-sm border border-border/60 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="group p-6 rounded-2xl bg-gradient-to-br from-card/80 to-muted/20 backdrop-blur-md border border-border/50 shadow-sm flex flex-col justify-between hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:hover:shadow-[0_8px_30px_rgba(255,255,255,0.03)] hover:-translate-y-1 hover:border-info/30 transition-all duration-300">
             <div className="flex items-center gap-2 text-muted-foreground mb-4">
-              <div className="p-2 bg-info/10 text-info rounded-lg">
+              <div className="p-2 bg-info/10 text-info rounded-lg group-hover:scale-110 transition-transform duration-300">
                 <AppIcon name="Database" className="h-4 w-4" />
               </div>
               <h3 className="font-medium text-sm">{t("dashboard.sourcesIndexed")}</h3>
